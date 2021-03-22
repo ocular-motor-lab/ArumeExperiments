@@ -980,7 +980,7 @@ classdef ArumeGui < matlab.apps.AppBase
                     pastRunNumber = regexp(source.Text, '\[(?<runNumber>\d+)\]', 'names');
                     pastRunNumber = str2double(pastRunNumber.runNumber);
                     
-                    app.arumeController.resumeSessionFrom(pastRunNumber);
+                    app.arumeController.resumeSession(pastRunNumber);
                     app.UpdateGui();
             end
         end

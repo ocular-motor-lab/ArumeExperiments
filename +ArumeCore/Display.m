@@ -71,8 +71,8 @@ classdef Display < handle
             graph.white = WhiteIndex( graph.window );
             
             if ( exist('exper','var') && ~isempty(exper) )
-                graph.dlgTextColor = exper.ForegroundColor;
-                graph.dlgBackgroundScreenColor = exper.BackgroundColor;
+                graph.dlgTextColor = exper.ExperimentOptions.ForegroundColor;
+                graph.dlgBackgroundScreenColor = exper.ExperimentOptions.BackgroundColor;
             end
             
             % FOR OKN

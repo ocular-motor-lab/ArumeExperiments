@@ -37,13 +37,6 @@ classdef ExperimentDesign < handle
     % Options for every experimental paradigm
     %
     properties
-        DisplayVariableSelection = {'TrialNumber' 'TrialResult'}; % which variables to display every trial in the command line
-        HitKeyBeforeTrial = 0;
-        ForegroundColor = 0;
-        BackgroundColor = 0;
-        trialDuration = 10;
-        trialsBeforeBreak = 1000;
-        trialAbortAction = 'Repeat';
     end
     
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -57,7 +50,19 @@ classdef ExperimentDesign < handle
         % Some common options will be added
         function dlg = GetOptionsDialog( this, importing )
             dlg = [];
-            dlg.Debug               = { {'{0}','1'} };
+            dlg.Debug = { {'{0}','1'} };
+            
+            dlg.DisplayVariableSelection = {'TrialNumber' 'TrialResult'}; % which variables to display every trial in the command line
+            
+            % TODO: GET DIFFERENT OPTIONS DEPENDING ON THE TYPE OF DISPLAY
+            dlg.ForegroundColor = 0;
+            dlg.BackgroundColor = 0;
+            
+            
+            dlg.HitKeyBeforeTrial = 0;
+            dlg.TrialDuration = 10;
+            dlg.TrialsBeforeBreak = 1000;
+            dlg.TrialAbortAction = 'Repeat';
         end
         
         % Set up the trial table when a new session is created
@@ -148,6 +153,11 @@ classdef ExperimentDesign < handle
     end
     
     methods (Access = public)
+        
+        function trialTable = GetTrialTable(this)
+            trialTable = this.TrialTable;
+        end
+        
         function trialTableOptions = GetDefaultTrialTableOptions(this)
             % Trial sequence and blocking
             trialTableOptions = [];
@@ -202,39 +212,44 @@ classdef ExperimentDesign < handle
             end
         
         
+            blockSeqWithRepeats = [];
+            for iRepeatBlockSequence = 1:trialTableOptions.numberOfTimesRepeatBlockSequence
         
-            % generate the sequence of blocks, a total of
-            % parameters.blocksToRun blocks will be run
-            nBlocks = length(trialTableOptions.blocks);
-            blockSeq = [];
-            switch(trialTableOptions.blockSequence)
-                case 'Sequential'
-                    blockSeq = mod( (1:trialTableOptions.blocksToRun)-1,  nBlocks ) + 1;
-                case 'Random'
-                    [~, theBlocks] = sort( rand(1,trialTableOptions.blocksToRun) ); % get a random shuffle of 1 ... blocks to run
-                    blockSeq = mod( theBlocks-1,  nBlocks ) + 1; % limit the random sequence to 1 ... nBlocks
-                case 'Random with repetition'
-                    blockSeq = ceil( rand(1,trialTableOptions.blocksToRun) * nBlocks ); % just get random block numbers
-                case 'Manual'
-                    blockSeq = [];
-                    
-                    while length(blockSeq) ~= trialTableOptions.blocksToRun
-                        S.Block_Sequence = [1:trialTableOptions.blocksToRun];
-                        S = StructDlg( S, ['Block Sequence'], [],  CorrGui.get_default_dlg_pos() );
-                        blockSeq =  S.Block_Sequence;
-                    end
-                    %                     if length(parameters.manualBlockSequence) == parameters.blocksToRun;
-                    %                         %                         blockSequence = parameters.manualBlockSequence;
-                    %
-                    %                     else
-                    %                         disp(['Error with the manual block sequence. Please fix.']);
-                    %                     end
+                % generate the sequence of blocks, a total of
+                % parameters.blocksToRun blocks will be run
+                nBlocks = length(trialTableOptions.blocks);
+                blockSeq = [];
+                switch(trialTableOptions.blockSequence)
+                    case 'Sequential'
+                        blockSeq = mod( (1:trialTableOptions.blocksToRun)-1,  nBlocks ) + 1;
+                    case 'Random'
+                        [~, theBlocks] = sort( rand(1,trialTableOptions.blocksToRun) ); % get a random shuffle of 1 ... blocks to run
+                        blockSeq = mod( theBlocks-1,  nBlocks ) + 1; % limit the random sequence to 1 ... nBlocks
+                    case 'Random with repetition'
+                        blockSeq = ceil( rand(1,trialTableOptions.blocksToRun) * nBlocks ); % just get random block numbers
+                    case 'Manual'
+                        blockSeq = [];
+                        
+                        while length(blockSeq) ~= trialTableOptions.blocksToRun
+                            S.Block_Sequence = [1:trialTableOptions.blocksToRun];
+                            S = StructDlg( S, ['Block Sequence'], [],  CorrGui.get_default_dlg_pos() );
+                            blockSeq =  S.Block_Sequence;
+                        end
+                        %                     if length(parameters.manualBlockSequence) == parameters.blocksToRun;
+                        %                         %                         blockSequence = parameters.manualBlockSequence;
+                        %
+                        %                     else
+                        %                         disp(['Error with the manual block sequence. Please fix.']);
+                        %                     end
+                end
+                blockSeq = [blockSeq;ones(size(blockSeq))*iRepeatBlockSequence];
+                blockSeqWithRepeats = [blockSeqWithRepeats blockSeq];
             end
-            blockSeq = repmat( blockSeq,1,trialTableOptions.numberOfTimesRepeatBlockSequence);
+            blockSeq = blockSeqWithRepeats;
             
             futureConditions = [];
-            for iblock=1:length(blockSeq)
-                i = blockSeq(iblock);
+            for iblock=1:size(blockSeq,2)
+                i = blockSeq(1,iblock);
                 possibleConditions = trialTableOptions.blocks(i).fromCondition : trialTableOptions.blocks(i).toCondition; % the possible conditions to select from in this block
                 nConditions = length(possibleConditions);
                 nTrials = trialTableOptions.blocks(i).trialsToRun;
@@ -249,14 +264,15 @@ classdef ExperimentDesign < handle
                     case 'Random with repetition' 
                         trialSeq = possibleConditions( ceil( rand(1,nTrials) * nConditions ) ); % nTrialss numbers between 1 and nConditions
                 end
-                futureConditions = cat(1,futureConditions, [trialSeq' ones(size(trialSeq'))*iblock  ones(size(trialSeq'))*i] );
+                futureConditions = cat(1,futureConditions, [trialSeq' ones(size(trialSeq'))*iblock  ones(size(trialSeq'))*i ones(size(trialSeq'))*blockSeq(2,iblock)] );
             end
             
             newTrialTable = table();
             newTrialTable.Condition = futureConditions(:,1);
             newTrialTable.BlockNumber = futureConditions(:,2);
             newTrialTable.BlockSequenceNumber = futureConditions(:,3);
-            newTrialTable.Session = ceil((1:height(newTrialTable))/trialTableOptions.trialsPerSession)';
+            newTrialTable.BlockSequenceRepeat = futureConditions(:,4);
+            newTrialTable.Session = ceil((1:height(newTrialTable))/min(height(newTrialTable), trialTableOptions.trialsPerSession))';
             
             variableTable = table();
             for i=1:height(newTrialTable)
@@ -441,7 +457,7 @@ classdef ExperimentDesign < handle
                             % experiment is set to ask for hit key before
                             % every trial
                             if ( (~isempty(this.Session.currentRun.pastTrialTable) && this.Session.currentRun.pastTrialTable.TrialResult(end) == Enum.trialResult.ABORT) ...
-                                     || this.HitKeyBeforeTrial )
+                                     || this.ExperimentOptions.HitKeyBeforeTrial )
                                 dlgResult = this.Graph.DlgHitKey( 'Hit a key to continue',[],[]);
                                 if ( ~dlgResult )
                                     status = IDLE;
@@ -544,7 +560,7 @@ classdef ExperimentDesign < handle
                             
                             % -- Display trial Table for last 20 trials
                             data = this.Session.currentRun.pastTrialTable;
-                            varSelection = intersect(this.DisplayVariableSelection,data.Properties.VariableNames,'stable');
+                            varSelection = intersect(this.ExperimentOptions.DisplayVariableSelection,data.Properties.VariableNames,'stable');
                             if ( ~this.ExperimentOptions.Debug )
                                 disp(data(max(1,end-20):end,varSelection));
                             else
@@ -594,7 +610,7 @@ classdef ExperimentDesign < handle
                             end
                             
                             % -- Experiment or session finished ?
-                            if ( trialsSinceBreak >= this.trialsBeforeBreak )
+                            if ( trialsSinceBreak >= this.ExperimentOptions.TrialsBeforeBreak )
                                 status = BREAK;
                             end
                             if ( ~isempty(this.Session.currentRun.futureTrialTable) && ~isempty(this.Session.currentRun.pastTrialTable) )

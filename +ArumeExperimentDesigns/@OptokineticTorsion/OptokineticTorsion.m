@@ -80,6 +80,11 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
                 conditionVars(i).values = {'Dots'};
             end
             
+            trialTableOptions = this.GetDefaultTrialTableOptions();
+            trialTableOptions.trialSequence = 'Random';
+            trialTableOptions.trialAbortAction = 'Delay';
+            trialTableOptions.trialsPerSession = 1000;
+            trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberOfRepetitions;
             trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
         end
         
@@ -94,7 +99,7 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
                 
                 
                 lastFlipTime        = GetSecs;
-                secondsRemaining    = this.trialDuration;
+                secondsRemaining    = this.ExperimentOptions.TrialDuration;
                 thisTrialData.TimeStartLoop = lastFlipTime;
                 
                 % prepare dots
@@ -144,7 +149,7 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
                 while secondsRemaining > 0
                     
                     secondsElapsed      = GetSecs - thisTrialData.TimeStartLoop;
-                    secondsRemaining    = this.trialDuration - secondsElapsed;
+                    secondsRemaining    = this.ExperimentOptions.TrialDuration - secondsElapsed;
                     
                     
                     % -----------------------------------------------------------------
@@ -152,6 +157,7 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
                     % -----------------------------------------------------------------
                     switch(thisTrialData.Stimulus)
                         case 'Dots'
+                             s( s>63) = 63;
                             Screen('DrawDots', graph.window, xymatrix, s, WhiteIndex(graph.window), center,1);  % change 1 to 0 to draw square dots
                     end
                     

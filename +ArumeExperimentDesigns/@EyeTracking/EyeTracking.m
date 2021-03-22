@@ -40,7 +40,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
         
         function cleanAfterRunning(this)
             
-            if ( this.ExperimentOptions.UseEyeTracker )
+            if ( this.ExperimentOptions.UseEyeTracker && ~isempty(this.eyeTracker))
                 this.eyeTracker.StopRecording();
         
                 disp('Downloading eye tracking files...');

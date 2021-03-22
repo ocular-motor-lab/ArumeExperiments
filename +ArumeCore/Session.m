@@ -145,8 +145,8 @@ classdef Session < ArumeCore.DataDB
             
             this.initialRun         = ArumeCore.ExperimentRun();
             this.initialRun.pastTrialTable           = table();
-            this.initialRun.originalFutureTrialTable = this.experimentDesign.SetUpTrialTable();
-            this.initialRun.futureTrialTable         = this.currentRun.originalFutureTrialTable;
+            this.initialRun.originalFutureTrialTable = this.experimentDesign.GetTrialTable();
+            this.initialRun.futureTrialTable         = this.initialRun.originalFutureTrialTable;
             
             % to create stand alone sessions that do not belong to a
             % project and don't save data
@@ -154,7 +154,6 @@ classdef Session < ArumeCore.DataDB
                 this.dataPath  = fullfile(projectPath, this.name);
                 this.InitDB( this.dataPath );
             end
-            
             
         end
                 
@@ -177,7 +176,6 @@ classdef Session < ArumeCore.DataDB
                 this.dataPath  = newPath;
                 this.InitDB( this.dataPath );
             end
-            
         end
         
         function deleteFolders( this )

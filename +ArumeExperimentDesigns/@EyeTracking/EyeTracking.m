@@ -9,30 +9,19 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
     % ---------------------------------------------------------------------
     methods (Access=protected)
         function dlg = GetOptionsDialog( this, importing )
-            dlg.UseEyeTracker = { {'0' '{1}'} };
-            dlg.Debug = { {'{0}','1'} };
+            dlg = GetOptionsDialog@ArumeCore.ExperimentDesign(this);
             
-            dlg.ScreenWidth = { 40 '* (cm)' [1 3000] };
-            dlg.ScreenHeight = { 30 '* (cm)' [1 3000] };
-            dlg.ScreenDistance = { 135 '* (cm)' [1 3000] };
+            dlg.UseEyeTracker       = { {'0' '{1}'} };
+            
+            dlg.ScreenWidth         = { 40 '* (cm)' [1 3000] };
+            dlg.ScreenHeight        = { 30 '* (cm)' [1 3000] };
+            dlg.ScreenDistance      = { 135 '* (cm)' [1 3000] };
             
             if ( exist('importing','var') && importing )
                 dlg.DataFiles = { {['uigetfile(''' fullfile(pwd,'*.txt') ''',''MultiSelect'', ''on'')']} };
                 dlg.EventFiles = { {['uigetfile(''' fullfile(pwd,'*.txt') ''',''MultiSelect'', ''on'')']} };
                 dlg.CalibrationFiles = { {['uigetfile(''' fullfile(pwd,'*.cal') ''',''MultiSelect'', ''on'')']} };
             end
-        end
-        
-        function [conditionVars] = getConditionVariables( this )
-            %-- condition variables ---------------------------------------
-            i= 0;
-            
-            % This is necessary for basic imported sessions of eye movement
-            % recordings
-            
-            i = i+1;
-            conditionVars(i).name   = 'Recording';
-            conditionVars(i).values = 1;
         end
         
         function shouldContinue = initBeforeRunning( this )

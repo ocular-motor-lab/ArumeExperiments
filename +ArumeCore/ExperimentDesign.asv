@@ -313,33 +313,34 @@ classdef ExperimentDesign < handle
         end
         
         function init(this, session, options)
-            this.Session = session;
             
+            %-- init options
             %-- Check if all the options are there, if not add the default
             % values. This is important to mantain past compatibility if
             % options are added in the future.
             optionsDlg = this.GetOptionsDialog( );
-            if ( ~isempty( optionsDlg ) && (isempty(options) || ~isempty(setdiff(fieldnames(optionsDlg), fieldnames(options)))) )
+            if ( ~isempty( optionsDlg ) && (isempty(this.ExperimentOptions) || ~isempty(setdiff(fieldnames(optionsDlg), fieldnames(this.ExperimentOptions)))) )
                 
-                defaultOptions = StructDlg(optionsDlg,'',[],[],'off');
+                options = StructDlg(optionsDlg,'',[],[],'off');
                 
-                fields = fieldnames(defaultOptions);
+                fields = fieldnames(options);
                 for i=1:length(fields)
-                    if ( ~isfield(options, fields{i}))
-                        options.(fields{i}) = defaultOptions.(fields{i});
+                    if ( ~isfield(this.ExperimentOptions, fields{i}))
+                        this.ExperimentOptions.(fields{i}) = options.(fields{i});
                     end
                 end
             end
             
-            this.ExperimentOptions = options;
+            if ( exist( 'session', 'var') && exist('options', 'var') )
+                this.Session            = session;
+                this.ExperimentOptions  = options;
+            end
             
-            newTrialTable = this.SetUpTrialTable();
-            
-            % Check trialTable
-            
-            this.TrialTable = newTrialTable;
         end
         
+        function CheckOptions(this, options)
+            
+        end
         
         function run(this)
             Enum = ArumeCore.ExperimentDesign.getEnum();

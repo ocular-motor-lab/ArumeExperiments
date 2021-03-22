@@ -45,24 +45,22 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
             this.HitKeyBeforeTrial = 1;
             this.BackgroundColor = this.ExperimentOptions.BackgroundBrightness;
             
-            this.trialDuration = this.ExperimentOptions.Trial_Duration; %seconds
-            
-            this.trialsBeforeBreak = 15;
                 
             % default parameters of any experiment
+            this.trialsBeforeBreak = 15;
             this.trialAbortAction = 'Delay';     % Repeat, Delay, Drop
             
-            %%-- Blocking
-            this.blockSequence = 'Sequential';	% Sequential, Random, ...
             
-            this.trialSequence = 'Random';	% Sequential, Random, Random with repetition, ...
-            this.trialsPerSession = this.NumberOfConditions*this.ExperimentOptions.NumberOfRepetitions;
-            this.numberOfTimesRepeatBlockSequence  = this.ExperimentOptions.NumberOfRepetitions;
-            this.blocksToRun = 1;
-            this.blocks = struct( 'fromCondition', 1, 'toCondition', this.NumberOfConditions, 'trialsToRun', this.NumberOfConditions  );
+            
+            %%-- Blocking
+            trialTableOptions = this.GetDefaultTrialTableOptions();
+            trialTableOptions.blockSequence = 'Sequential';	% Sequential, Random, ...
+            
+            trialTableOptions.trialSequence = 'Random';	% Sequential, Random, Random with repetition, ...
+            trialTableOptions.numberOfTimesRepeatBlockSequence  = this.ExperimentOptions.NumberOfRepetitions;
         end
-        
-        function [conditionVars] = getConditionVariables( this )
+        function trialTable = SetUpTrialTable(this)
+            
             %-- condition variables ---------------------------------------
             i= 0;
             
@@ -81,7 +79,10 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
             else
                 conditionVars(i).values = {'Dots'};
             end
+            
+            trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
         end
+        
         
         function [trialResult, thisTrialData] = runTrial( this, thisTrialData )
             

@@ -143,7 +143,7 @@ classdef Session < ArumeCore.DataDB
             this.experimentDesign   = ArumeCore.ExperimentDesign.Create( experimentName );
             this.experimentDesign.init(this, experimentOptions);
             
-            this.initialRun         = ArumeCore.ExperimentRun();
+            this.initialRun = ArumeCore.ExperimentRun();
             this.initialRun.pastTrialTable           = table();
             this.initialRun.originalFutureTrialTable = this.experimentDesign.SetUpTrialTable();
             this.initialRun.futureTrialTable         = this.currentRun.originalFutureTrialTable;
@@ -191,17 +191,12 @@ classdef Session < ArumeCore.DataDB
             
             sessionData.comment             = this.comment;
             sessionData.experimentOptions   = this.experimentDesign.ExperimentOptions;
-            sessionData.initialRun          = [];
             sessionData.currentRun          = [];
             sessionData.pastRuns            = [];
             
             if (~isempty( this.currentRun ))
                 sessionData.currentRun = ArumeCore.ExperimentRun.SaveRunData(this.currentRun);
                 sessionData.pastRuns = ArumeCore.ExperimentRun.SaveRunDataArray(this.pastRuns);
-            end
-            
-            if (~isempty( this.initialRun ))
-                sessionData.initialRun = ArumeCore.ExperimentRun.SaveRunData(this.initialRun);
             end
             
             filename = fullfile( this.dataPath, 'ArumeSession.mat');
@@ -610,10 +605,6 @@ classdef Session < ArumeCore.DataDB
             
             if (isfield(data, 'currentRun') && ~isempty( data.currentRun ))
                 session.currentRun = ArumeCore.ExperimentRun.LoadRunData( data.currentRun );
-            end
-            
-            if (isfield(data, 'initialRun') && ~isempty( data.initialRun ))
-                session.initialRun = ArumeCore.ExperimentRun.LoadRunData( data.initialRun );
             end
             
             if (isfield(data, 'pastRuns') && ~isempty( data.pastRuns ))

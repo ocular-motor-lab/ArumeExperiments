@@ -59,7 +59,7 @@ classdef Display < handle
             
             %-- window
             Screen('Preference', 'ConserveVRAM', 64);
-            if (~exper.ExperimentOptions.Debug || max(graph.screens)<2)
+            if (~exper.ExperimentOptions.Debug.DebugMode || max(graph.screens)<2)
                 [graph.window, graph.wRect] = Screen('OpenWindow', graph.selectedScreen, 0, [], [], [], 0, 10);
             else
                 [graph.window, graph.wRect] = Screen('OpenWindow', graph.selectedScreen, 0, [10 10 900 600], [], [], 0, 10);
@@ -71,8 +71,8 @@ classdef Display < handle
             graph.white = WhiteIndex( graph.window );
             
             if ( exist('exper','var') && ~isempty(exper) )
-                graph.dlgTextColor = exper.ExperimentOptions.ForegroundColor;
-                graph.dlgBackgroundScreenColor = exper.ExperimentOptions.BackgroundColor;
+                graph.dlgTextColor = exper.ExperimentOptions.DisplayOptions.ForegroundColor;
+                graph.dlgBackgroundScreenColor = exper.ExperimentOptions.DisplayOptions.BackgroundColor;
             end
             
             % FOR OKN
@@ -103,9 +103,9 @@ classdef Display < handle
             
             if ( exist('exper','var') && ~isempty(exper) )
                 %-- physical dimensions
-                graph.mmWidth           = exper.ExperimentOptions.ScreenWidth;
-                graph.mmHeight          = exper.ExperimentOptions.ScreenHeight;
-                graph.distanceToMonitor = exper.ExperimentOptions.ScreenDistance;
+                graph.mmWidth           = exper.ExperimentOptions.DisplayOptions.ScreenWidth;
+                graph.mmHeight          = exper.ExperimentOptions.DisplayOptions.ScreenHeight;
+                graph.distanceToMonitor = exper.ExperimentOptions.DisplayOptions.ScreenDistance;
                 
                 
                 %-- scale
@@ -140,7 +140,7 @@ classdef Display < handle
             Enum = ArumeCore.ExperimentDesign.getEnum();
             
             if ( nargin == 4)
-                if ( exper.ExperimentOptions.Debug )
+                if ( exper.ExperimentOptions.DisplayOptions.Debug )
                     Screen('DrawText', this.window, sprintf('%i seconds remaining...', round(secondsRemaining)), 20, 50, this.white);
                     currentline = 50 + 25;
                     vNames = thisTrialData.Properties.VariableNames;

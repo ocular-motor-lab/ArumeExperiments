@@ -13,10 +13,6 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             
             dlg.UseEyeTracker       = { {'0' '{1}'} };
             
-            dlg.ScreenWidth         = { 40 '* (cm)' [1 3000] };
-            dlg.ScreenHeight        = { 30 '* (cm)' [1 3000] };
-            dlg.ScreenDistance      = { 135 '* (cm)' [1 3000] };
-            
             if ( exist('importing','var') && importing )
                 dlg.DataFiles = { {['uigetfile(''' fullfile(pwd,'*.txt') ''',''MultiSelect'', ''on'')']} };
                 dlg.EventFiles = { {['uigetfile(''' fullfile(pwd,'*.txt') ''',''MultiSelect'', ''on'')']} };

@@ -145,7 +145,7 @@ classdef Session < ArumeCore.DataDB
             
             this.initialRun         = ArumeCore.ExperimentRun();
             this.initialRun.pastTrialTable           = table();
-            this.initialRun.originalFutureTrialTable = this.experimentDesign.GetTrialTable();
+            this.initialRun.originalFutureTrialTable = this.experimentDesign.TrialTable;
             this.initialRun.futureTrialTable         = this.initialRun.originalFutureTrialTable;
             
             % to create stand alone sessions that do not belong to a
@@ -256,9 +256,6 @@ classdef Session < ArumeCore.DataDB
     %% RUNING METHODS
     methods
         function start( this )
-            if ( this.isFinished )
-                error( 'This is session is finished it cannot be run' )
-            end
             
             this.currentRun = this.initialRun;
             
@@ -268,8 +265,8 @@ classdef Session < ArumeCore.DataDB
         
         function resume( this )
             
-            if ( this.isFinished )
-                error( 'This is session is finished it cannot be run' )
+            if ( ~this.isStarted )
+                error( 'This session is not started.' )
             end
             
             % Save the status of the current run in  the past runs, useful
@@ -286,8 +283,8 @@ classdef Session < ArumeCore.DataDB
         
         function resumeFrom( this, runNumber )
             
-            if ( this.isFinished )
-                error( 'This is session is finished it cannot be run' )
+            if ( ~this.isStarted )
+                error( 'This session is not started.' )
             end
             
             % Save the status of the current run in  the past runs, useful
@@ -306,8 +303,8 @@ classdef Session < ArumeCore.DataDB
         
         function restart( this )
             
-            if ( this.isFinished )
-                error( 'This is session is finished it cannot be run' )
+            if ( ~this.isStarted )
+                error( 'This session is not started.' )
             end
             
             % Save the status of the current run in  the past runs, useful
@@ -513,17 +510,19 @@ classdef Session < ArumeCore.DataDB
                     end
                 end
                 
-                opts = fieldnames(this.experimentDesign.ExperimentOptions);
+                options = this.experimentDesign.ExperimentOptions;
+                options = FlattenStructure(options); % eliminate strcuts with the struct so it can be made into a row of a table
+                opts = fieldnames(options);
                 s = this.experimentDesign.GetExperimentOptionsDialog(1);
                 for i=1:length(opts)
-                    if ( ~ischar( this.experimentDesign.ExperimentOptions.(opts{i})) && numel(this.experimentDesign.ExperimentOptions.(opts{i})) <= 1)
-                        newSessionDataTable.(['Option_' opts{i}]) = this.experimentDesign.ExperimentOptions.(opts{i});
+                    if ( ~ischar( options.(opts{i})) && numel(options.(opts{i})) <= 1)
+                        newSessionDataTable.(['Option_' opts{i}]) = options.(opts{i});
                     elseif (isfield( s, opts{i}) && iscell(s.(opts{i})) && iscell(s.(opts{i}){1}) && length(s.(opts{i}){1}) >1)
-                        newSessionDataTable.(['Option_' opts{i}]) = categorical(cellstr(this.experimentDesign.ExperimentOptions.(opts{i})));
-                    elseif (~ischar(this.experimentDesign.ExperimentOptions.(opts{i})) && numel(this.experimentDesign.ExperimentOptions.(opts{i})) > 1 )
-                        newSessionDataTable.(['Option_' opts{i}]) = {this.experimentDesign.ExperimentOptions.(opts{i})};
+                        newSessionDataTable.(['Option_' opts{i}]) = categorical(cellstr(options.(opts{i})));
+                    elseif (~ischar(options.(opts{i})) && numel(options.(opts{i})) > 1 )
+                        newSessionDataTable.(['Option_' opts{i}]) = {options.(opts{i})};
                     else
-                        newSessionDataTable.(['Option_' opts{i}]) = string(this.experimentDesign.ExperimentOptions.(opts{i}));
+                        newSessionDataTable.(['Option_' opts{i}]) = string(options.(opts{i}));
                     end
                 end
                 
@@ -673,5 +672,30 @@ classdef Session < ArumeCore.DataDB
         end
     end
     
+end
+
+%% eliminates structs within strcuts and replaces them with NAMEofSTRUCT__NAMEofFIELD recursively
+function s = FlattenStructure(s)
+    if (~isstruct(s))
+        error('parameter s should be a struct');
+    end
+    fields = fieldnames(s);
+    
+    for i=1:length(fields)
+        s2 = s.(fields{i});
+        
+        if ( isstruct(s2))
+            
+            s2 = FlattenStructure(s2);
+            
+            fields2 = fieldnames(s2);
+            
+            for i2 = 1:length(fields2)
+                s.([fields{i} '__' fields2{i2}]) = s2.(fields2{i2});
+            end
+            
+            s = rmfield(s, fields{i});
+        end
+    end
 end
 

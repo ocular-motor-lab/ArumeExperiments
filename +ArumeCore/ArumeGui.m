@@ -356,16 +356,20 @@ classdef ArumeGui < matlab.apps.AppBase
             
             if ( ~isempty( app.arumeController.currentSession ) && numel(app.arumeController.selectedSessions) == 1 )
                 
-                if ( ~app.arumeController.currentSession.isStarted )
+                set(app.menuRunStartSession, 'Enable', 'off');
+                set(app.menuRunRestartSession, 'Enable', 'off');
+                set(app.menuRunResumeSession, 'Enable', 'off');
+                    
+                if ( ~app.arumeController.currentSession.isStarted && ~app.arumeController.currentSession.isFinished )
                     set(app.menuRunStartSession, 'Enable', 'on');
-                else
-                    set(app.menuRunStartSession, 'Enable', 'off');
+                end
+                if ( app.arumeController.currentSession.isStarted )
+                    set(app.menuRunRestartSession, 'Enable', 'on');
                 end
                 if ( app.arumeController.currentSession.isStarted && ~app.arumeController.currentSession.isFinished )
-                    set(app.menuRun, 'Enable', 'on');
-                else
-                    set(app.menuRun, 'Enable', 'off');
+                    set(app.menuRunResumeSession, 'Enable', 'on');
                 end
+                
                 
                 if ( app.arumeController.currentSession.isFinished )
                     set(app.menuAnalyzeMarkData, 'Enable', 'on');

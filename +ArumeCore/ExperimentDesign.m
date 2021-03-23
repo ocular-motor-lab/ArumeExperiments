@@ -50,14 +50,14 @@ classdef ExperimentDesign < handle
         % Some common options will be added
         function dlg = GetOptionsDialog( this, importing )
             dlg = [];
-            dlg.Debug = { {'{0}','1'} };
+            dlg.Debug.DebugMode = { {'{0}','1'} };
+            dlg.Debug.DisplayVariableSelection = {'TrialNumber' 'TrialResult'}; % which variables to display every trial in the command line
             
-            dlg.DisplayVariableSelection = {'TrialNumber' 'TrialResult'}; % which variables to display every trial in the command line
-            
-            % TODO: GET DIFFERENT OPTIONS DEPENDING ON THE TYPE OF DISPLAY
-            dlg.ForegroundColor = 0;
-            dlg.BackgroundColor = 0;
-            
+            dlg.DisplayOptions.ForegroundColor      = 0;
+            dlg.DisplayOptions.BackgroundColor      = 128;
+            dlg.DisplayOptions.ScreenWidth          = { 40 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenHeight         = { 30 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenDistance       = { 135 '* (cm)' [1 3000] };
             
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 10;
@@ -153,10 +153,6 @@ classdef ExperimentDesign < handle
     end
     
     methods (Access = public)
-        
-        function trialTable = GetTrialTable(this)
-            trialTable = this.TrialTable;
-        end
         
         function trialTableOptions = GetDefaultTrialTableOptions(this)
             % Trial sequence and blocking
@@ -386,7 +382,7 @@ classdef ExperimentDesign < handle
                             
                             % -- GRAPHICS KEYBOARD and MOUSE
                             %-- hide the mouse cursor during the experiment
-                            if ( ~this.ExperimentOptions.Debug)
+                            if ( ~this.ExperimentOptions.Debug.DebugMode)
                                 HideCursor;
                                 ListenChar(2);
                             else
@@ -560,8 +556,8 @@ classdef ExperimentDesign < handle
                             
                             % -- Display trial Table for last 20 trials
                             data = this.Session.currentRun.pastTrialTable;
-                            varSelection = intersect(this.ExperimentOptions.DisplayVariableSelection,data.Properties.VariableNames,'stable');
-                            if ( ~this.ExperimentOptions.Debug )
+                            varSelection = intersect(this.ExperimentOptions.Debug.DisplayVariableSelection,data.Properties.VariableNames,'stable');
+                            if ( ~this.ExperimentOptions.Debug.DebugMode )
                                 disp(data(max(1,end-20):end,varSelection));
                             else
                                 disp(data);
@@ -578,7 +574,7 @@ classdef ExperimentDesign < handle
                                 trialsSinceBreak = trialsSinceBreak + 1;
                             else
                                 %-- what to do in case of abort
-                                switch(this.trialAbortAction)
+                                switch(this.ExperimentOptions.TrialAbortAction)
                                     case 'Repeat'
                                         % do nothing
                                     case 'Delay'

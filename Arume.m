@@ -309,7 +309,7 @@ classdef Arume < handle
                 error( 'Arume: session already exists, use a diferent name' );
             end
             
-            session = ArumeCore.Session.NewSession( this.currentProject.path, experiment, subjectCode, sessionCode, options );
+            session = ArumeCore.Session.NewSession( this.currentProject.path, experiment, subjectCode, sessionCode, options, 1 );
             this.currentProject.addSession(session);
             this.selectedSessions = session;
             

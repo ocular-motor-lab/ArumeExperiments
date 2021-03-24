@@ -9,7 +9,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
     % ---------------------------------------------------------------------
     methods (Access=protected)
         function dlg = GetOptionsDialog( this, importing )
-            dlg = GetOptionsDialog@ArumeCore.ExperimentDesign(this);
+            dlg = GetOptionsDialog@ArumeCore.ExperimentDesign(this, importing);
             
             dlg.UseEyeTracker       = { {'0' '{1}'} };
             

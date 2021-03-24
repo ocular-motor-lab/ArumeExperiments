@@ -8,7 +8,7 @@ classdef ExperimentDesign < handle
     % etc.
     
     properties( SetAccess = protected)
-        Session = [];       % The session that is current running this experiment design
+        Session = [];       % The session that is currently running this experiment design
         ExperimentOptions   = [];  % Options of this specific experiment design
         TrialTable          = [];
         
@@ -16,21 +16,10 @@ classdef ExperimentDesign < handle
         
         TrialStartCallbacks  % callback functions to be called before a trial starts
         TrialStopCallbacks   % callback functions to be called after a trial ends
-    end
-    
-    
-    properties ( Dependent = true )
+        
         Name
     end
-    
-    methods
-        function name = get.Name(this)
-            className = class(this);
-            name = className(find(className=='.',1, 'last')+1:end);
-        end
-    end
-    
-    
+        
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % THESE ARE THE METHODS THAT SHOULD BE IMPLEMENTED BY NEW EXPERIMENT
     % DESIGNS
@@ -42,19 +31,22 @@ classdef ExperimentDesign < handle
         % Some common options will be added
         function dlg = GetOptionsDialog( this, importing )
             dlg = [];
-            dlg.Debug.DebugMode = { {'{0}','1'} };
-            dlg.Debug.DisplayVariableSelection = {'TrialNumber' 'TrialResult'}; % which variables to display every trial in the command line
             
-            dlg.DisplayOptions.ForegroundColor      = 0;
-            dlg.DisplayOptions.BackgroundColor      = 128;
-            dlg.DisplayOptions.ScreenWidth          = { 40 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenHeight         = { 30 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenDistance       = { 135 '* (cm)' [1 3000] };
-            
-            dlg.HitKeyBeforeTrial = 0;
-            dlg.TrialDuration = 10;
-            dlg.TrialsBeforeBreak = 1000;
-            dlg.TrialAbortAction = 'Repeat';
+            if ( ~importing)
+                dlg.Debug.DebugMode = { {'{0}','1'} };
+                dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult'; % which variables to display every trial in the command line separated by spaces
+                
+                dlg.DisplayOptions.ForegroundColor      = 0;
+                dlg.DisplayOptions.BackgroundColor      = 128;
+                dlg.DisplayOptions.ScreenWidth          = { 40 '* (cm)' [1 3000] };
+                dlg.DisplayOptions.ScreenHeight         = { 30 '* (cm)' [1 3000] };
+                dlg.DisplayOptions.ScreenDistance       = { 135 '* (cm)' [1 3000] };
+                
+                dlg.HitKeyBeforeTrial = 0;
+                dlg.TrialDuration = 10;
+                dlg.TrialsBeforeBreak = 1000;
+                dlg.TrialAbortAction = 'Repeat';
+            end
         end
         
         % Set up the trial table when a new session is created
@@ -101,6 +93,11 @@ classdef ExperimentDesign < handle
     
     methods ( Access = public )
         
+        function this = ExperimentDesign()
+            className = class(this);
+            this.Name = className(find(className=='.',1, 'last')+1:end);
+        end
+        
         function optionsDlg = GetAnalysisOptionsDialog(this)
             optionsDlg = [];
         end
@@ -119,7 +116,6 @@ classdef ExperimentDesign < handle
         function [analysisResults, samplesDataTable, trialDataTable, sessionTable]  = RunDataAnalyses(this, analysisResults, samplesDataTable, trialDataTable, sessionTable, options)
         end
         
-        %% ImportSession
         function ImportSession( this )
         end
     end
@@ -291,6 +287,83 @@ classdef ExperimentDesign < handle
         function UpdateExperimentOptions(this, newOptions)
             this.ExperimentOptions = newOptions;
         end
+        
+        function [dataTable, idx, selectedFilters] = FilterTableByConditionVariable(this, dataTable, Select_Conditions, columns, columnNames)
+            
+            if (ischar(dataTable) )
+                switch(dataTable)
+                    case 'get_filters'
+                        Select_Conditions = struct();
+                        Select_Conditions.All = { {'0', '{1}'}};
+                        for i=1:length(this.Session.experimentDesign.ConditionVars)
+                            name = this.Session.experimentDesign.ConditionVars(i).name;
+                            values = categorical(this.Session.experimentDesign.ConditionVars(i).values);
+                            for j=1:numel(values)
+                                Select_Conditions.(strcat(name, '_', string(values(j)))) = { {'{0}', '1'}};
+                            end
+                        end
+                        dataTable = Select_Conditions;
+                        return;
+                end
+            end
+            
+            dataTable.All = ones(height(dataTable),1);
+            
+            Select_ConditionsFilters = struct();
+            Select_ConditionsFilters.All.VarName = 'All';
+            Select_ConditionsFilters.All.VarValue = 1;
+            for i=1:length(this.Session.experimentDesign.ConditionVars)
+                name = this.Session.experimentDesign.ConditionVars(i).name;
+                if ( iscell(this.Session.experimentDesign.ConditionVars(i).values) )
+                    values = categorical(this.Session.experimentDesign.ConditionVars(i).values);
+                else
+                    values = this.Session.experimentDesign.ConditionVars(i).values;
+                end
+                for j=1:numel(values)
+                    Select_ConditionsFilters.(strcat(name, '_', string(values(j)))).VarName = name;
+                    Select_ConditionsFilters.(strcat(name, '_', string(values(j)))).VarValue = values(j);
+                end
+            end
+            
+            selectedFilters = {};
+            
+            filters = fieldnames(Select_Conditions);
+            for i=1:length(filters)
+                if ( Select_Conditions.(filters{i}) )
+                    selectedFilters{end+1} = filters{i};
+                end
+            end
+            
+            sessionDataTable = dataTable;
+            dataTable = table();
+            idx = table();
+            for i=1:length(selectedFilters)
+                idxf = find(sessionDataTable.(Select_ConditionsFilters.(selectedFilters{i}).VarName) == Select_ConditionsFilters.(selectedFilters{i}).VarValue);
+                dataTable{i, {'Data' 'Condition' 'Idx'}} = {sessionDataTable(idxf,:), selectedFilters{i}, idxf};
+            end
+            
+            
+            
+            if ( exist('columns','var'))
+                dataTableTemp = table();
+                for j=1:height(dataTable)
+                    props = dataTable(j,:);
+                    
+                    props = repmat(props, numel(columns), 1);
+                    props.Component = columnNames';
+                    for iComp=1:numel(columns)
+                        props{iComp,'Data'} = {props.Data{iComp}.(columns{iComp})};
+                    end
+                    dataTableTemp = vertcat(dataTableTemp, props);
+                end
+                dataTable = dataTableTemp;
+                
+                
+                dataTable.Component = categorical(cellstr(dataTable.Component));
+            end
+            
+            dataTable.Condition = categorical(cellstr(dataTable.Condition));
+        end
     end
     
     % --------------------------------------------------------------------
@@ -316,13 +389,13 @@ classdef ExperimentDesign < handle
             dlg = this.GetOptionsDialog(importing);
         end
         
-        function init(this, session, options)
+        function init(this, session, options, importing)
             this.Session = session;
             
             %-- Check if all the options are there, if not add the default
             % values. This is important to mantain past compatibility if
             % options are added in the future.
-            optionsDlg = this.GetOptionsDialog( );
+            optionsDlg = this.GetOptionsDialog(importing);
             if ( ~isempty( optionsDlg ) && (isempty(options) || ~isempty(setdiff(fieldnames(optionsDlg), fieldnames(options)))) )
                 
                 defaultOptions = StructDlg(optionsDlg,'',[],[],'off');
@@ -526,7 +599,7 @@ classdef ExperimentDesign < handle
                             
                             % -- Display trial Table for last 20 trials
                             data = this.Session.currentRun.pastTrialTable;
-                            varSelection = intersect(this.ExperimentOptions.Debug.DisplayVariableSelection,data.Properties.VariableNames,'stable');
+                            varSelection = intersect(strsplit(this.ExperimentOptions.Debug.DisplayVariableSelection,' '),data.Properties.VariableNames,'stable');
                             if ( ~this.ExperimentOptions.Debug.DebugMode )
                                 disp(data(max(1,end-20):end,varSelection));
                             else
@@ -644,94 +717,7 @@ classdef ExperimentDesign < handle
             throw(MException('PSYCORTEX:USERQUIT', ''));
         end
     end
-    
-    
-    % --------------------------------------------------------------------
-    %% Protected methods --------------------------------------------------
-    % --------------------------------------------------------------------
-    % to be called from any experiment
-    % --------------------------------------------------------------------
-    methods(Access=public)
-                
-        function [dataTable, idx, selectedFilters] = FilterTableByConditionVariable(this, dataTable, Select_Conditions, columns, columnNames)
-            
-            if (ischar(dataTable) )
-                switch(dataTable)
-                    case 'get_filters'
-                        Select_Conditions = struct();
-                        Select_Conditions.All = { {'0', '{1}'}};
-                        for i=1:length(this.Session.experimentDesign.ConditionVars)
-                            name = this.Session.experimentDesign.ConditionVars(i).name;
-                            values = categorical(this.Session.experimentDesign.ConditionVars(i).values);
-                            for j=1:numel(values)
-                                Select_Conditions.(strcat(name, '_', string(values(j)))) = { {'{0}', '1'}};
-                            end
-                        end
-                        dataTable = Select_Conditions;
-                        return;
-                end
-            end
-            
-            dataTable.All = ones(height(dataTable),1);
-            
-            Select_ConditionsFilters = struct();
-            Select_ConditionsFilters.All.VarName = 'All';
-            Select_ConditionsFilters.All.VarValue = 1;
-            for i=1:length(this.Session.experimentDesign.ConditionVars)
-                name = this.Session.experimentDesign.ConditionVars(i).name;
-                if ( iscell(this.Session.experimentDesign.ConditionVars(i).values) )
-                    values = categorical(this.Session.experimentDesign.ConditionVars(i).values);
-                else
-                    values = this.Session.experimentDesign.ConditionVars(i).values;
-                end
-                for j=1:numel(values)
-                    Select_ConditionsFilters.(strcat(name, '_', string(values(j)))).VarName = name;
-                    Select_ConditionsFilters.(strcat(name, '_', string(values(j)))).VarValue = values(j);
-                end
-            end
-            
-            selectedFilters = {};
-            
-            filters = fieldnames(Select_Conditions);
-            for i=1:length(filters)
-                if ( Select_Conditions.(filters{i}) )
-                    selectedFilters{end+1} = filters{i};
-                end
-            end
-            
-            sessionDataTable = dataTable;
-            dataTable = table();
-            idx = table();
-            for i=1:length(selectedFilters)
-                idxf = find(sessionDataTable.(Select_ConditionsFilters.(selectedFilters{i}).VarName) == Select_ConditionsFilters.(selectedFilters{i}).VarValue);
-                dataTable{i, {'Data' 'Condition' 'Idx'}} = {sessionDataTable(idxf,:), selectedFilters{i}, idxf};
-            end
-            
-            
-            
-            if ( exist('columns','var'))
-                dataTableTemp = table();
-                for j=1:height(dataTable)
-                    props = dataTable(j,:);
-                    
-                    props = repmat(props, numel(columns), 1);
-                    props.Component = columnNames';
-                    for iComp=1:numel(columns)
-                        props{iComp,'Data'} = {props.Data{iComp}.(columns{iComp})};
-                    end
-                    dataTableTemp = vertcat(dataTableTemp, props);
-                end
-                dataTable = dataTableTemp;
-                
-                
-                dataTable.Component = categorical(cellstr(dataTable.Component));
-            end
-            
-            dataTable.Condition = categorical(cellstr(dataTable.Condition));
-        end
-    end % methods(Access=protected)
-    
-    
+        
     % --------------------------------------------------------------------
     %% Private methods ----------------------------------------------------
     % --------------------------------------------------------------------

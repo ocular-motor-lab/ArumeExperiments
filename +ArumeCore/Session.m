@@ -135,13 +135,13 @@ classdef Session < ArumeCore.DataDB
     
     %% Main Session methods
     methods
-        function init( this, projectPath, experimentName, subjectCode, sessionCode, experimentOptions )
+        function init( this, projectPath, experimentName, subjectCode, sessionCode, experimentOptions, importing )
             
             this.subjectCode        = subjectCode;
             this.sessionCode        = sessionCode;
             this.sessionIDNumber    = ArumeCore.Session.GetNewSessionNumber();
             this.experimentDesign   = ArumeCore.ExperimentDesign.Create( experimentName );
-            this.experimentDesign.init(this, experimentOptions);
+            this.experimentDesign.init(this, experimentOptions, importing);
             
             this.initialRun         = ArumeCore.ExperimentRun();
             this.initialRun.pastTrialTable           = table();
@@ -572,7 +572,10 @@ classdef Session < ArumeCore.DataDB
     %% SESSION FACTORY METHODS
     methods (Static = true )
         
-        function session = NewSession( projectPath, experimentName, subjectCode, sessionCode, experimentOptions )
+        function session = NewSession( projectPath, experimentName, subjectCode, sessionCode, experimentOptions, importing )
+            if ( ~exist('importing','var') )
+                importing = 1;
+            end
             
             session = ArumeCore.Session();
             
@@ -584,7 +587,7 @@ classdef Session < ArumeCore.DataDB
                 end
             end
                     
-            session.init(projectPath, experimentName, subjectCode, sessionCode, experimentOptions);
+            session.init(projectPath, experimentName, subjectCode, sessionCode, experimentOptions, importing);
         end
         
         function session = LoadSession( sessionPath )

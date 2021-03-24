@@ -12,7 +12,7 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
     % ---------------------------------------------------------------------
     methods ( Access = protected )
         function dlg = GetOptionsDialog( this, importing )
-            dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this);
+            dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             dlg.Display.ScreenWidth = { 121 '* (cm)' [1 3000] };
             dlg.Display.ScreenHeight = { 68 '* (cm)' [1 3000] };

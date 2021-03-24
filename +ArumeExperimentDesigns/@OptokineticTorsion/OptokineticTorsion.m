@@ -14,9 +14,9 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
         function dlg = GetOptionsDialog( this, importing )
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this);
             
-            dlg.ScreenWidth = { 121 '* (cm)' [1 3000] };
-            dlg.ScreenHeight = { 68 '* (cm)' [1 3000] };
-            dlg.ScreenDistance = { 60 '* (cm)' [1 3000] };
+            dlg.Display.ScreenWidth = { 121 '* (cm)' [1 3000] };
+            dlg.Display.ScreenHeight = { 68 '* (cm)' [1 3000] };
+            dlg.Display.ScreenDistance = { 60 '* (cm)' [1 3000] };
             
             dlg.Trial_Duration =  { 30 '* (s)' [1 100] };
             dlg.Max_Speed = { 30 '* (deg/s)' [0 100] };

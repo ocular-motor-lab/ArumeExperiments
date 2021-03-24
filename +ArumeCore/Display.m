@@ -48,6 +48,15 @@ classdef Display < handle
         
         function Init( graph, exper)
             
+            % -- GRAPHICS KEYBOARD and MOUSE
+            %-- hide the mouse cursor during the experiment
+            if ( ~exper.ExperimentOptions.Debug.DebugMode)
+                HideCursor;
+                ListenChar(2);
+            else
+                ListenChar(1);
+            end
+            
             %           Screen('Preference', 'VisualDebugLevel', 3);
             Screen('Preference', 'SkipSyncTests', 1);
             Screen('Preference', 'VisualDebugLevel', 0);
@@ -120,6 +129,14 @@ classdef Display < handle
             fixRect = CenterRectOnPointd( fixRect, mx, my );
             Screen('FillOval', graph.window,  255, fixRect);
             fliptime = Screen('Flip', graph.window);
+        end
+        
+        function Clear(graph)
+            ShowCursor;
+            ListenChar(0);
+            Priority(0);
+            
+            Screen('CloseAll');
         end
         
         function ResetBackground( this )

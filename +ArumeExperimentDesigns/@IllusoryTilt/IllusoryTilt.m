@@ -1,11 +1,7 @@
 classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
     %Illusotry tilt Summary of this class goes here
     %   Detailed explanation goes here
-    
-    properties
-        fixRad = 20;
-        fixColor = [255 0 0];
-    end
+
     
     % ---------------------------------------------------------------------
     % Experiment design methods
@@ -13,10 +9,6 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
     methods ( Access = protected )
         function dlg = GetOptionsDialog( this, importing )
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this);
-            
-            dlg.ScreenWidth     = { 121 '* (cm)' [1 3000] };
-            dlg.ScreenHeight    = { 68 '* (cm)' [1 3000] };
-            dlg.ScreenDistance  = { 60 '* (cm)' [1 3000] };
             
             dlg.Trial_Duration  =  { 30 '* (s)' [1 100] };
             

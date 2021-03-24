@@ -351,8 +351,6 @@ classdef ExperimentDesign < handle
             % --------------------------------------------------------------------
             %% -- EXPERIMENT LOOP -------------------------------------------------
             % --------------------------------------------------------------------
-            
-            % possible states of the loop
             INITIALIZNG_HARDWARE = 0;
             INITIALIZNG_EXPERIMENT = 1;
             IDLE = 2;
@@ -362,19 +360,28 @@ classdef ExperimentDesign < handle
             BREAK = 6;
             FINALIZING_HARDWARE = 7;
             
-            state = INITIALIZNG_HARDWARE;
+            status = INITIALIZNG_HARDWARE;
             
             trialsSinceBreak = 0;
             
             while(1)
                 try
-                    switch( state )
+                    switch( status )
                         case INITIALIZNG_HARDWARE
+                            
+                            % -- GRAPHICS KEYBOARD and MOUSE
+                            %-- hide the mouse cursor during the experiment
+                            if ( ~this.ExperimentOptions.Debug.DebugMode)
+                                HideCursor;
+                                ListenChar(2);
+                            else
+                                ListenChar(1);
+                            end
                             
                             this.Graph = ArumeCore.Display( );
                             this.Graph.Init( this );
                             
-                            state = INITIALIZNG_EXPERIMENT;
+                            status = INITIALIZNG_EXPERIMENT;
                             
                         case INITIALIZNG_EXPERIMENT
                             
@@ -384,9 +391,9 @@ classdef ExperimentDesign < handle
                             shouldContinue = this.initBeforeRunning();
                             
                             if ( shouldContinue )
-                                state = RUNNING;
+                                status = RUNNING;
                             else
-                                state = FINILIZING_EXPERIMENT;
+                                status = FINILIZING_EXPERIMENT;
                             end
                             
                         case IDLE
@@ -397,26 +404,32 @@ classdef ExperimentDesign < handle
                             
                             switch( result )
                                 case 'n'
-                                    state = RUNNING;
+                                    status = RUNNING;
                                 case {'q' 0}
                                     dlgResult = this.Graph.DlgYesNo( 'Are you sure you want to exit?',[],[],20,20);
                                     if( dlgResult )
-                                        state = FINILIZING_EXPERIMENT;
+                                        status = FINILIZING_EXPERIMENT;
                                     end
                             end
                             
+                            % ---------------------------------------------
+                            % ++ BREAK ------------------------------------
+                            % ---------------------------------------------
                         case BREAK
                             dlgResult = this.Graph.DlgHitKey( 'Break: hit a key to continue',[],[] );
                             %             this.Graph.DlgTimer( 'Break');
                             %             dlgResult = this.Graph.DlgYesNo( 'Finish break and continue?');
                             % problems with breaks i am going to skip the timer
                             if ( ~dlgResult )
-                                state = IDLE;
+                                status = IDLE;
                             else
                                 trialsSinceBreak = 0;
-                                state = RUNNING;
+                                status = RUNNING;
                             end
                             
+                            % ---------------------------------------------
+                            % ++ RUNNING ----------------------------------
+                            % ---------------------------------------------
                         case RUNNING
                             % force to hit a key to continue if the
                             % previous trial was an abort or if the
@@ -426,7 +439,7 @@ classdef ExperimentDesign < handle
                                      || this.ExperimentOptions.HitKeyBeforeTrial )
                                 dlgResult = this.Graph.DlgHitKey( 'Hit a key to continue',[],[]);
                                 if ( ~dlgResult )
-                                    state = IDLE;
+                                    status = IDLE;
                                     continue;
                                 end
                             end
@@ -568,34 +581,40 @@ classdef ExperimentDesign < handle
                             %-- handle errors
                             switch ( thisTrialData.TrialResult )
                                 case Enum.trialResult.ERROR
-                                    state = IDLE;
+                                    status = IDLE;
                                     continue;
                                 case Enum.trialResult.QUIT
-                                    state = IDLE;
+                                    status = IDLE;
                                     continue;
                             end
                             
                             % -- Experiment or session finished ?
                             if ( trialsSinceBreak >= this.ExperimentOptions.TrialsBeforeBreak )
-                                state = BREAK;
+                                status = BREAK;
                             end
                             if ( ~isempty(this.Session.currentRun.futureTrialTable) && ~isempty(this.Session.currentRun.pastTrialTable) )
                                 if ( this.Session.currentRun.pastTrialTable.Session(end) ~= this.Session.currentRun.futureTrialTable.Session(1) )
-                                    state = SESSIONFINISHED;
+                                    status = SESSIONFINISHED;
                                 end
                             end
                             if ( isempty(this.Session.currentRun.futureTrialTable) )
-                                state = FINILIZING_EXPERIMENT;
+                                status = FINILIZING_EXPERIMENT;
                             end
                             
-                        case SESSIONFINISHED
+                            % ---------------------------------------------
+                            % ++ FINISHED ---------------------------------
+                            % ---------------------------------------------
+                        case {SESSIONFINISHED}
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', 'Session part finished! closing down and saving data ...\n');
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', '---------------------------------------------------------\n')
-                            state = FINILIZING_EXPERIMENT;
+                            status = FINILIZING_EXPERIMENT;
                             
+                            % ---------------------------------------------
+                            % ++ FINILIZING_EXPERIMENT --------------------
+                            % ---------------------------------------------
                         case FINILIZING_EXPERIMENT
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', '---------------------------------------------------------\n')
@@ -605,13 +624,19 @@ classdef ExperimentDesign < handle
                             
                             this.cleanAfterRunning();
                             
-                            state = FINALIZING_HARDWARE;
+                            status = FINALIZING_HARDWARE;
                             
+                            % ---------------------------------------------
+                            % ++ FINALIZING_HARDWARE ----------------------
+                            % ---------------------------------------------
                         case FINALIZING_HARDWARE
                             
-                            this.Graph.Clear();
+                            ShowCursor;
+                            ListenChar(0);
+                            Priority(0);
                             
                             this.Graph = [];
+                            Screen('CloseAll');
                             disp('ARUME:: Done closing display and connections!');
                             break; % finish loop
                             
@@ -626,12 +651,12 @@ classdef ExperimentDesign < handle
                     cprintf('red', '!!!!!!!!!!!!! END ARUME ERROR: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
                     cprintf('red', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
                     
-                    if ( state == FINILIZING_EXPERIMENT )
-                        state = FINALIZING_HARDWARE;
-                    elseif ( state == FINALIZING_HARDWARE )
+                    if ( status == FINILIZING_EXPERIMENT )
+                        status = FINALIZING_HARDWARE;
+                    elseif ( status == FINALIZING_HARDWARE )
                         break;
                     else
-                        state = FINILIZING_EXPERIMENT;
+                        status = FINILIZING_EXPERIMENT;
                     end
                 end
             end

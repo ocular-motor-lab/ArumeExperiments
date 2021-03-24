@@ -93,11 +93,6 @@ classdef ExperimentDesign < handle
     
     methods ( Access = public )
         
-        function this = ExperimentDesign()
-            className = class(this);
-            this.Name = className(find(className=='.',1, 'last')+1:end);
-        end
-        
         function optionsDlg = GetAnalysisOptionsDialog(this)
             optionsDlg = [];
         end
@@ -117,6 +112,14 @@ classdef ExperimentDesign < handle
         end
         
         function ImportSession( this )
+        end
+    end
+    
+    methods(Access=public,Sealed=true)
+        
+        function this = ExperimentDesign()
+            className = class(this);
+            this.Name = className(find(className=='.',1, 'last')+1:end);
         end
     end
     
@@ -395,6 +398,7 @@ classdef ExperimentDesign < handle
             %-- Check if all the options are there, if not add the default
             % values. This is important to mantain past compatibility if
             % options are added in the future.
+            % TODO deal with nested structures
             optionsDlg = this.GetOptionsDialog(importing);
             if ( ~isempty( optionsDlg ) && (isempty(options) || ~isempty(setdiff(fieldnames(optionsDlg), fieldnames(options)))) )
                 

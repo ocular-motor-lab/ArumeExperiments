@@ -136,6 +136,13 @@ classdef Session < ArumeCore.DataDB
     %% Main Session methods
     methods
         function init( this, projectPath, experimentName, subjectCode, sessionCode, experimentOptions, importing )
+            if ( ~exist('importing','var'))
+                importing = 0;
+            end
+            
+            if ( ~exist('experimentOptions','var'))
+                experimentOptions = ArumeCore.ExperimentDesign.GetDefaultExperimentOptions(experimentName);
+            end
             
             this.subjectCode        = subjectCode;
             this.sessionCode        = sessionCode;

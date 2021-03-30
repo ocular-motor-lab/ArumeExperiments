@@ -9,34 +9,38 @@ classdef VOG  < handle
     methods
         function Connect(this, ip, port)
            
-            if ( ~exist('port','var') )
-                port = 9000;
-            end
-                        
-            if ( exist('C:\secure\Code\EyeTracker\bin\x64\Debug','file') )
-                asm = NET.addAssembly('C:\secure\Code\EyeTracker\bin\x64\Debug\EyeTrackerRemoteClient.dll');
-                if ( ~exist('ip','var') )
-                    ip = fileread('C:\secure\Code\EyeTracker\bin\x64\Debug\IP.txt');
+            try
+                if ( ~exist('port','var') )
+                    port = 9000;
                 end
-            elseif exist('C:\secure\EyeTracker Debug 2018-22-08\EyeTrackerRemoteClient.dll')
-                asm = NET.addAssembly('C:\secure\EyeTracker Debug 2018-22-08\EyeTrackerRemoteClient.dll');
-                if ( ~exist('ip','var') )
-                    ip = fileread('C:\secure\EyeTracker Debug 2018-22-08\IP.txt');
-                end
-            elseif exist('C:\Secure\EyeTracker\Debug\EyeTrackerRemoteClient.dll')
-                asm = NET.addAssembly('C:\Secure\EyeTracker\Debug\EyeTrackerRemoteClient.dll');
-                if ( ~exist('ip','var') )
-                    ip = fileread('C:\Secure\EyeTracker\Debug\IP.txt');
-                end
-            else
-                asm = NET.addAssembly('C:\secure\code\Debug\EyeTrackerRemoteClient.dll');
                 
-                if ( ~exist('ip','var') )
-                    ip = fileread('C:\secure\code\Debug\IP.txt');
+                if ( exist('C:\secure\Code\EyeTracker\bin\x64\Debug','file') )
+                    asm = NET.addAssembly('C:\secure\Code\EyeTracker\bin\x64\Debug\EyeTrackerRemoteClient.dll');
+                    if ( ~exist('ip','var') )
+                        ip = fileread('C:\secure\Code\EyeTracker\bin\x64\Debug\IP.txt');
+                    end
+                elseif exist('C:\secure\EyeTracker Debug 2018-22-08\EyeTrackerRemoteClient.dll')
+                    asm = NET.addAssembly('C:\secure\EyeTracker Debug 2018-22-08\EyeTrackerRemoteClient.dll');
+                    if ( ~exist('ip','var') )
+                        ip = fileread('C:\secure\EyeTracker Debug 2018-22-08\IP.txt');
+                    end
+                elseif exist('C:\Secure\EyeTracker\Debug\EyeTrackerRemoteClient.dll')
+                    asm = NET.addAssembly('C:\Secure\EyeTracker\Debug\EyeTrackerRemoteClient.dll');
+                    if ( ~exist('ip','var') )
+                        ip = fileread('C:\Secure\EyeTracker\Debug\IP.txt');
+                    end
+                else
+                    asm = NET.addAssembly('C:\secure\code\Debug\EyeTrackerRemoteClient.dll');
+                    
+                    if ( ~exist('ip','var') )
+                        ip = fileread('C:\secure\code\Debug\IP.txt');
+                    end
                 end
+                
+                this.eyeTracker = VORLab.VOG.Remote.EyeTrackerClient(ip, port);
+            catch
+                disp('Error initializing the eye tracker');
             end
-            
-            this.eyeTracker = VORLab.VOG.Remote.EyeTrackerClient(ip, port);
         end
         
         function result = IsRecording(this)

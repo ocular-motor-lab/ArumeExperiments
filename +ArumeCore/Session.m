@@ -6,6 +6,8 @@ classdef Session < ArumeCore.DataDB
     properties( SetAccess = private)
         experimentDesign            % Experiment design object associated with this session
         
+        ArumeVersionWhenCreated = []; % Version of Arume used to create this session
+        
         subjectCode = '000';        % Subject code for this session. Good 
                                     % practice is to combine a unique serial 
                                     % number for a guiven project with initials 
@@ -144,6 +146,7 @@ classdef Session < ArumeCore.DataDB
                 experimentOptions = ArumeCore.ExperimentDesign.GetDefaultExperimentOptions(experimentName);
             end
             
+            this.ArumeVersionWhenCreated = Arume.version_number;
             this.subjectCode        = subjectCode;
             this.sessionCode        = sessionCode;
             this.sessionIDNumber    = ArumeCore.Session.GetNewSessionNumber();
@@ -479,6 +482,7 @@ classdef Session < ArumeCore.DataDB
             
             try 
                 newSessionDataTable = table();
+                newSessionDataTable.ArumeVersion = this.ArumeVersionWhenCreated;
                 newSessionDataTable.Subject = categorical(cellstr(this.subjectCode));
                 newSessionDataTable.SessionCode = categorical(cellstr(this.sessionCode));
                 newSessionDataTable.Experiment = categorical(cellstr(this.experimentDesign.Name));

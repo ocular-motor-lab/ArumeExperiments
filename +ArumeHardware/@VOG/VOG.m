@@ -7,7 +7,7 @@ classdef VOG  < handle
     end
     
     methods
-        function Connect(this, ip, port)
+        function result = Connect(this, ip, port)
            
             try
                 if ( ~exist('port','var') )
@@ -38,8 +38,11 @@ classdef VOG  < handle
                 end
                 
                 this.eyeTracker = VORLab.VOG.Remote.EyeTrackerClient(ip, port);
+                result = 1;
             catch
                 disp('Error initializing the eye tracker');
+                this.eyeTracker = [];
+                result = 0;
             end
         end
         

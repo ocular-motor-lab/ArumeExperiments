@@ -45,7 +45,6 @@ classdef ExperimentDesign < handle
                 dlg.HitKeyBeforeTrial = 0;
                 dlg.TrialDuration = 10;
                 dlg.TrialsBeforeBreak = 1000;
-                dlg.TrialAbortAction = 'Repeat';
             end
         end
         

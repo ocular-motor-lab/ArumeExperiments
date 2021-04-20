@@ -14,6 +14,7 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
         function dlg = GetOptionsDialog( this, importing )
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
+            
             dlg.Display.ScreenWidth = { 121 '* (cm)' [1 3000] };
             dlg.Display.ScreenHeight = { 68 '* (cm)' [1 3000] };
             dlg.Display.ScreenDistance = { 60 '* (cm)' [1 3000] };
@@ -37,28 +38,17 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
             dlg.TargetSize = 0.5;
             
             dlg.BackgroundBrightness = 0;
+            
+            %% CHANGE DEFAULTS 
+            dlg.UseEyeTracker = 0;
+            dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult Speed Stimulus'; % which variables to display every trial in the command line separated by spaces
+            
+                dlg.HitKeyBeforeTrial = 0;
+                dlg.TrialDuration = 10;
+                dlg.TrialsBeforeBreak = 15;
+                dlg.TrialAbortAction = 'Repeat';
         end
         
-        function initExperimentDesign( this  )
-            this.DisplayVariableSelection = {'TrialNumber' 'TrialResult' 'Speed' 'Stimulus'};
-        
-            this.HitKeyBeforeTrial = 1;
-            this.BackgroundColor = this.ExperimentOptions.BackgroundBrightness;
-            
-                
-            % default parameters of any experiment
-            this.trialsBeforeBreak = 15;
-            this.trialAbortAction = 'Delay';     % Repeat, Delay, Drop
-            
-            
-            
-            %%-- Blocking
-            trialTableOptions = this.GetDefaultTrialTableOptions();
-            trialTableOptions.blockSequence = 'Sequential';	% Sequential, Random, ...
-            
-            trialTableOptions.trialSequence = 'Random';	% Sequential, Random, Random with repetition, ...
-            trialTableOptions.numberOfTimesRepeatBlockSequence  = this.ExperimentOptions.NumberOfRepetitions;
-        end
         function trialTable = SetUpTrialTable(this)
             
             %-- condition variables ---------------------------------------
@@ -104,8 +94,8 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
                 
                 % prepare dots
                 
-                mon_width   = this.Graph.pxWidth/this.ExperimentOptions.ScreenWidth;   % horizontal dimension of viewable screen (cm)
-                v_dist      = this.ExperimentOptions.ScreenDistance ;   % viewing distance (cm)
+                mon_width   = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth;   % horizontal dimension of viewable screen (cm)
+                v_dist      = this.ExperimentOptions.DisplayOptions.ScreenDistance ;   % viewing distance (cm)
                 
                 dot_speed   = thisTrialData.Speed;    % dot speed (deg/sec)
                 ndots       = this.ExperimentOptions.Number_of_Dots; % number of dots
@@ -170,7 +160,7 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
                     %-- Draw fixation spot
                     [mx, my] = RectCenter(this.Graph.wRect);
                     
-                    targetPix = this.Graph.pxWidth/this.ExperimentOptions.ScreenWidth * this.ExperimentOptions.ScreenDistance * tan(this.ExperimentOptions.TargetSize/180*pi);
+                    targetPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tan(this.ExperimentOptions.TargetSize/180*pi);
                     fixRect = [0 0 targetPix targetPix];
                     fixRect = CenterRectOnPointd( fixRect, mx, my );
                     Screen('FillOval', graph.window, this.fixColor, fixRect);

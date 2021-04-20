@@ -41,6 +41,11 @@ classdef SVV2AFC < ArumeCore.ExperimentDesign & ArumeExperimentDesigns.EyeTracki
             dlg.Target_On_Until_Response = { {'0','{1}'} }; 
             dlg.responseDuration = { 1500 '* (ms)' [100 3000] };
             
+            
+            dlg.HitKeyBeforeTrial = 1;
+            dlg.TrialDuration = 1000;
+            dlg.TrialsBeforeBreak = 100;
+            
         end
         
         function initExperimentDesign( this  )

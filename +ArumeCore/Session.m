@@ -10,7 +10,7 @@ classdef Session < ArumeCore.DataDB
         
         subjectCode = '000';        % Subject code for this session. Good 
                                     % practice is to combine a unique serial 
-                                    % number for a guiven project with initials 
+                                     % number for a guiven project with initials 
                                     % of subject (or coded initials). 
                                     % For example: S03_JO
         

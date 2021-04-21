@@ -620,7 +620,7 @@ classdef ExperimentDesign < handle
                                 trialsSinceBreak = trialsSinceBreak + 1;
                             else
                                 %-- what to do in case of abort
-                                switch(this.ExperimentOptions.TrialAbortAction)
+                                switch(this.TrialTable.Properties.UserData.trialTableOptions.trialAbortAction)
                                     case 'Repeat'
                                         % do nothing
                                     case 'Delay'

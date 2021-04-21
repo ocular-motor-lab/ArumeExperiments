@@ -157,7 +157,7 @@ classdef Display < handle
             Enum = ArumeCore.ExperimentDesign.getEnum();
             
             if ( nargin == 4)
-                if ( exper.ExperimentOptions.DisplayOptions.Debug )
+                if ( exper.ExperimentOptions.Debug.DebugMode )
                     Screen('DrawText', this.window, sprintf('%i seconds remaining...', round(secondsRemaining)), 20, 50, this.white);
                     currentline = 50 + 25;
                     vNames = thisTrialData.Properties.VariableNames;

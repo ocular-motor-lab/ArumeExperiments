@@ -1,4 +1,4 @@
-classdef SVV2AFC < ArumeCore.ExperimentDesign & ArumeExperimentDesigns.EyeTracking
+classdef SVV2AFC < ArumeExperimentDesigns.EyeTracking
     %SVV2AFC Parent experiment design for designs of SVV experiments
     % using 2AFC two alternative forced choice task
     % all the experiments will have a variable called angle which is the
@@ -36,39 +36,24 @@ classdef SVV2AFC < ArumeCore.ExperimentDesign & ArumeExperimentDesigns.EyeTracki
             dlg.Type_of_line = { '{Radius}|Diameter'} ;
             dlg.Length_of_line = { 300 '* (pix)' [10 1000] };
             
-            dlg.fixationDuration = { 1000 '* (ms)' [1 3000] };
-            dlg.targetDuration = { 300 '* (ms)' [100 30000] };
+            dlg.fixationDuration = { 500 '* (ms)' [1 3000] };
+            dlg.targetDuration = { 100 '* (ms)' [100 30000] };
             dlg.Target_On_Until_Response = { {'0','{1}'} }; 
             dlg.responseDuration = { 1500 '* (ms)' [100 3000] };
             
             
-            dlg.HitKeyBeforeTrial = 1;
-            dlg.TrialDuration = 1000;
+            dlg.HitKeyBeforeTrial = 0;
+            dlg.TrialDuration = 2;
             dlg.TrialsBeforeBreak = 100;
             
+            % OVERRIDES
+            dlg.Debug.DebugMode = 1;
+            dlg.UseBiteBarMotor = 0;
+            
         end
         
-        function initExperimentDesign( this  )
-            this.DisplayVariableSelection = {'TrialNumber' 'TrialResult' 'Angle' 'Response' 'ReactionTime'};
-        
-            this.trialDuration = this.ExperimentOptions.fixationDuration/1000 ...
-                + this.ExperimentOptions.targetDuration/1000 ...
-                + this.ExperimentOptions.responseDuration/1000 ; %seconds
-            
-            % default parameters of any experiment
-            this.trialSequence      = 'Random';      % Sequential, Random, Random with repetition, ...
-            this.trialAbortAction   = 'Delay';    % Repeat, Delay, Drop
-            this.trialsPerSession   = 10000;
-            this.trialsBeforeBreak  = 10000;
-            
-            %%-- Blocking
-            this.blockSequence = 'Sequential';	% Sequential, Random, Random with repetition, ...
-            this.numberOfTimesRepeatBlockSequence = ceil(this.ExperimentOptions.TotalNumberOfTrials/22);
-            this.blocksToRun = 1;
-            this.blocks = [ struct( 'fromCondition', 1, 'toCondition', 22, 'trialsToRun', 22) ];
-        end
-        
-        function [conditionVars] = getConditionVariables( this )
+        % Set up the trial table when a new session is created
+        function trialTable = SetUpTrialTable( this )
             %-- condition variables ---------------------------------------
             i= 0;
             
@@ -79,7 +64,15 @@ classdef SVV2AFC < ArumeCore.ExperimentDesign & ArumeExperimentDesigns.EyeTracki
             i = i+1;
             conditionVars(i).name   = 'Position';
             conditionVars(i).values = {'Up' 'Down'};
+            
+            trialTableOptions = this.GetDefaultTrialTableOptions();
+            trialTableOptions.trialSequence = 'Random';
+            trialTableOptions.trialAbortAction = 'Delay';
+            trialTableOptions.trialsPerSession = 100;
+            trialTableOptions.numberOfTimesRepeatBlockSequence = 5;
+            trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
         end
+        
         
         function shouldContinue = initBeforeRunning( this )
             shouldContinue = 1;
@@ -122,6 +115,8 @@ classdef SVV2AFC < ArumeCore.ExperimentDesign & ArumeExperimentDesigns.EyeTracki
             Enum = ArumeCore.ExperimentDesign.getEnum();
             graph = this.Graph;
             
+            trialDuration = this.ExperimentOptions.TrialDuration;
+            
             %-- add here the trial code
             Screen('FillRect', graph.window, 0);
             
@@ -131,7 +126,7 @@ classdef SVV2AFC < ArumeCore.ExperimentDesign & ArumeExperimentDesigns.EyeTracki
             %outp(hex2dec('378'),rem(nCorrect,100)*2);
             
             lastFlipTime                        = Screen('Flip', graph.window);
-            secondsRemaining                    = this.trialDuration;
+            secondsRemaining                    = trialDuration;
             thisTrialData.TimeStartLoop         = lastFlipTime;
             if ( ~isempty(this.eyeTracker) )
                 thisTrialData.EyeTrackerFrameStartLoop = this.eyeTracker.RecordEvent(sprintf('TRIAL_START_LOOP %d %d', thisTrialData.TrialNumber, thisTrialData.Condition) );
@@ -139,7 +134,7 @@ classdef SVV2AFC < ArumeCore.ExperimentDesign & ArumeExperimentDesigns.EyeTracki
             while secondsRemaining > 0
                 
                 secondsElapsed      = GetSecs - thisTrialData.TimeStartLoop;
-                secondsRemaining    = this.trialDuration - secondsElapsed;
+                secondsRemaining    = trialDuration - secondsElapsed;
                 
                 % -----------------------------------------------------------------
                 % --- Drawing of stimulus -----------------------------------------
@@ -450,7 +445,7 @@ classdef SVV2AFC < ArumeCore.ExperimentDesign & ArumeExperimentDesigns.EyeTracki
                         options.Type_Of_Fit = { {'Logit','{Probit}'} };
                         return;
                     case 'get_defaults'
-                        [~,optionsDlg] = VOGAnalysis.Plot_SVV_Sigmoid('get_options');
+                        [~,optionsDlg] = this.Plot_SVV_Sigmoid('get_options');
                         options = StructDlg(optionsDlg,'',[],[],'off');
                         return
                 end

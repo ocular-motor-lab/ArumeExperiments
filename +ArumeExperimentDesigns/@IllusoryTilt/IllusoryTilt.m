@@ -4,6 +4,7 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
 
     properties
         stimTexture = [];
+        targetColor = [255 0 0];
     end
     
     % ---------------------------------------------------------------------
@@ -11,7 +12,7 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
     % ---------------------------------------------------------------------
     methods ( Access = protected )
         function dlg = GetOptionsDialog( this, importing )
-            dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this);
+            dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             dlg.Trial_Duration  =  { 20 '* (s)' [1 100] };
             
@@ -21,6 +22,7 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
             
             dlg.BackgroundBrightness = 0;
             
+            dlg.StimulusContrast0to100 = 10;
             dlg.SmallTilt = 10;
             dlg.LargeTilt = 30;
         end
@@ -46,48 +48,45 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
         function [trialResult, thisTrialData] = runPreTrial( this, thisTrialData )
             Enum = ArumeCore.ExperimentDesign.getEnum();
             trialResult = Enum.trialResult.CORRECT;
-            if ( isempty(this.Session.currentRun.pastTrialTable) && this.ExperimentOptions.HeadAngle ~= 0 )
-                [trialResult, thisTrialData] = this.TiltBiteBar(this.ExperimentOptions.HeadAngle, thisTrialData);
-            end
             
             switch(thisTrialData.Image)
                 case 'IlusoryTiltRight'
                     I = imread(fullfile(fileparts(mfilename('fullpath')),'TiltWithBlur.png'));
-                    Isquare = I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:);
+                    Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
                     
                     this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
                     
                 case 'IllusoryTiltLeft'
                     I = imread(fullfile(fileparts(mfilename('fullpath')),'TiltWithBlur.png'));
-                    Isquare = I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:);
+                    Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
                     
                     this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
-                case 'RealSmallTiltLeft' 
-                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.png'));
-                    Isquare = I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:);
+                case 'RealSmallTiltLeft'
+                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.jpg'));
+                    Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
                     
-                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
-                case 'RealSmallTiltRight' 
-                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.png'));
-                    Isquare = I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:);
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
+                case 'RealSmallTiltRight'
+                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.jpg'));
+                    Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
                     
-                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
-                case 'RealLargeTiltLeft' 
-                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.png'));
-                    Isquare = I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:);
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
+                case 'RealLargeTiltLeft'
+                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.jpg'));
+                    Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
                     
-                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
                 case 'RealLargeTiltRight'
-                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.png'));
-                    Isquare = I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:);
+                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.jpg'));
+                    Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
                     
-                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
             end
             
         end
@@ -127,17 +126,17 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
                                 
                 switch(thisTrialData.Image)
                     case 'IlusoryTiltRight'
-                        Screen('DrawTexture', this.Graph.window, tex);
+                        Screen('DrawTexture', this.Graph.window, this.stimTexture);
                     case 'IllusoryTiltLeft'
-                        Screen('DrawTexture', this.Graph.window, tex);
+                        Screen('DrawTexture', this.Graph.window, this.stimTexture);
                     case 'RealSmallTiltLeft'
-                        Screen('DrawTexture', this.Graph.window, tex, [],[],-this.ExperimentOptions.SmallTilt);
+                        Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],-this.ExperimentOptions.SmallTilt);
                     case 'RealSmallTiltRight'
-                        Screen('DrawTexture', this.Graph.window, tex, [],[],this.ExperimentOptions.SmallTilt);
+                        Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],this.ExperimentOptions.SmallTilt);
                     case 'RealLargeTiltLeft'
-                        Screen('DrawTexture', this.Graph.window, tex, [],[],-this.ExperimentOptions.LargeTilt);
+                        Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],-this.ExperimentOptions.LargeTilt);
                     case 'RealLargeTiltRight'
-                        Screen('DrawTexture', this.Graph.window, tex, [],[],this.ExperimentOptions.LargeTilt);
+                        Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],this.ExperimentOptions.LargeTilt);
                 end
                 
                 %-- Draw target
@@ -155,11 +154,7 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
                 
             end
             
-            if ( isempty(response) )
-                trialResult = Enum.trialResult.ABORT;
-            else
-                trialResult = Enum.trialResult.CORRECT;
-            end
+            trialResult = Enum.trialResult.CORRECT;
         end
           
     end

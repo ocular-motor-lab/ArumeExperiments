@@ -2,6 +2,9 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
     %Illusotry tilt Summary of this class goes here
     %   Detailed explanation goes here
 
+    properties
+        stimTexture = [];
+    end
     
     % ---------------------------------------------------------------------
     % Experiment design methods
@@ -10,172 +13,155 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
         function dlg = GetOptionsDialog( this, importing )
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this);
             
-            dlg.Trial_Duration  =  { 30 '* (s)' [1 100] };
+            dlg.Trial_Duration  =  { 20 '* (s)' [1 100] };
             
             dlg.NumberOfRepetitions = {8 '* (N)' [1 100] };
                          
             dlg.TargetSize = 0.5;
             
             dlg.BackgroundBrightness = 0;
+            
+            dlg.SmallTilt = 10;
+            dlg.LargeTilt = 30;
         end
         
-        function initExperimentDesign( this  )
-            this.DisplayVariableSelection = {'TrialNumber' 'TrialResult' 'Speed' 'Stimulus'};
-        
-            this.HitKeyBeforeTrial = 1;
-            this.BackgroundColor = this.ExperimentOptions.BackgroundBrightness;
-            
-            this.trialDuration = this.ExperimentOptions.Trial_Duration; %seconds
-            
-            this.trialsBeforeBreak = 15;
-                
-            % default parameters of any experiment
-            this.trialAbortAction = 'Delay';     % Repeat, Delay, Drop
-            
-            %%-- Blocking
-            this.blockSequence = 'Sequential';	% Sequential, Random, ...
-            
-            this.trialSequence = 'Random';	% Sequential, Random, Random with repetition, ...
-            this.trialsPerSession = this.NumberOfConditions*this.ExperimentOptions.NumberOfRepetitions;
-            this.numberOfTimesRepeatBlockSequence  = this.ExperimentOptions.NumberOfRepetitions;
-            this.blocksToRun = 1;
-            this.blocks = struct( 'fromCondition', 1, 'toCondition', this.NumberOfConditions, 'trialsToRun', this.NumberOfConditions  );
-        end
-        
-        function [conditionVars] = getConditionVariables( this )
+        % Set up the trial table when a new session is created
+        function trialTable = SetUpTrialTable( this )
             %-- condition variables ---------------------------------------
             i= 0;
-            
+                                    
             i = i+1;
-            conditionVars(i).name   = 'Speed';
-            conditionVars(i).values = this.ExperimentOptions.Max_Speed/this.ExperimentOptions.Number_of_Speeds * [0:this.ExperimentOptions.Number_of_Speeds];
+            conditionVars(i).name   = 'Image';
+            conditionVars(i).values = {'IlusoryTiltRight' 'IllusoryTiltLeft' 'RealSmallTiltLeft' 'RealSmallTiltRight' 'RealLargeTiltLeft' 'RealLargeTiltRight'};
             
-            i = i+1;
-            conditionVars(i).name   = 'Direction';
-            conditionVars(i).values = {'CW' 'CCW'};
-            
-            i = i+1;
-            conditionVars(i).name   = 'Stimulus';
-            if ( this.ExperimentOptions.Do_Blank ) 
-                conditionVars(i).values = {'Blank' 'Dots'};
-            else
-                conditionVars(i).values = {'Dots'};
-            end
+            trialTableOptions = this.GetDefaultTrialTableOptions();
+            trialTableOptions.trialSequence = 'Random';
+            trialTableOptions.trialAbortAction = 'Delay';
+            trialTableOptions.trialsPerSession = 100;
+            trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberOfRepetitions;
+            trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
         end
         
-        function [trialResult, thisTrialData] = runTrial( this, thisTrialData )
-            
-            try
-                
-                Enum = ArumeCore.ExperimentDesign.getEnum();
-                graph = this.Graph;
-                trialResult = Enum.trialResult.CORRECT;
-                
-                
-                lastFlipTime        = GetSecs;
-                secondsRemaining    = this.trialDuration;
-                thisTrialData.TimeStartLoop = lastFlipTime;
-                
-                % prepare dots
-                
-                mon_width   = this.Graph.pxWidth/this.ExperimentOptions.ScreenWidth;   % horizontal dimension of viewable screen (cm)
-                v_dist      = this.ExperimentOptions.ScreenDistance ;   % viewing distance (cm)
-                
-                dot_speed   = thisTrialData.Speed;    % dot speed (deg/sec)
-                ndots       = this.ExperimentOptions.Number_of_Dots; % number of dots
-                
-                max_d       = this.ExperimentOptions.Max_Radius;   % maximum radius of  annulus (degrees)
-                min_d       = this.ExperimentOptions.Min_Radius;    % minumum
-                
-                differentsizes = this.ExperimentOptions.Number_of_Dot_Sizes; % Use different sizes for each point if >= 1. Use one common size if == 0.
-                dot_w       = this.ExperimentOptions.Min_Dot_Diam;  % width of dot (deg)
-                                
-                ppd = pi * (this.Graph.wRect(3)-this.Graph.wRect(1)) / atan(mon_width/v_dist/2) / 360;    % pixels per degree
-                s = dot_w * ppd;                                        % dot size (pixels)
-                
-                rmax = max_d * ppd;	% maximum radius of annulus (pixels from center)
-                rmin = min_d * ppd; % minimum
-                r = rmin + (rmax-rmin) * sqrt(rand(ndots,1));	% r
-                t = 2*pi*rand(ndots,1);                         % theta polar coordinate
-                
-                cs = [cos(t), sin(t)];
-                xy = [r r] .* cs;   % dot positions in Cartesian coordinates (pixels from center)
-                xymatrix = transpose(xy);
-                 
-                mdir = 1;    % motion direction (in or out) for each dot
-                if ( thisTrialData.Direction == 'CCW' )
-                    mdir = -1;
-                end
-                dt = 2*pi/360/this.Graph.frameRate * thisTrialData.Speed*mdir;                       % change in theta per frame (radians)
-                % Create a vector with different point sizes for each single dot, if
-                % requested:
-                if (differentsizes>0)
-                    s=(1+rand(1, ndots)*(differentsizes-1))*s;
-                end
-                [center(1), center(2)] = RectCenter(this.Graph.wRect);
-                
-                % end prepare dots
-                
-                if ( ~isempty(this.eyeTracker) )
-                    thisTrialData.EyeTrackerFrameStartLoop = this.eyeTracker.RecordEvent(sprintf('TRIAL_START_LOOP %d %d', thisTrialData.TrialNumber, thisTrialData.Condition) );
-                end
-                
-                while secondsRemaining > 0
-                    
-                    secondsElapsed      = GetSecs - thisTrialData.TimeStartLoop;
-                    secondsRemaining    = this.trialDuration - secondsElapsed;
-                    
-                    
-                    % -----------------------------------------------------------------
-                    % --- Drawing of stimulus -----------------------------------------
-                    % -----------------------------------------------------------------
-                    switch(thisTrialData.Stimulus)
-                        case 'Dots'
-                            Screen('DrawDots', graph.window, xymatrix, s, WhiteIndex(graph.window), center,1);  % change 1 to 0 to draw square dots
-                    end
-                    
-                    t = t + dt;                         % update theta
-                    xy = [r r] .* [cos(t), sin(t)];     % compute new positions
-                    xymatrix = transpose(xy);
-                    
-                    
-                    
-                    %-- Draw fixation spot
-                    [mx, my] = RectCenter(this.Graph.wRect);
-                    
-                    targetPix = this.Graph.pxWidth/this.ExperimentOptions.ScreenWidth * this.ExperimentOptions.ScreenDistance * tan(this.ExperimentOptions.TargetSize/180*pi);
-                    fixRect = [0 0 targetPix targetPix];
-                    fixRect = CenterRectOnPointd( fixRect, mx, my );
-                    Screen('FillOval', graph.window, this.fixColor, fixRect);
-                    
-                    Screen('DrawingFinished', graph.window); % Tell PTB that no further drawing commands will follow before Screen('Flip')
-                    
-                    
-                    % -----------------------------------------------------------------
-                    % --- END Drawing of stimulus -------------------------------------
-                    % -----------------------------------------------------------------
-                    
-                    % -----------------------------------------------------------------
-                    % -- Flip buffers to refresh screen -------------------------------
-                    % -----------------------------------------------------------------
-                    this.Graph.Flip();
-                    % -----------------------------------------------------------------
-                    
-                    
-                    % -----------------------------------------------------------------
-                    % --- Collecting responses  ---------------------------------------
-                    % -----------------------------------------------------------------
-                    
-                    % -----------------------------------------------------------------
-                    % --- END Collecting responses  -----------------------------------
-                    % -----------------------------------------------------------------
-                    
-                end
-            catch ex
-                rethrow(ex)
+        
+        function [trialResult, thisTrialData] = runPreTrial( this, thisTrialData )
+            Enum = ArumeCore.ExperimentDesign.getEnum();
+            trialResult = Enum.trialResult.CORRECT;
+            if ( isempty(this.Session.currentRun.pastTrialTable) && this.ExperimentOptions.HeadAngle ~= 0 )
+                [trialResult, thisTrialData] = this.TiltBiteBar(this.ExperimentOptions.HeadAngle, thisTrialData);
             end
             
-        end        
+            switch(thisTrialData.Image)
+                case 'IlusoryTiltRight'
+                    I = imread(fullfile(fileparts(mfilename('fullpath')),'TiltWithBlur.png'));
+                    Isquare = I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:);
+                    Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
+                    
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
+                    
+                case 'IllusoryTiltLeft'
+                    I = imread(fullfile(fileparts(mfilename('fullpath')),'TiltWithBlur.png'));
+                    Isquare = I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:);
+                    Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
+                    
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
+                case 'RealSmallTiltLeft' 
+                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.png'));
+                    Isquare = I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:);
+                    Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
+                    
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
+                case 'RealSmallTiltRight' 
+                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.png'));
+                    Isquare = I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:);
+                    Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
+                    
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
+                case 'RealLargeTiltLeft' 
+                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.png'));
+                    Isquare = I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:);
+                    Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
+                    
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
+                case 'RealLargeTiltRight'
+                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.png'));
+                    Isquare = I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:);
+                    Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
+                    
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
+            end
+            
+        end
+            
+        function [trialResult, thisTrialData] = runTrial( this, thisTrialData )
+            
+            Enum = ArumeCore.ExperimentDesign.getEnum();
+            graph = this.Graph;
+            
+            trialDuration = this.ExperimentOptions.TrialDuration;
+            
+            %-- add here the trial code
+            Screen('FillRect', graph.window, 0);
+            
+            % SEND TO PARALEL PORT TRIAL NUMBER
+            %write a value to the default LPT1 printer output port (at 0x378)
+            %nCorrect = sum(this.Session.currentRun.pastConditions(:,Enum.pastConditions.trialResult) ==  Enum.trialResult.CORRECT );
+            %outp(hex2dec('378'),rem(nCorrect,100)*2);
+            
+            lastFlipTime                        = Screen('Flip', graph.window);
+            secondsRemaining                    = trialDuration;
+            thisTrialData.TimeStartLoop         = lastFlipTime;
+            if ( ~isempty(this.eyeTracker) )
+                thisTrialData.EyeTrackerFrameStartLoop = this.eyeTracker.RecordEvent(sprintf('TRIAL_START_LOOP %d %d', thisTrialData.TrialNumber, thisTrialData.Condition) );
+            end
+            while secondsRemaining > 0
+                
+                secondsElapsed      = GetSecs - thisTrialData.TimeStartLoop;
+                secondsRemaining    = trialDuration - secondsElapsed;
+                
+                % -----------------------------------------------------------------
+                % --- Drawing of stimulus -----------------------------------------
+                % -----------------------------------------------------------------
+                
+                %-- Find the center of the screen
+                [mx, my] = RectCenter(graph.wRect);
+                                
+                switch(thisTrialData.Image)
+                    case 'IlusoryTiltRight'
+                        Screen('DrawTexture', this.Graph.window, tex);
+                    case 'IllusoryTiltLeft'
+                        Screen('DrawTexture', this.Graph.window, tex);
+                    case 'RealSmallTiltLeft'
+                        Screen('DrawTexture', this.Graph.window, tex, [],[],-this.ExperimentOptions.SmallTilt);
+                    case 'RealSmallTiltRight'
+                        Screen('DrawTexture', this.Graph.window, tex, [],[],this.ExperimentOptions.SmallTilt);
+                    case 'RealLargeTiltLeft'
+                        Screen('DrawTexture', this.Graph.window, tex, [],[],-this.ExperimentOptions.LargeTilt);
+                    case 'RealLargeTiltRight'
+                        Screen('DrawTexture', this.Graph.window, tex, [],[],this.ExperimentOptions.LargeTilt);
+                end
+                
+                %-- Draw target
+                
+                
+                fixRect = [0 0 10 10];
+                fixRect = CenterRectOnPointd( fixRect, mx, my );
+                Screen('FillOval', graph.window,  this.targetColor, fixRect);
+                
+                this.Graph.Flip(this, thisTrialData, secondsRemaining);
+                % -----------------------------------------------------------------
+                % --- END Drawing of stimulus -------------------------------------
+                % -----------------------------------------------------------------
+                
+                
+            end
+            
+            if ( isempty(response) )
+                trialResult = Enum.trialResult.ABORT;
+            else
+                trialResult = Enum.trialResult.CORRECT;
+            end
+        end
+          
     end
     
 end

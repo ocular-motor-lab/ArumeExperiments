@@ -14,6 +14,9 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
     methods ( Access = protected )
         function dlg = GetOptionsDialog( this, importing )
             dlg = GetOptionsDialog@ArumeExperimentDesigns.SVV2AFC(this, importing);
+            
+            dlg.StimulusContrast0to100 = 10;
+            dlg.TestWithoutTilt = { {'{0}','1'} };
         end
         
         
@@ -51,7 +54,7 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
             
             
             I = imread(fullfile(fileparts(mfilename('fullpath')),'TiltWithBlur.png'));
-            Isquare = I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:);
+            Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
             
             Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
 
@@ -109,7 +112,12 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
                         case 'Control'
                             tex = this.texControl;
                     end
-                     Screen('DrawTexture', this.Graph.window, tex, [],[],thisTrialData.Angle);        
+                    
+                    if ( this.ExperimentOptions.TestWithoutTilt)
+                        Screen('DrawTexture', this.Graph.window, tex);        
+                    else
+                        Screen('DrawTexture', this.Graph.window, tex, [],[],thisTrialData.Angle);        
+                    end
         
         
                     % SEND TO PARALEL PORT TRIAL NUMBER

@@ -32,7 +32,7 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
             
             i = i+1;
             conditionVars(i).name   = 'Image';
-            conditionVars(i).values = {'Left' 'Right' 'Control'};
+            conditionVars(i).values = {'Left' 'Right'};
             
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
@@ -49,35 +49,14 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
                 [trialResult, thisTrialData] = this.TiltBiteBar(this.ExperimentOptions.HeadAngle, thisTrialData);
             end
             
-            white=255;
-            black=128;
             
-            % Round gray to integral number, to avoid roundoff artifacts with some
-            % graphics cards:
-            gray=round((white+black)/2);
+            I = imread(fullfile(fileparts(mfilename('fullpath')),'TiltWithBlur.png'));
+            Isquare = I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:);
             
-            % This makes sure that on floating point framebuffers we still get a
-            % well defined gray. It isn't strictly neccessary in this demo:
-            if gray == white
-                gray=white / 2;
-            end
-            
-            % Contrast 'inc'rement range for given white and gray values:
-            inc=white-gray;
-            
-            phase=0;
-            % grating
-            [x,y]=meshgrid(-300:300,-300:300);
-            angle=0*pi/180; % 30 deg orientation.
-            f=0.05*2*pi; % cycles/pixel
-            a=cos(angle)*f;
-            b=sin(angle)*f;
-            m=exp(-((x/90).^2)-((y/90).^2)).*sin(a*x+b*y+phase);
-        
-            Images = load(fullfile(fileparts(mfilename('fullpath')),'Images.mat'));
-            this.texControl = Screen('MakeTexture', this.Graph.window, Images.Images.Control.cdata);
-            this.texLeft = Screen('MakeTexture', this.Graph.window, Images.Images.Left.cdata);
-            this.texRight = Screen('MakeTexture', this.Graph.window, Images.Images.Right.cdata);
+            Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
+
+            this.texLeft = Screen('MakeTexture', this.Graph.window, Isquare);
+            this.texRight = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
                     
         end
             
@@ -115,6 +94,7 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
                 %-- Find the center of the screen
                 [mx, my] = RectCenter(graph.wRect);
                 
+                
                 t1 = this.ExperimentOptions.fixationDuration/1000;
                 t2 = this.ExperimentOptions.fixationDuration/1000 +this.ExperimentOptions.targetDuration/1000;
                 
@@ -129,7 +109,7 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
                         case 'Control'
                             tex = this.texControl;
                     end
-                    Screen('DrawTexture', this.Graph.window, tex, [],[],thisTrialData.Angle);        
+                     Screen('DrawTexture', this.Graph.window, tex, [],[],thisTrialData.Angle);        
         
         
                     % SEND TO PARALEL PORT TRIAL NUMBER

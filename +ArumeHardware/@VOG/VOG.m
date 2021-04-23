@@ -7,7 +7,8 @@ classdef VOG  < handle
     end
     
     methods
-        function Connect(this, ip, port)
+        function result = Connect(this, ip, port)
+           result = 0;
            
             if ( ~exist('port','var') )
                 port = 9000;
@@ -43,6 +44,8 @@ classdef VOG  < handle
             
 %             this.eyeTracker = VORLab.VOG.Remote.EyeTrackerClient(ip, port);
             this.eyeTracker = OpenIris.EyeTrackerClient(ip, port);
+            
+            result = 1;
         end
         
         function result = IsRecording(this)

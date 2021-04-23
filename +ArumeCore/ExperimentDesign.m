@@ -393,6 +393,9 @@ classdef ExperimentDesign < handle
         
         function init(this, session, options, importing)
             this.Session = session;
+            if ( ~exist( 'importing', 'var') )
+                importing = 0;
+            end
             
             %-- Check if all the options are there, if not add the default
             % values. This is important to mantain past compatibility if

@@ -659,6 +659,21 @@ classdef SVV2AFC < ArumeExperimentDesigns.EyeTracking
             
         end
         
+        function PlotSigmoid(angles, responses)
+            
+            [SVV, a, p, allAngles, allResponses,trialCounts] = ArumeExperimentDesigns.SVV2AFC.FitAngleResponses(angles, responses);
+            
+            set(gca,'nextplot','add', 'fontsize',12);
+            
+            plot( allAngles, allResponses,'^', 'color', [0.7 0.7 0.7], 'markersize',10,'linewidth',2)
+            plot(a,p, 'color', 'k','linewidth',2);
+            line([SVV,SVV], [0 100], 'color','k','linewidth',2);
+            plot(SVV, 0,'^', 'markersize',10, 'markerfacecolor','k', 'color','k','linewidth',2);
+            
+            
+            text(30, 80, sprintf('SVV: %0.2f°',SVV), 'fontsize',16,'HorizontalAlignment','right');
+        end
+        
         function drawFrame( graph, angle, color)
             
             lineLength = 350;

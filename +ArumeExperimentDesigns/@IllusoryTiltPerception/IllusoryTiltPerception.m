@@ -169,5 +169,28 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
         end
           
     end
-    
+    % ---------------------------------------------------------------------
+    % Plot methods
+    % ---------------------------------------------------------------------
+    methods ( Access = public )
+        function [out] = Plot_Sigmoids_by_Tilt(this)
+            %%
+            d = this.Session.currentRun.pastTrialTable(:,{'Image','Angle','Response'});
+            d(ismissing(d.Response),:)=[];
+            figure
+            subplot(1,2,1);
+            ArumeExperimentDesigns.SVV2AFC.PlotSigmoid(d.Angle(d.Image=='Left'), d.Response(d.Image=='Left'));
+            xlabel('Angle (deg)');
+            ylabel('Percent response right');
+            title('Left tilt');
+            set(gca,'xlim',[-30 30])
+            subplot(1,2,2);
+            ArumeExperimentDesigns.SVV2AFC.PlotSigmoid(d.Angle(d.Image=='Right'), d.Response(d.Image=='Right'));
+            xlabel('Angle (deg)');
+            ylabel('Percent response right');
+            title('Right tilt');
+            set(gca,'xlim',[-30 30])
+        end
+    end
+        
 end

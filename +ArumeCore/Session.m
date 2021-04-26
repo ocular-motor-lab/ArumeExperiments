@@ -526,7 +526,9 @@ classdef Session < ArumeCore.DataDB
                 opts = fieldnames(options);
                 s = this.experimentDesign.GetExperimentOptionsDialog(1);
                 for i=1:length(opts)
-                    if ( ~ischar( options.(opts{i})) && numel(options.(opts{i})) <= 1)
+                    if ( isempty(options.(opts{i})))
+                        newSessionDataTable.(['Option_' opts{i}]) = {''};
+                    elseif ( ~ischar( options.(opts{i})) && numel(options.(opts{i})) <= 1)
                         newSessionDataTable.(['Option_' opts{i}]) = options.(opts{i});
                     elseif (isfield( s, opts{i}) && iscell(s.(opts{i})) && iscell(s.(opts{i}){1}) && length(s.(opts{i}){1}) >1)
                         newSessionDataTable.(['Option_' opts{i}]) = categorical(cellstr(options.(opts{i})));

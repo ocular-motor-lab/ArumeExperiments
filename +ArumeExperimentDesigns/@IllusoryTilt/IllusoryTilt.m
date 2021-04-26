@@ -159,4 +159,92 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
           
     end
     
+    % ---------------------------------------------------------------------
+    % Plot methods
+    % ---------------------------------------------------------------------
+    methods ( Access = public )
+        function [out] = Plot_Torsion_by_image(this)
+            %%
+            t = this.Session.trialDataTable;
+            s = this.Session.samplesDataTable;
+            
+            conditions ={};
+            conditions{1,1} = 'IllusoryTiltLeft';
+            conditions{1,2} = 'IlusoryTiltRight';
+            
+            conditions{2,1} = 'RealSmallTiltLeft'; 
+            conditions{2,2} = 'RealSmallTiltRight'; 
+            
+            conditions{3,1} = 'RealLargeTiltLeft';
+            conditions{3,2} = 'RealLargeTiltRight';
+            
+            trialTorsion = nan(3,2,10,1000);
+            
+            for i=1:size(conditions,1)
+                for j=1:2
+                    trials = t(t.Image==conditions{i,j},:);
+                    for itrial = 1:height(trials)
+                        trialIdx = trials.SampleStartTrial(itrial):trials.SampleStopTrial(itrial);
+                        torsionLeft = s.LeftT(trialIdx);
+                        torsionRight = s.RightT(trialIdx);
+                        
+                        torsion = nanmedfilt(nanmean([torsionLeft, torsionRight],2),100,1/2);
+                        torsion = torsion - nanmean(torsion(1:100));
+                    
+                        if ( length(torsion)>1000)
+                            torsion = torsion(1:1000);
+                        end
+                        trialTorsion(i,j,itrial,1:length(torsion)) = torsion;
+                    end
+                end
+            end
+            
+            %%
+            time = 0:0.01:10;
+            time = time(1:end-1);
+            figure
+            subplot(2,3,1);
+            plot(time, squeeze(trialTorsion(1,1,:,:))','b');
+            hold
+            plot(time, squeeze(trialTorsion(1,2,:,:))','r');
+            title('Illusory tilt')
+            
+            subplot(2,3,2);
+            plot(time, squeeze(trialTorsion(2,1,:,:))','b');
+            hold
+            plot(time, squeeze(trialTorsion(2,2,:,:))','r');
+            title('Real tilt small')
+            
+            subplot(2,3,3);
+            plot(time, squeeze(trialTorsion(3,1,:,:))','b');
+            hold
+            plot(time, squeeze(trialTorsion(3,2,:,:))','r');
+            title('Real tilt large')
+            
+            subplot(2,3,4);
+            plot(time, nanmean(squeeze(trialTorsion(1,1,:,:))),'b');
+            hold
+            plot(time, nanmean(squeeze(trialTorsion(1,2,:,:))),'r');
+            title('Illusory tilt (avg.)')
+            
+            subplot(2,3,5);
+            plot(time, nanmean(squeeze(trialTorsion(2,1,:,:))),'b');
+            hold
+            plot(time, nanmean(squeeze(trialTorsion(2,2,:,:))),'r');
+            title('Real tilt small (avg.)')
+            
+            subplot(2,3,6);
+            plot(time, nanmean(squeeze(trialTorsion(3,1,:,:))),'b');
+            hold
+            plot(time, nanmean(squeeze(trialTorsion(3,2,:,:))),'r');
+            title('Real tilt large (avg.)')
+            
+            
+            set(get(gcf,'children'),'ylim',[-1 1])
+            
+            ylabel('Torsion (deg)');
+            xlabel('Time (s)');
+            legend({'left tilt','right tilt'});
+        end
+    end
 end

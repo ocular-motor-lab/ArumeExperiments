@@ -564,7 +564,7 @@ classdef SVV2AFC < ArumeExperimentDesigns.EyeTracking
                 responses = cell2mat(responses);
             end
             
-            ds = dataset;
+            ds = table;
             if ( iscategorical(responses) || max(responses)>10)
                 n = length(angles);
                 angles(end+1,1) = -40;

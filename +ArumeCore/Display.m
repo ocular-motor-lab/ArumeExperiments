@@ -64,8 +64,8 @@ classdef Display < handle
             %-- screens
             
             graph.screens = Screen('Screens');
-%             graph.selectedScreen=max(graph.screens);
-            graph.selectedScreen=1;
+            graph.selectedScreen=max(graph.screens);
+             graph.selectedScreen=2;
             
             %-- window
             Screen('Preference', 'ConserveVRAM', 64);

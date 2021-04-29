@@ -2166,12 +2166,12 @@ classdef VOGAnalysis < handle
             %       - spv: instantaneous slow phase velocity.
             %       - positionFiltered: corresponding filtered position signal.
             
-            firstPassVThrehold              = 100;  %deg/s
+            firstPassVThrehold              = 1000;  %deg/s
             firstPassMedfiltWindow          = 4;    %s
             firstPassMedfiltNanFraction     = 0.25;   %
             firstPassPadding                = 30;   %ms
             
-            secondPassVThrehold             = 10;   %deg/s
+            secondPassVThrehold             = 100;   %deg/s
             secondPassMedfiltWindow         = 1;    %s
             secondPassMedfiltNanFraction    = 0.5;   %
             secondPassPadding               = 30;   %ms

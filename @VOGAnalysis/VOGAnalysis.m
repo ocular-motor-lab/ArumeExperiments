@@ -2469,18 +2469,18 @@ classdef VOGAnalysis < handle
             timeR = data.RightSeconds;
             
             subplot(3,1,1,'nextplot','add')
-            plot(timeL, data.LeftX, 'color', [ MEDIUM_BLUE ])
-            plot(timeR, data.RightX, 'color', [ MEDIUM_RED])
+            plot(timeL, data.LeftPupilX, 'color', [ MEDIUM_BLUE ])
+            plot(timeR, data.RightPupilX, 'color', [ MEDIUM_RED])
             ylabel('Horizontal (deg)','fontsize', 16);
             
             subplot(3,1,2,'nextplot','add')
-            plot(timeL, data.LeftY, 'color', [ MEDIUM_BLUE ])
-            plot(timeR, data.RightY, 'color', [ MEDIUM_RED])
+            plot(timeL, data.LeftPupilY, 'color', [ MEDIUM_BLUE ])
+            plot(timeR, data.RightPupilY, 'color', [ MEDIUM_RED])
             ylabel('Vertical (deg)','fontsize', 16);
             
             subplot(3,1,3,'nextplot','add')
-            plot(timeL, data.LeftT, 'color', [ MEDIUM_BLUE ])
-            plot(timeR, data.RightT, 'color', [ MEDIUM_RED])
+            plot(timeL, data.LeftTorsion, 'color', [ MEDIUM_BLUE ])
+            plot(timeR, data.RightTorsion, 'color', [ MEDIUM_RED])
             ylabel('Torsion (deg)','fontsize', 16);
             xlabel('Time (s)');
         end

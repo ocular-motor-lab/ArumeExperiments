@@ -14,17 +14,20 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
         function dlg = GetOptionsDialog( this, importing )
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
-            dlg.Trial_Duration  =  { 20 '* (s)' [1 100] };
-            
             dlg.NumberOfRepetitions = {8 '* (N)' [1 100] };
                          
             dlg.TargetSize = 0.5;
             
             dlg.BackgroundBrightness = 0;
             
-            dlg.StimulusContrast0to100 = 10;
-            dlg.SmallTilt = 10;
-            dlg.LargeTilt = 30;
+            dlg.StimulusContrast0to100 = {10 '* (%)' [0 100] };
+            dlg.SmallTilt = {5 '* (deg)' [0 90] };
+            dlg.LargeTilt = {30 '* (deg)' [0 90] };
+            
+            dlg.Initial_Fixation_Duration = {5 '* (s)' [1 100] };
+            
+            dlg.TrialDuration = {20 '* (s)' [1 100] };
+            dlg.HitKeyBeforeTrial = { {'0' '{1}'} };
         end
         
         % Set up the trial table when a new session is created
@@ -124,19 +127,21 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
                 %-- Find the center of the screen
                 [mx, my] = RectCenter(graph.wRect);
                                 
-                switch(thisTrialData.Image)
-                    case 'IlusoryTiltRight'
-                        Screen('DrawTexture', this.Graph.window, this.stimTexture);
-                    case 'IllusoryTiltLeft'
-                        Screen('DrawTexture', this.Graph.window, this.stimTexture);
-                    case 'RealSmallTiltLeft'
-                        Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],-this.ExperimentOptions.SmallTilt);
-                    case 'RealSmallTiltRight'
-                        Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],this.ExperimentOptions.SmallTilt);
-                    case 'RealLargeTiltLeft'
-                        Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],-this.ExperimentOptions.LargeTilt);
-                    case 'RealLargeTiltRight'
-                        Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],this.ExperimentOptions.LargeTilt);
+                if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration )
+                    switch(thisTrialData.Image)
+                        case 'IlusoryTiltRight'
+                            Screen('DrawTexture', this.Graph.window, this.stimTexture);
+                        case 'IllusoryTiltLeft'
+                            Screen('DrawTexture', this.Graph.window, this.stimTexture);
+                        case 'RealSmallTiltLeft'
+                            Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],-this.ExperimentOptions.SmallTilt);
+                        case 'RealSmallTiltRight'
+                            Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],this.ExperimentOptions.SmallTilt);
+                        case 'RealLargeTiltLeft'
+                            Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],-this.ExperimentOptions.LargeTilt);
+                        case 'RealLargeTiltRight'
+                            Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],this.ExperimentOptions.LargeTilt);
+                    end
                 end
                 
                 %-- Draw target
@@ -189,10 +194,10 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
                         torsionRight = s.RightT(trialIdx);
                         
                         torsion = nanmedfilt(nanmean([torsionLeft, torsionRight],2),100,1/2);
-                        torsion = torsion - nanmean(torsion(1:100));
+                        torsion = torsion - nanmean(torsion(1:1000));
                     
-                        if ( length(torsion)>1000)
-                            torsion = torsion(1:1000);
+                        if ( length(torsion)>10000)
+                            torsion = torsion(1:10000);
                         end
                         trialTorsion(i,j,itrial,1:length(torsion)) = torsion;
                     end
@@ -200,7 +205,7 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
             end
             
             %%
-            time = 0:0.01:10;
+            time = 0:0.002:20;
             time = time(1:end-1);
             figure
             subplot(2,3,1);

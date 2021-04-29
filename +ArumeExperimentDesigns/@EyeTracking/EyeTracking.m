@@ -331,7 +331,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
         end
         
         function sessionDataTable = PrepareSessionDataTable(this, sessionDataTable, options)
-            
+            return
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % CALCULATE AVERAGE EYE MOVEMENT ACROSS TRIALS
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -385,7 +385,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                 updateTrialsAndSessionTables = true;
             end
             
-            if ( 1 )
+            if ( 0 )
                 T = samplesDataTable.Properties.UserData.sampleRate;
                 analysisResults.SPV.Time = samplesDataTable.Time(1:T:(end-T/2));
                 fields = {'LeftX', 'LeftY' 'LeftT' 'RightX' 'RightY' 'RightT'};

@@ -2183,7 +2183,7 @@ classdef VOGAnalysis < handle
             spv = [0;(diff(position)./diff(timeSec))];
             
             % first past at finding quick phases (>100 deg/s)
-            qp = boxcar(abs(spv)>firstPassVThrehold | isnan(spv), firstPassPadding*samplerate/1000)>0;
+            qp = boxcar(abs(spv)>firstPassVThrehold | isnan(spv), round(firstPassPadding*samplerate/1000))>0;
             spv(qp) = nan;
             
             % used the velocity without first past of quick phases
@@ -2192,7 +2192,7 @@ classdef VOGAnalysis < handle
             v2 = spv-nanmedfilt(spv,samplerate*firstPassMedfiltWindow,firstPassMedfiltNanFraction);
             
             % do a second pass for the quick phases (>10 deg/s)
-            qp2 = boxcar(abs(v2)>secondPassVThrehold, secondPassPadding*samplerate/1000)>0;
+            qp2 = boxcar(abs(v2)>secondPassVThrehold, round(secondPassPadding*samplerate/1000))>0;
             spv(qp2) = nan;
             
             % get a filted and decimated version of the spv at 1

@@ -47,7 +47,7 @@ classdef SVV2AFC < ArumeExperimentDesigns.EyeTracking
             dlg.TrialsBeforeBreak = 100;
             
             % OVERRIDES
-            dlg.Debug.DebugMode = 1;
+%             dlg.Debug.DebugMode = 1;
             dlg.UseBiteBarMotor = 0;
             
         end

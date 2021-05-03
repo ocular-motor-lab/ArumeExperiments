@@ -15,8 +15,14 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
         function dlg = GetOptionsDialog( this, importing )
             dlg = GetOptionsDialog@ArumeExperimentDesigns.SVV2AFC(this, importing);
             
-            dlg.StimulusContrast0to100 = 10;
+            dlg.StimulusContrast0to100 = 20;
             dlg.TestWithoutTilt = { {'{0}','1'} };
+            
+            %% override defaults
+            dlg.fixationDuration = { 500 '* (ms)' [1 3000] };
+            dlg.targetDuration = { 100 '* (ms)' [100 30000] };
+            dlg.Target_On_Until_Response = { {'0','{1}'} }; 
+            dlg.responseDuration = { 1500 '* (ms)' [100 3000] };
         end
         
         
@@ -53,13 +59,13 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
             end
             
             
-            I = imread(fullfile(fileparts(mfilename('fullpath')),'TiltWithBlur.png'));
+            I = imread(fullfile(fileparts(mfilename('fullpath')),'IllusoryRightTiltImage.tiff'));
             Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
             
             Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
 
-            this.texLeft = Screen('MakeTexture', this.Graph.window, Isquare);
-            this.texRight = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
+            this.texRight = Screen('MakeTexture', this.Graph.window, Isquare);
+            this.texLeft = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
                     
         end
             

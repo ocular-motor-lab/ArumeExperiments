@@ -12,11 +12,12 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
     % ---------------------------------------------------------------------
     methods ( Access = protected )
         function dlg = GetOptionsDialog( this, importing )
-            dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this);
+            dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
-            dlg.ScreenWidth = { 121 '* (cm)' [1 3000] };
-            dlg.ScreenHeight = { 68 '* (cm)' [1 3000] };
-            dlg.ScreenDistance = { 60 '* (cm)' [1 3000] };
+            
+            dlg.Display.ScreenWidth = { 121 '* (cm)' [1 3000] };
+            dlg.Display.ScreenHeight = { 68 '* (cm)' [1 3000] };
+            dlg.Display.ScreenDistance = { 60 '* (cm)' [1 3000] };
             
             dlg.Trial_Duration =  { 30 '* (s)' [1 100] };
             dlg.Max_Speed = { 30 '* (deg/s)' [0 100] };
@@ -37,32 +38,19 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
             dlg.TargetSize = 0.5;
             
             dlg.BackgroundBrightness = 0;
+            
+            %% CHANGE DEFAULTS 
+            dlg.UseEyeTracker = 0;
+            dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult Speed Stimulus'; % which variables to display every trial in the command line separated by spaces
+            
+                dlg.HitKeyBeforeTrial = 0;
+                dlg.TrialDuration = 10;
+                dlg.TrialsBeforeBreak = 15;
+                dlg.TrialAbortAction = 'Repeat';
         end
         
-        function initExperimentDesign( this  )
-            this.DisplayVariableSelection = {'TrialNumber' 'TrialResult' 'Speed' 'Stimulus'};
-        
-            this.HitKeyBeforeTrial = 1;
-            this.BackgroundColor = this.ExperimentOptions.BackgroundBrightness;
+        function trialTable = SetUpTrialTable(this)
             
-            this.trialDuration = this.ExperimentOptions.Trial_Duration; %seconds
-            
-            this.trialsBeforeBreak = 15;
-                
-            % default parameters of any experiment
-            this.trialAbortAction = 'Delay';     % Repeat, Delay, Drop
-            
-            %%-- Blocking
-            this.blockSequence = 'Sequential';	% Sequential, Random, ...
-            
-            this.trialSequence = 'Random';	% Sequential, Random, Random with repetition, ...
-            this.trialsPerSession = this.NumberOfConditions*this.ExperimentOptions.NumberOfRepetitions;
-            this.numberOfTimesRepeatBlockSequence  = this.ExperimentOptions.NumberOfRepetitions;
-            this.blocksToRun = 1;
-            this.blocks = struct( 'fromCondition', 1, 'toCondition', this.NumberOfConditions, 'trialsToRun', this.NumberOfConditions  );
-        end
-        
-        function [conditionVars] = getConditionVariables( this )
             %-- condition variables ---------------------------------------
             i= 0;
             
@@ -81,7 +69,15 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
             else
                 conditionVars(i).values = {'Dots'};
             end
+            
+            trialTableOptions = this.GetDefaultTrialTableOptions();
+            trialTableOptions.trialSequence = 'Random';
+            trialTableOptions.trialAbortAction = 'Delay';
+            trialTableOptions.trialsPerSession = 1000;
+            trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberOfRepetitions;
+            trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
         end
+        
         
         function [trialResult, thisTrialData] = runTrial( this, thisTrialData )
             
@@ -93,13 +89,13 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
                 
                 
                 lastFlipTime        = GetSecs;
-                secondsRemaining    = this.trialDuration;
+                secondsRemaining    = this.ExperimentOptions.TrialDuration;
                 thisTrialData.TimeStartLoop = lastFlipTime;
                 
                 % prepare dots
                 
-                mon_width   = this.Graph.pxWidth/this.ExperimentOptions.ScreenWidth;   % horizontal dimension of viewable screen (cm)
-                v_dist      = this.ExperimentOptions.ScreenDistance ;   % viewing distance (cm)
+                mon_width   = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth;   % horizontal dimension of viewable screen (cm)
+                v_dist      = this.ExperimentOptions.DisplayOptions.ScreenDistance ;   % viewing distance (cm)
                 
                 dot_speed   = thisTrialData.Speed;    % dot speed (deg/sec)
                 ndots       = this.ExperimentOptions.Number_of_Dots; % number of dots
@@ -143,7 +139,7 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
                 while secondsRemaining > 0
                     
                     secondsElapsed      = GetSecs - thisTrialData.TimeStartLoop;
-                    secondsRemaining    = this.trialDuration - secondsElapsed;
+                    secondsRemaining    = this.ExperimentOptions.TrialDuration - secondsElapsed;
                     
                     
                     % -----------------------------------------------------------------
@@ -151,6 +147,7 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
                     % -----------------------------------------------------------------
                     switch(thisTrialData.Stimulus)
                         case 'Dots'
+                             s( s>63) = 63;
                             Screen('DrawDots', graph.window, xymatrix, s, WhiteIndex(graph.window), center,1);  % change 1 to 0 to draw square dots
                     end
                     
@@ -163,7 +160,7 @@ classdef OptokineticTorsion < ArumeExperimentDesigns.EyeTracking
                     %-- Draw fixation spot
                     [mx, my] = RectCenter(this.Graph.wRect);
                     
-                    targetPix = this.Graph.pxWidth/this.ExperimentOptions.ScreenWidth * this.ExperimentOptions.ScreenDistance * tan(this.ExperimentOptions.TargetSize/180*pi);
+                    targetPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tan(this.ExperimentOptions.TargetSize/180*pi);
                     fixRect = [0 0 targetPix targetPix];
                     fixRect = CenterRectOnPointd( fixRect, mx, my );
                     Screen('FillOval', graph.window, this.fixColor, fixRect);

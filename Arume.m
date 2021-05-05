@@ -20,13 +20,17 @@ classdef Arume < handle
     % have runs of one individual paradigm.
     %
     % The projects can be managed with the GUI but also with command line.
-        
+    
+    properties (Constant)
+        version_number = '1.0.20210330'
+    end
+    
     properties( SetAccess=private )
         gui                 % Current gui associated with the controller
         configuration       % Configuration options saved into a mat file in the Arume folder
         possiblePlots
         priv_currentProject      
-        priv_selectedSessions    
+        priv_selectedSessions   
     end
     
     properties(Dependent=true)
@@ -309,7 +313,7 @@ classdef Arume < handle
                 error( 'Arume: session already exists, use a diferent name' );
             end
             
-            session = ArumeCore.Session.NewSession( this.currentProject.path, experiment, subjectCode, sessionCode, options );
+            session = ArumeCore.Session.NewSession( this.currentProject.path, experiment, subjectCode, sessionCode, options, 1 );
             this.currentProject.addSession(session);
             this.selectedSessions = session;
             

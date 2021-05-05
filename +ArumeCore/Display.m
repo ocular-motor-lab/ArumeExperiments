@@ -48,6 +48,15 @@ classdef Display < handle
         
         function Init( graph, exper)
             
+            % -- GRAPHICS KEYBOARD and MOUSE
+            %-- hide the mouse cursor during the experiment
+            if ( ~exper.ExperimentOptions.Debug.DebugMode)
+                HideCursor;
+                ListenChar(2);
+            else
+                ListenChar(1);
+            end
+            
             %           Screen('Preference', 'VisualDebugLevel', 3);
             Screen('Preference', 'SkipSyncTests', 1);
             Screen('Preference', 'VisualDebugLevel', 0);
@@ -56,10 +65,11 @@ classdef Display < handle
             
             graph.screens = Screen('Screens');
             graph.selectedScreen=max(graph.screens);
+             graph.selectedScreen=2;
             
             %-- window
             Screen('Preference', 'ConserveVRAM', 64);
-            if (~exper.ExperimentOptions.Debug || max(graph.screens)<2)
+            if (~exper.ExperimentOptions.Debug.DebugMode || max(graph.screens)<2)
                 [graph.window, graph.wRect] = Screen('OpenWindow', graph.selectedScreen, 0, [], [], [], 0, 10);
             else
                 [graph.window, graph.wRect] = Screen('OpenWindow', graph.selectedScreen, 0, [10 10 900 600], [], [], 0, 10);
@@ -71,8 +81,8 @@ classdef Display < handle
             graph.white = WhiteIndex( graph.window );
             
             if ( exist('exper','var') && ~isempty(exper) )
-                graph.dlgTextColor = exper.ForegroundColor;
-                graph.dlgBackgroundScreenColor = exper.BackgroundColor;
+                graph.dlgTextColor = exper.ExperimentOptions.DisplayOptions.ForegroundColor;
+                graph.dlgBackgroundScreenColor = exper.ExperimentOptions.DisplayOptions.BackgroundColor;
             end
             
             % FOR OKN
@@ -103,9 +113,9 @@ classdef Display < handle
             
             if ( exist('exper','var') && ~isempty(exper) )
                 %-- physical dimensions
-                graph.mmWidth           = exper.ExperimentOptions.ScreenWidth;
-                graph.mmHeight          = exper.ExperimentOptions.ScreenHeight;
-                graph.distanceToMonitor = exper.ExperimentOptions.ScreenDistance;
+                graph.mmWidth           = exper.ExperimentOptions.DisplayOptions.ScreenWidth;
+                graph.mmHeight          = exper.ExperimentOptions.DisplayOptions.ScreenHeight;
+                graph.distanceToMonitor = exper.ExperimentOptions.DisplayOptions.ScreenDistance;
                 
                 
                 %-- scale
@@ -120,6 +130,14 @@ classdef Display < handle
             fixRect = CenterRectOnPointd( fixRect, mx, my );
             Screen('FillOval', graph.window,  255, fixRect);
             fliptime = Screen('Flip', graph.window);
+        end
+        
+        function Clear(graph)
+            ShowCursor;
+            ListenChar(0);
+            Priority(0);
+            
+            Screen('CloseAll');
         end
         
         function ResetBackground( this )
@@ -140,7 +158,7 @@ classdef Display < handle
             Enum = ArumeCore.ExperimentDesign.getEnum();
             
             if ( nargin == 4)
-                if ( exper.ExperimentOptions.Debug )
+                if ( exper.ExperimentOptions.Debug.DebugMode )
                     Screen('DrawText', this.window, sprintf('%i seconds remaining...', round(secondsRemaining)), 20, 50, this.white);
                     currentline = 50 + 25;
                     vNames = thisTrialData.Properties.VariableNames;

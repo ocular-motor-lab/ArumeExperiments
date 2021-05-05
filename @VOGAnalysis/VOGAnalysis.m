@@ -1072,7 +1072,7 @@ classdef VOGAnalysis < handle
                 end
                 
                 for j=1:length(headSignals)
-                    signalName = ['Head' headSignals{j}];
+                    signalName = headSignals{j};
                     x = data.(signalName);
                     resampledData.(signalName) = nan(size(rest));
                     
@@ -2166,12 +2166,12 @@ classdef VOGAnalysis < handle
             %       - spv: instantaneous slow phase velocity.
             %       - positionFiltered: corresponding filtered position signal.
             
-            firstPassVThrehold              = 100;  %deg/s
+            firstPassVThrehold              = 1000;  %deg/s
             firstPassMedfiltWindow          = 4;    %s
             firstPassMedfiltNanFraction     = 0.25;   %
             firstPassPadding                = 30;   %ms
             
-            secondPassVThrehold             = 10;   %deg/s
+            secondPassVThrehold             = 100;   %deg/s
             secondPassMedfiltWindow         = 1;    %s
             secondPassMedfiltNanFraction    = 0.5;   %
             secondPassPadding               = 30;   %ms
@@ -2183,7 +2183,7 @@ classdef VOGAnalysis < handle
             spv = [0;(diff(position)./diff(timeSec))];
             
             % first past at finding quick phases (>100 deg/s)
-            qp = boxcar(abs(spv)>firstPassVThrehold | isnan(spv), firstPassPadding*samplerate/1000)>0;
+            qp = boxcar(abs(spv)>firstPassVThrehold | isnan(spv), round(firstPassPadding*samplerate/1000))>0;
             spv(qp) = nan;
             
             % used the velocity without first past of quick phases
@@ -2192,7 +2192,7 @@ classdef VOGAnalysis < handle
             v2 = spv-nanmedfilt(spv,samplerate*firstPassMedfiltWindow,firstPassMedfiltNanFraction);
             
             % do a second pass for the quick phases (>10 deg/s)
-            qp2 = boxcar(abs(v2)>secondPassVThrehold, secondPassPadding*samplerate/1000)>0;
+            qp2 = boxcar(abs(v2)>secondPassVThrehold, round(secondPassPadding*samplerate/1000))>0;
             spv(qp2) = nan;
             
             % get a filted and decimated version of the spv at 1
@@ -2469,18 +2469,18 @@ classdef VOGAnalysis < handle
             timeR = data.RightSeconds;
             
             subplot(3,1,1,'nextplot','add')
-            plot(timeL, data.LeftX, 'color', [ MEDIUM_BLUE ])
-            plot(timeR, data.RightX, 'color', [ MEDIUM_RED])
+            plot(timeL, data.LeftPupilX, 'color', [ MEDIUM_BLUE ])
+            plot(timeR, data.RightPupilX, 'color', [ MEDIUM_RED])
             ylabel('Horizontal (deg)','fontsize', 16);
             
             subplot(3,1,2,'nextplot','add')
-            plot(timeL, data.LeftY, 'color', [ MEDIUM_BLUE ])
-            plot(timeR, data.RightY, 'color', [ MEDIUM_RED])
+            plot(timeL, data.LeftPupilY, 'color', [ MEDIUM_BLUE ])
+            plot(timeR, data.RightPupilY, 'color', [ MEDIUM_RED])
             ylabel('Vertical (deg)','fontsize', 16);
             
             subplot(3,1,3,'nextplot','add')
-            plot(timeL, data.LeftT, 'color', [ MEDIUM_BLUE ])
-            plot(timeR, data.RightT, 'color', [ MEDIUM_RED])
+            plot(timeL, data.LeftTorsion, 'color', [ MEDIUM_BLUE ])
+            plot(timeR, data.RightTorsion, 'color', [ MEDIUM_RED])
             ylabel('Torsion (deg)','fontsize', 16);
             xlabel('Time (s)');
         end

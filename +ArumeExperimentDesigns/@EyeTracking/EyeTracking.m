@@ -9,12 +9,9 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
     % ---------------------------------------------------------------------
     methods (Access=protected)
         function dlg = GetOptionsDialog( this, importing )
-            dlg.UseEyeTracker = { {'0' '{1}'} };
-            dlg.Debug = { {'{0}','1'} };
+            dlg = GetOptionsDialog@ArumeCore.ExperimentDesign(this, importing);
             
-            dlg.ScreenWidth = { 40 '* (cm)' [1 3000] };
-            dlg.ScreenHeight = { 30 '* (cm)' [1 3000] };
-            dlg.ScreenDistance = { 135 '* (cm)' [1 3000] };
+            dlg.UseEyeTracker       = { {'0' '{1}'} };
             
             if ( exist('importing','var') && importing )
                 dlg.DataFiles = { {['uigetfile(''' fullfile(pwd,'*.txt') ''',''MultiSelect'', ''on'')']} };
@@ -23,27 +20,21 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             end
         end
         
-        function [conditionVars] = getConditionVariables( this )
-            %-- condition variables ---------------------------------------
-            i= 0;
-            
-            % This is necessary for basic imported sessions of eye movement
-            % recordings
-            
-            i = i+1;
-            conditionVars(i).name   = 'Recording';
-            conditionVars(i).values = 1;
-        end
-        
         function shouldContinue = initBeforeRunning( this )
             
             if ( this.ExperimentOptions.UseEyeTracker )
                 this.eyeTracker = ArumeHardware.VOG();
-                this.eyeTracker.Connect();
-                this.eyeTracker.SetSessionName(this.Session.name);
-                this.eyeTracker.StartRecording();
-                this.AddTrialStartCallback(@this.TrialStartCallback)
-                this.AddTrialStopCallback(@this.TrialStopCallBack)
+                result = this.eyeTracker.Connect();
+                if ( result )
+                    this.eyeTracker.SetSessionName(this.Session.name);
+                    this.eyeTracker.StartRecording();
+                    this.AddTrialStartCallback(@this.TrialStartCallback)
+                    this.AddTrialStopCallback(@this.TrialStopCallBack)
+                else
+                    shouldContinue = 0;
+                    this.eyeTracker = [];
+                    return;
+                end
             end
             
             shouldContinue = 1;
@@ -51,7 +42,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
         
         function cleanAfterRunning(this)
             
-            if ( this.ExperimentOptions.UseEyeTracker )
+            if ( this.ExperimentOptions.UseEyeTracker && ~isempty(this.eyeTracker))
                 this.eyeTracker.StopRecording();
         
                 disp('Downloading eye tracking files...');
@@ -77,6 +68,10 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
         end
         
         function variables = TrialStartCallback(this, variables)
+            if ( isempty(this.eyeTracker))
+                return;
+            end
+            
             if ( ~this.eyeTracker.IsRecording )
                 ME = MException('ArumeHardware.VOG:NotRecording', 'The eye tracker is not recording.');
                 throw(ME);
@@ -95,6 +90,9 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
         end
          
         function variables = TrialStopCallBack(this, variables)
+            if ( isempty(this.eyeTracker))
+                return;
+            end
             if ( ~this.eyeTracker.IsRecording )
                 ME = MException('ArumeHardware.VOG:NotRecording', 'The eye tracker is not recording.');
                 throw(ME);
@@ -333,7 +331,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
         end
         
         function sessionDataTable = PrepareSessionDataTable(this, sessionDataTable, options)
-            
+            return
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % CALCULATE AVERAGE EYE MOVEMENT ACROSS TRIALS
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -387,7 +385,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                 updateTrialsAndSessionTables = true;
             end
             
-            if ( 1 )
+            if ( 0 )
                 T = samplesDataTable.Properties.UserData.sampleRate;
                 analysisResults.SPV.Time = samplesDataTable.Time(1:T:(end-T/2));
                 fields = {'LeftX', 'LeftY' 'LeftT' 'RightX' 'RightY' 'RightT'};

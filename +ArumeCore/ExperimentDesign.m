@@ -7,65 +7,19 @@ classdef ExperimentDesign < handle
     % options regarding configuration of the experiment, randomization,
     % etc.
     
-    properties( SetAccess = private)
-        Session = [];       % The session that is current running this experiment design
+    properties( SetAccess = protected)
+        Session = [];       % The session that is currently running this experiment design
+        ExperimentOptions   = [];  % Options of this specific experiment design
+        TrialTable          = [];
         
-        Graph       = [];   % Display handle (psychtoolbox).
-        Config      = [];   % Configuration of the system.
+        Graph               = [];   % Display handle (usually psychtoolbox).
         
-        ExperimentOptions = [];  % Options of this specific experiment design
+        TrialStartCallbacks  % callback functions to be called before a trial starts
+        TrialStopCallbacks   % callback functions to be called after a trial ends
         
-        % Experimental variables
-        ConditionVars = [];
-        ConditionMatrix
-        
-        TrialStartCallbacks
-        TrialStopCallbacks
-    end
-    
-    properties ( Dependent = true )
         Name
-        
-        NumberOfConditions
     end
-    
-    methods
-        function name = get.Name(this)
-            className = class(this);
-            name = className(find(className=='.',1, 'last')+1:end);
-        end
         
-        function number = get.NumberOfConditions(this)
-            number = size(this.ConditionMatrix,1);
-        end
-    end
-    
-    %
-    % Options for every experimental paradigm
-    %
-    properties
-        DisplayVariableSelection = {'TrialNumber' 'TrialResult'}; % which variables to display every trial in the command line
-        
-        HitKeyBeforeTrial = 0;
-        
-        ForegroundColor = 0;
-        BackgroundColor = 0;
-        
-        % Trial sequence and blocking
-        trialSequence       = 'Sequential';	% Sequential, Random, Random with repetition, ...
-        trialAbortAction    = 'Repeat';     % Repeat, Delay, Drop
-        trialsPerSession    = 1;
-        trialsBeforeBreak   = 1;
-        
-        blockSequence       = 'Sequential';	% Sequential, Random, Random with repetition, ...numberOfTimesRepeatBlockSequence = 1;
-        blocksToRun         = 1;
-        blocks              =  struct( 'fromCondition', 1, 'toCondition', 1, 'trialsToRun', 1) ;
-        numberOfTimesRepeatBlockSequence = 1;
-        
-        % Other parameters
-        trialDuration       = 5; %seconds
-    end
-    
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % THESE ARE THE METHODS THAT SHOULD BE IMPLEMENTED BY NEW EXPERIMENT
     % DESIGNS
@@ -77,17 +31,31 @@ classdef ExperimentDesign < handle
         % Some common options will be added
         function dlg = GetOptionsDialog( this, importing )
             dlg = [];
-        end
-        
-        function conditionVars = getConditionVariables( this )
-            conditionVars = this.ConditionVars;
-        end
-        
-        % run initialization when the session is created.
-        % Use this to set parameters of the trial sequence, etc.
-        % This is executed at the time of creating a session
-        function initExperimentDesign( this )
             
+            if ( ~importing)
+                dlg.Debug.DebugMode = { {'{0}','1'} };
+                dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult'; % which variables to display every trial in the command line separated by spaces
+                
+                dlg.DisplayOptions.ForegroundColor      = 0;
+                dlg.DisplayOptions.BackgroundColor      = 128;
+                dlg.DisplayOptions.ScreenWidth          = { 40 '* (cm)' [1 3000] };
+                dlg.DisplayOptions.ScreenHeight         = { 30 '* (cm)' [1 3000] };
+                dlg.DisplayOptions.ScreenDistance       = { 135 '* (cm)' [1 3000] };
+                
+                dlg.HitKeyBeforeTrial = 0;
+                dlg.TrialDuration = 10;
+                dlg.TrialsBeforeBreak = 1000;
+            end
+        end
+        
+        % Set up the trial table when a new session is created
+        function trialTable = SetUpTrialTable( this )
+            trialTable = table();
+            trialTable.Condition = 1;
+            trialTable.BlockNumber = 1;
+            trialTable.BlockSequenceNumber = 1;
+            trialTable.BlockSequenceRepeat = 1;
+            trialTable.Session = 1;
         end
         
         % run initialization before the first trial is run
@@ -147,8 +115,15 @@ classdef ExperimentDesign < handle
         function [analysisResults, samplesDataTable, trialDataTable, sessionTable]  = RunDataAnalyses(this, analysisResults, samplesDataTable, trialDataTable, sessionTable, options)
         end
         
-        %% ImportSession
         function ImportSession( this )
+        end
+    end
+    
+    methods(Access=public,Sealed=true)
+        
+        function this = ExperimentDesign()
+            className = class(this);
+            this.Name = className(find(className=='.',1, 'last')+1:end);
         end
     end
     
@@ -174,69 +149,145 @@ classdef ExperimentDesign < handle
     
     methods (Access = public)
         function trialTable = GetTrialTable(this)
+            trialTable = this.TrialTable;
+        end
+        
+        function trialTableOptions = GetDefaultTrialTableOptions(this)
+            % Trial sequence and blocking
+            trialTableOptions = [];
+            trialTableOptions.trialSequence       = 'Sequential';	% Sequential, Random, Random with repetition, ...
+            trialTableOptions.trialAbortAction    = 'Repeat';     % Repeat, Delay, Drop
+            trialTableOptions.trialsPerSession    = 1;
+            trialTableOptions.trialsBeforeBreak   = 1;
             
-            % generate the sequence of blocks, a total of
-            % parameters.blocksToRun blocks will be run
-            nBlocks = length(this.blocks);
-            blockSeq = [];
-            switch(this.blockSequence)
-                case 'Sequential'
-                    blockSeq = mod( (1:this.blocksToRun)-1,  nBlocks ) + 1;
-                case 'Random'
-                    [~, theBlocks] = sort( rand(1,this.blocksToRun) ); % get a random shuffle of 1 ... blocks to run
-                    blockSeq = mod( theBlocks-1,  nBlocks ) + 1; % limit the random sequence to 1 ... nBlocks
-                case 'Random with repetition'
-                    blockSeq = ceil( rand(1,this.blocksToRun) * nBlocks ); % just get random block numbers
-                case 'Manual'
-                    blockSeq = [];
-                    
-                    while length(blockSeq) ~= this.blocksToRun
-                        S.Block_Sequence = [1:this.blocksToRun];
-                        S = StructDlg( S, ['Block Sequence'], [],  CorrGui.get_default_dlg_pos() );
-                        blockSeq =  S.Block_Sequence;
-                    end
-                    %                     if length(parameters.manualBlockSequence) == parameters.blocksToRun;
-                    %                         %                         blockSequence = parameters.manualBlockSequence;
-                    %
-                    %                     else
-                    %                         disp(['Error with the manual block sequence. Please fix.']);
-                    %                     end
+            trialTableOptions.blockSequence       = 'Sequential';	% Sequential, Random, Random with repetition, ...numberOfTimesRepeatBlockSequence = 1;
+            trialTableOptions.blocksToRun         = 1;
+            trialTableOptions.blocks              = [];
+            trialTableOptions.numberOfTimesRepeatBlockSequence = 1;
+        end
+            
+        function trialTable = GetTrialTableFromConditions(this, conditionVars, trialTableOptions)
+            
+            % Create the matrix with all the possible combinations of
+            % condition variables. Each combination is a condition
+            % total number of conditions is the product of the number of
+            % values of each condition variable
+            nConditions = 1;
+            for iVar = 1:length(conditionVars)
+                nConditions = nConditions * length(conditionVars(iVar).values);
             end
-            blockSeq = repmat( blockSeq,1,this.numberOfTimesRepeatBlockSequence);
+            
+            conditionMatrix = [];
+            
+            %-- recursion to create the condition matrix
+            % for each variable, we repeat the previous matrix as many
+            % times as values the current variable has and in each
+            % repetition we add a new column with one of the values of the
+            % current variable
+            % example: var1 = {a b} var2 = {e f g}
+            % step 1: matrix = [ a ;
+            %                    b ];
+            % step 2: matrix = [ a e ;
+            %                    b e ;
+            %                    a f ;
+            %                    b f ;
+            %                    a g ;
+            %                    b g ];
+            for iVar = 1:length(conditionVars)
+                nValues(iVar) = length(conditionVars(iVar).values);
+                conditionMatrix = [ repmat(conditionMatrix,nValues(iVar),1)  ceil((1:prod(nValues))/prod(nValues(1:end-1)))' ];
+            end
+            
+            % if the blocks are empty add one that includes all the
+            % conditions
+            if ( isempty( trialTableOptions.blocks) )
+                trialTableOptions.blocks = struct( 'fromCondition', 1, 'toCondition', size(conditionMatrix,1), 'trialsToRun', size(conditionMatrix,1)  );
+                trialTableOptions.blocksToRun = 1;
+            end
+        
+        
+            blockSeqWithRepeats = [];
+            for iRepeatBlockSequence = 1:trialTableOptions.numberOfTimesRepeatBlockSequence
+        
+                % generate the sequence of blocks, a total of
+                % parameters.blocksToRun blocks will be run
+                nBlocks = length(trialTableOptions.blocks);
+                blockSeq = [];
+                switch(trialTableOptions.blockSequence)
+                    case 'Sequential'
+                        blockSeq = mod( (1:trialTableOptions.blocksToRun)-1,  nBlocks ) + 1;
+                    case 'Random'
+                        [~, theBlocks] = sort( rand(1,trialTableOptions.blocksToRun) ); % get a random shuffle of 1 ... blocks to run
+                        blockSeq = mod( theBlocks-1,  nBlocks ) + 1; % limit the random sequence to 1 ... nBlocks
+                    case 'Random with repetition'
+                        blockSeq = ceil( rand(1,trialTableOptions.blocksToRun) * nBlocks ); % just get random block numbers
+                    case 'Manual'
+                        blockSeq = [];
+                        
+                        while length(blockSeq) ~= trialTableOptions.blocksToRun
+                            S.Block_Sequence = [1:trialTableOptions.blocksToRun];
+                            S = StructDlg( S, ['Block Sequence'], [],  CorrGui.get_default_dlg_pos() );
+                            blockSeq =  S.Block_Sequence;
+                        end
+                        %                     if length(parameters.manualBlockSequence) == parameters.blocksToRun;
+                        %                         %                         blockSequence = parameters.manualBlockSequence;
+                        %
+                        %                     else
+                        %                         disp(['Error with the manual block sequence. Please fix.']);
+                        %                     end
+                end
+                blockSeq = [blockSeq;ones(size(blockSeq))*iRepeatBlockSequence];
+                blockSeqWithRepeats = [blockSeqWithRepeats blockSeq];
+            end
+            blockSeq = blockSeqWithRepeats;
             
             futureConditions = [];
-            for iblock=1:length(blockSeq)
-                i = blockSeq(iblock);
-                possibleConditions = this.blocks(i).fromCondition : this.blocks(i).toCondition; % the possible conditions to select from in this block
+            for iblock=1:size(blockSeq,2)
+                i = blockSeq(1,iblock);
+                possibleConditions = trialTableOptions.blocks(i).fromCondition : trialTableOptions.blocks(i).toCondition; % the possible conditions to select from in this block
                 nConditions = length(possibleConditions);
-                nTrials = this.blocks(i).trialsToRun;
+                nTrials = trialTableOptions.blocks(i).trialsToRun;
                 
-                switch( this.trialSequence )
+                switch( trialTableOptions.trialSequence )
                     case 'Sequential'
                         trialSeq = possibleConditions( mod( (1:nTrials)-1,  nConditions ) + 1 );
                     case 'Random'
                         [~, conditions] = sort( rand(1,nTrials) ); % get a random shuffle of 1 ... nTrials
                         conditionIndexes = mod( conditions-1,  nConditions ) + 1; % limit the random sequence to 1 ... nConditions
                         trialSeq = possibleConditions( conditionIndexes ); % limit the random sequence to fromCondition ... toCondition for this block
-                    case 'Random with repetition'
+                    case 'Random with repetition' 
                         trialSeq = possibleConditions( ceil( rand(1,nTrials) * nConditions ) ); % nTrialss numbers between 1 and nConditions
                 end
-                futureConditions = cat(1,futureConditions, [trialSeq' ones(size(trialSeq'))*iblock  ones(size(trialSeq'))*i] );
+                futureConditions = cat(1,futureConditions, [trialSeq' ones(size(trialSeq'))*iblock  ones(size(trialSeq'))*i ones(size(trialSeq'))*blockSeq(2,iblock)] );
             end
             
             newTrialTable = table();
             newTrialTable.Condition = futureConditions(:,1);
             newTrialTable.BlockNumber = futureConditions(:,2);
             newTrialTable.BlockSequenceNumber = futureConditions(:,3);
-            newTrialTable.Session = ceil((1:height(newTrialTable))/this.trialsPerSession)';
+            newTrialTable.BlockSequenceRepeat = futureConditions(:,4);
+            newTrialTable.Session = ceil((1:height(newTrialTable))/min(height(newTrialTable), trialTableOptions.trialsPerSession))';
             
             variableTable = table();
             for i=1:height(newTrialTable)
-                vars = this.getVariablesCurrentCondition( newTrialTable.Condition(i) );
-                variableTable = cat(1,variableTable,struct2table(vars,'AsArray',true));
+                variables = [];
+                for iVar=1:length(conditionVars)
+                    varName = conditionVars(iVar).name;
+                    varValues = conditionVars(iVar).values;
+                    if iscell( varValues )
+                        variables.(varName) = categorical(varValues(conditionMatrix(newTrialTable.Condition(i),iVar)));
+                    else
+                        variables.(varName) = varValues(conditionMatrix(newTrialTable.Condition(i),iVar));
+                    end
+                end
+            
+                variableTable = cat(1,variableTable,struct2table(variables,'AsArray',true));
             end
             
             trialTable = [newTrialTable variableTable];
+            
+            trialTable.Properties.UserData.conditionVars = conditionVars;
+            trialTable.Properties.UserData.trialTableOptions = trialTableOptions;
         end
         
         function options = GetDefaultOptions(this)
@@ -245,6 +296,83 @@ classdef ExperimentDesign < handle
         
         function UpdateExperimentOptions(this, newOptions)
             this.ExperimentOptions = newOptions;
+        end
+        
+        function [dataTable, idx, selectedFilters] = FilterTableByConditionVariable(this, dataTable, Select_Conditions, columns, columnNames)
+            
+            if (ischar(dataTable) )
+                switch(dataTable)
+                    case 'get_filters'
+                        Select_Conditions = struct();
+                        Select_Conditions.All = { {'0', '{1}'}};
+                        for i=1:length(this.Session.experimentDesign.ConditionVars)
+                            name = this.Session.experimentDesign.ConditionVars(i).name;
+                            values = categorical(this.Session.experimentDesign.ConditionVars(i).values);
+                            for j=1:numel(values)
+                                Select_Conditions.(strcat(name, '_', string(values(j)))) = { {'{0}', '1'}};
+                            end
+                        end
+                        dataTable = Select_Conditions;
+                        return;
+                end
+            end
+            
+            dataTable.All = ones(height(dataTable),1);
+            
+            Select_ConditionsFilters = struct();
+            Select_ConditionsFilters.All.VarName = 'All';
+            Select_ConditionsFilters.All.VarValue = 1;
+            for i=1:length(this.Session.experimentDesign.ConditionVars)
+                name = this.Session.experimentDesign.ConditionVars(i).name;
+                if ( iscell(this.Session.experimentDesign.ConditionVars(i).values) )
+                    values = categorical(this.Session.experimentDesign.ConditionVars(i).values);
+                else
+                    values = this.Session.experimentDesign.ConditionVars(i).values;
+                end
+                for j=1:numel(values)
+                    Select_ConditionsFilters.(strcat(name, '_', string(values(j)))).VarName = name;
+                    Select_ConditionsFilters.(strcat(name, '_', string(values(j)))).VarValue = values(j);
+                end
+            end
+            
+            selectedFilters = {};
+            
+            filters = fieldnames(Select_Conditions);
+            for i=1:length(filters)
+                if ( Select_Conditions.(filters{i}) )
+                    selectedFilters{end+1} = filters{i};
+                end
+            end
+            
+            sessionDataTable = dataTable;
+            dataTable = table();
+            idx = table();
+            for i=1:length(selectedFilters)
+                idxf = find(sessionDataTable.(Select_ConditionsFilters.(selectedFilters{i}).VarName) == Select_ConditionsFilters.(selectedFilters{i}).VarValue);
+                dataTable{i, {'Data' 'Condition' 'Idx'}} = {sessionDataTable(idxf,:), selectedFilters{i}, idxf};
+            end
+            
+            
+            
+            if ( exist('columns','var'))
+                dataTableTemp = table();
+                for j=1:height(dataTable)
+                    props = dataTable(j,:);
+                    
+                    props = repmat(props, numel(columns), 1);
+                    props.Component = columnNames';
+                    for iComp=1:numel(columns)
+                        props{iComp,'Data'} = {props.Data{iComp}.(columns{iComp})};
+                    end
+                    dataTableTemp = vertcat(dataTableTemp, props);
+                end
+                dataTable = dataTableTemp;
+                
+                
+                dataTable.Component = categorical(cellstr(dataTable.Component));
+            end
+            
+            dataTable.Condition = categorical(cellstr(dataTable.Condition));
         end
     end
     
@@ -271,46 +399,38 @@ classdef ExperimentDesign < handle
             dlg = this.GetOptionsDialog(importing);
         end
         
-        function init(this, session, options)
-            if ( exist( 'session', 'var') && exist('options', 'var') )
-                this.Session            = session;
-                this.ExperimentOptions  = options;
+        function init(this, session, options, importing)
+            this.Session = session;
+            if ( ~exist( 'importing', 'var') )
+                importing = 0;
             end
             
-            %-- init options
             %-- Check if all the options are there, if not add the default
             % values. This is important to mantain past compatibility if
             % options are added in the future.
-            optionsDlg = this.GetOptionsDialog( );
-            if ( ~isempty( optionsDlg ) && (isempty(this.ExperimentOptions) || ~isempty(setdiff(fieldnames(optionsDlg), fieldnames(this.ExperimentOptions)))) )
+            % TODO deal with nested structures
+            optionsDlg = this.GetOptionsDialog(importing);
+            if ( ~isempty( optionsDlg ) && (isempty(options) || ~isempty(setdiff(fieldnames(optionsDlg), fieldnames(options)))) )
                 
-                options = StructDlg(optionsDlg,'',[],[],'off');
+                defaultOptions = StructDlg(optionsDlg,'',[],[],'off');
                 
-                fields = fieldnames(options);
+                fields = fieldnames(defaultOptions);
                 for i=1:length(fields)
-                    if ( ~isfield(this.ExperimentOptions, fields{i}))
-                        this.ExperimentOptions.(fields{i}) = options.(fields{i});
+                    if ( ~isfield(options, fields{i}))
+                        options.(fields{i}) = defaultOptions.(fields{i});
                     end
                 end
             end
             
-            %-- init variables
-            this.ConditionVars      = this.getConditionVariables();
-            this.ConditionMatrix    = this.getConditionMatrix( this.ConditionVars );
+            this.ExperimentOptions = options;
             
+            newTrialTable = this.SetUpTrialTable();
             
-            % default parameters of any experiment
-            this.trialsPerSession   = this.NumberOfConditions;
-            this.trialsBeforeBreak  = this.NumberOfConditions;            
+            % Check trialTable
             
-            %-- Blocking
-            this.blocks(1).toCondition    = this.NumberOfConditions;
-            this.blocks(1).trialsToRun    = this.NumberOfConditions;
-            
-            %-- init the parameters of this specific experiment
-            this.initExperimentDesign( );
-            
+            this.TrialTable = newTrialTable;
         end
+        
         
         function run(this)
             Enum = ArumeCore.ExperimentDesign.getEnum();
@@ -318,6 +438,8 @@ classdef ExperimentDesign < handle
             % --------------------------------------------------------------------
             %% -- EXPERIMENT LOOP -------------------------------------------------
             % --------------------------------------------------------------------
+            
+            % possible states of the loop
             INITIALIZNG_HARDWARE = 0;
             INITIALIZNG_EXPERIMENT = 1;
             IDLE = 2;
@@ -327,35 +449,20 @@ classdef ExperimentDesign < handle
             BREAK = 6;
             FINALIZING_HARDWARE = 7;
             
-            status = INITIALIZNG_HARDWARE;
+            state = INITIALIZNG_HARDWARE;
             
             trialsSinceBreak = 0;
             
             while(1)
                 try
-                    switch( status )
-                        % -------------------------------------------------
-                        % ++ INITIALIZNG_HARDWARE -------------------------
-                        % -------------------------------------------------
+                    switch( state )
                         case INITIALIZNG_HARDWARE
-                            
-                            % -- GRAPHICS KEYBOARD and MOUSE
-                            %-- hide the mouse cursor during the experiment
-                            if ( ~this.ExperimentOptions.Debug)
-                                HideCursor;
-                                ListenChar(2);
-                            else
-                                ListenChar(1);
-                            end
                             
                             this.Graph = ArumeCore.Display( );
                             this.Graph.Init( this );
                             
-                            status = INITIALIZNG_EXPERIMENT;
+                            state = INITIALIZNG_EXPERIMENT;
                             
-                            % ---------------------------------------------
-                            % ++ INITIALIZNG_EXPERIMENT -------------------
-                            % ---------------------------------------------
                         case INITIALIZNG_EXPERIMENT
                             
                             this.TrialStartCallbacks = [];
@@ -364,14 +471,11 @@ classdef ExperimentDesign < handle
                             shouldContinue = this.initBeforeRunning();
                             
                             if ( shouldContinue )
-                                status = RUNNING;
+                                state = RUNNING;
                             else
-                                status = FINILIZING_EXPERIMENT;
+                                state = FINILIZING_EXPERIMENT;
                             end
                             
-                            % ---------------------------------------------
-                            % ++ IDLE -------------------------------------
-                            % ---------------------------------------------
                         case IDLE
                             result = this.Graph.DlgSelect( ...
                                 'Choose an option:', ...
@@ -380,42 +484,36 @@ classdef ExperimentDesign < handle
                             
                             switch( result )
                                 case 'n'
-                                    status = RUNNING;
+                                    state = RUNNING;
                                 case {'q' 0}
                                     dlgResult = this.Graph.DlgYesNo( 'Are you sure you want to exit?',[],[],20,20);
                                     if( dlgResult )
-                                        status = FINILIZING_EXPERIMENT;
+                                        state = FINILIZING_EXPERIMENT;
                                     end
                             end
                             
-                            % ---------------------------------------------
-                            % ++ BREAK ------------------------------------
-                            % ---------------------------------------------
                         case BREAK
                             dlgResult = this.Graph.DlgHitKey( 'Break: hit a key to continue',[],[] );
                             %             this.Graph.DlgTimer( 'Break');
                             %             dlgResult = this.Graph.DlgYesNo( 'Finish break and continue?');
                             % problems with breaks i am going to skip the timer
                             if ( ~dlgResult )
-                                status = IDLE;
+                                state = IDLE;
                             else
                                 trialsSinceBreak = 0;
-                                status = RUNNING;
+                                state = RUNNING;
                             end
                             
-                            % ---------------------------------------------
-                            % ++ RUNNING ----------------------------------
-                            % ---------------------------------------------
                         case RUNNING
                             % force to hit a key to continue if the
                             % previous trial was an abort or if the
                             % experiment is set to ask for hit key before
                             % every trial
                             if ( (~isempty(this.Session.currentRun.pastTrialTable) && this.Session.currentRun.pastTrialTable.TrialResult(end) == Enum.trialResult.ABORT) ...
-                                     || this.HitKeyBeforeTrial )
+                                     || this.ExperimentOptions.HitKeyBeforeTrial )
                                 dlgResult = this.Graph.DlgHitKey( 'Hit a key to continue',[],[]);
                                 if ( ~dlgResult )
-                                    status = IDLE;
+                                    state = IDLE;
                                     continue;
                                 end
                             end
@@ -515,8 +613,8 @@ classdef ExperimentDesign < handle
                             
                             % -- Display trial Table for last 20 trials
                             data = this.Session.currentRun.pastTrialTable;
-                            varSelection = intersect(this.DisplayVariableSelection,data.Properties.VariableNames,'stable');
-                            if ( ~this.ExperimentOptions.Debug )
+                            varSelection = intersect(strsplit(this.ExperimentOptions.Debug.DisplayVariableSelection,' '),data.Properties.VariableNames,'stable');
+                            if ( ~this.ExperimentOptions.Debug.DebugMode )
                                 disp(data(max(1,end-20):end,varSelection));
                             else
                                 disp(data);
@@ -533,7 +631,7 @@ classdef ExperimentDesign < handle
                                 trialsSinceBreak = trialsSinceBreak + 1;
                             else
                                 %-- what to do in case of abort
-                                switch(this.trialAbortAction)
+                                switch(this.TrialTable.Properties.UserData.trialTableOptions.trialAbortAction)
                                     case 'Repeat'
                                         % do nothing
                                     case 'Delay'
@@ -557,40 +655,34 @@ classdef ExperimentDesign < handle
                             %-- handle errors
                             switch ( thisTrialData.TrialResult )
                                 case Enum.trialResult.ERROR
-                                    status = IDLE;
+                                    state = IDLE;
                                     continue;
                                 case Enum.trialResult.QUIT
-                                    status = IDLE;
+                                    state = IDLE;
                                     continue;
                             end
                             
                             % -- Experiment or session finished ?
-                            if ( trialsSinceBreak >= this.trialsBeforeBreak )
-                                status = BREAK;
+                            if ( trialsSinceBreak >= this.ExperimentOptions.TrialsBeforeBreak )
+                                state = BREAK;
                             end
                             if ( ~isempty(this.Session.currentRun.futureTrialTable) && ~isempty(this.Session.currentRun.pastTrialTable) )
                                 if ( this.Session.currentRun.pastTrialTable.Session(end) ~= this.Session.currentRun.futureTrialTable.Session(1) )
-                                    status = SESSIONFINISHED;
+                                    state = SESSIONFINISHED;
                                 end
                             end
                             if ( isempty(this.Session.currentRun.futureTrialTable) )
-                                status = FINILIZING_EXPERIMENT;
+                                state = FINILIZING_EXPERIMENT;
                             end
                             
-                            % ---------------------------------------------
-                            % ++ FINISHED ---------------------------------
-                            % ---------------------------------------------
-                        case {SESSIONFINISHED}
+                        case SESSIONFINISHED
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', 'Session part finished! closing down and saving data ...\n');
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', '---------------------------------------------------------\n')
-                            status = FINILIZING_EXPERIMENT;
+                            state = FINILIZING_EXPERIMENT;
                             
-                            % ---------------------------------------------
-                            % ++ FINILIZING_EXPERIMENT --------------------
-                            % ---------------------------------------------
                         case FINILIZING_EXPERIMENT
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', '---------------------------------------------------------\n')
@@ -600,19 +692,13 @@ classdef ExperimentDesign < handle
                             
                             this.cleanAfterRunning();
                             
-                            status = FINALIZING_HARDWARE;
+                            state = FINALIZING_HARDWARE;
                             
-                            % ---------------------------------------------
-                            % ++ FINALIZING_HARDWARE ----------------------
-                            % ---------------------------------------------
                         case FINALIZING_HARDWARE
                             
-                            ShowCursor;
-                            ListenChar(0);
-                            Priority(0);
+                            this.Graph.Clear();
                             
                             this.Graph = [];
-                            Screen('CloseAll');
                             disp('ARUME:: Done closing display and connections!');
                             break; % finish loop
                             
@@ -627,12 +713,12 @@ classdef ExperimentDesign < handle
                     cprintf('red', '!!!!!!!!!!!!! END ARUME ERROR: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
                     cprintf('red', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
                     
-                    if ( status == FINILIZING_EXPERIMENT )
-                        status = FINALIZING_HARDWARE;
-                    elseif ( status == FINALIZING_HARDWARE )
+                    if ( state == FINILIZING_EXPERIMENT )
+                        state = FINALIZING_HARDWARE;
+                    elseif ( state == FINALIZING_HARDWARE )
                         break;
                     else
-                        status = FINILIZING_EXPERIMENT;
+                        state = FINILIZING_EXPERIMENT;
                     end
                 end
             end
@@ -644,212 +730,14 @@ classdef ExperimentDesign < handle
         function abortExperiment(this)
             throw(MException('PSYCORTEX:USERQUIT', ''));
         end
-        
-        function conditionTable = GetConditionTable(this)
-            cm = table();
-            for i=1:size(this.ConditionMatrix,1)
-                for j=1:size(this.ConditionMatrix,2)
-                    var = this.ConditionVars(j);
-                    if ( iscell(var.values) )
-                        if ( width(cm) < j )
-                            cm.(var.name) = cell(size(this.ConditionMatrix(:,j)));
-                        end
-                        cm{i,j} = {var.values{this.ConditionMatrix(i,j)}};
-                    else
-                        if ( width(cm) < j )
-                            cm.(var.name) = nan(size(this.ConditionMatrix(:,j)));
-                        end
-                        cm{i,j} = var.values(this.ConditionMatrix(i,j));
-                    end
-                end
-            end
-            conditionTable = cm;
-        end
-        
-        function DisplayConditionMatrix(this)
-            
-            this.GetConditionTable()
-        end
-        
-        function [shouldReturn, options] = CheckPlotOptions(~, options, optionsDlg)
-            %% Can be used in Plot_methods to check for options
-            % options parameter can be 'get_dialog_options' or
-            % 'get_defualt_options' or can be directly the options
-            % structure
-            % optionsDlg parameter is the structure formated for structDlg
-            
-            shouldReturn = false;
-            
-            if ( ~exist( 'options', 'var' ) )
-                options = StructDlg(optionsDlg,'',[],[],'off');
-            end
-            
-            if ( ischar(options) )
-                switch(options)
-                    case {'get_options', 'get_options_dlg', 'dlg'}
-                        options = optionsDlg;
-                        shouldReturn = true;
-                    case {'get_defaults', 'get_default_options', 'defaults', 'default'}
-                        options = StructDlg(optionsDlg,'',[],[],'off');
-                        shouldReturn = true;
-                end
-            end
-        end
     end
-    
-    
-    % --------------------------------------------------------------------
-    %% Protected methods --------------------------------------------------
-    % --------------------------------------------------------------------
-    % to be called from any experiment
-    % --------------------------------------------------------------------
-    methods(Access=public)
         
-        %% getVariablesCurrentCondition
-        %--------------------------------------------------------------------------
-        function variables = getVariablesCurrentCondition( this, currentCondition )
-            
-            Enum = ArumeCore.ExperimentDesign.getEnum();
-            
-            conditionMatrix = this.ConditionMatrix;
-            conditionVars = this.ConditionVars;
-            
-            %
-            % Condition variables
-            %
-            variables = [];
-            for iVar=1:length(conditionVars)
-                varName = conditionVars(iVar).name;
-                varValues = conditionVars(iVar).values;
-                if iscell( varValues )
-                    variables.(varName) = categorical(varValues(conditionMatrix(currentCondition,iVar)));
-                else
-                    variables.(varName) = varValues(conditionMatrix(currentCondition,iVar));
-                end
-            end
-        end
-        
-        function shuffleConditionMatrix(this, variableNumber)
-            this.ConditionMatrix(:,variableNumber) = Shuffle(this.ConditionMatrix(:,variableNumber));
-        end      
-        
-        function [dataTable, idx, selectedFilters] = FilterTableByConditionVariable(this, dataTable, Select_Conditions, columns, columnNames)
-            
-            if (ischar(dataTable) )
-                switch(dataTable)
-                    case 'get_filters'
-                        Select_Conditions = struct();
-                        Select_Conditions.All = { {'0', '{1}'}};
-                        for i=1:length(this.Session.experimentDesign.ConditionVars)
-                            name = this.Session.experimentDesign.ConditionVars(i).name;
-                            values = categorical(this.Session.experimentDesign.ConditionVars(i).values);
-                            for j=1:numel(values)
-                                Select_Conditions.(strcat(name, '_', string(values(j)))) = { {'{0}', '1'}};
-                            end
-                        end
-                        dataTable = Select_Conditions;
-                        return;
-                end
-            end
-            
-            dataTable.All = ones(height(dataTable),1);
-            
-            Select_ConditionsFilters = struct();
-            Select_ConditionsFilters.All.VarName = 'All';
-            Select_ConditionsFilters.All.VarValue = 1;
-            for i=1:length(this.Session.experimentDesign.ConditionVars)
-                name = this.Session.experimentDesign.ConditionVars(i).name;
-                if ( iscell(this.Session.experimentDesign.ConditionVars(i).values) )
-                    values = categorical(this.Session.experimentDesign.ConditionVars(i).values);
-                else
-                    values = this.Session.experimentDesign.ConditionVars(i).values;
-                end
-                for j=1:numel(values)
-                    Select_ConditionsFilters.(strcat(name, '_', string(values(j)))).VarName = name;
-                    Select_ConditionsFilters.(strcat(name, '_', string(values(j)))).VarValue = values(j);
-                end
-            end
-            
-            selectedFilters = {};
-            
-            filters = fieldnames(Select_Conditions);
-            for i=1:length(filters)
-                if ( Select_Conditions.(filters{i}) )
-                    selectedFilters{end+1} = filters{i};
-                end
-            end
-            
-            sessionDataTable = dataTable;
-            dataTable = table();
-            idx = table();
-            for i=1:length(selectedFilters)
-                idxf = find(sessionDataTable.(Select_ConditionsFilters.(selectedFilters{i}).VarName) == Select_ConditionsFilters.(selectedFilters{i}).VarValue);
-                dataTable{i, {'Data' 'Condition' 'Idx'}} = {sessionDataTable(idxf,:), selectedFilters{i}, idxf};
-            end
-            
-            
-            
-            if ( exist('columns','var'))
-                dataTableTemp = table();
-                for j=1:height(dataTable)
-                    props = dataTable(j,:);
-                    
-                    props = repmat(props, numel(columns), 1);
-                    props.Component = columnNames';
-                    for iComp=1:numel(columns)
-                        props{iComp,'Data'} = {props.Data{iComp}.(columns{iComp})};
-                    end
-                    dataTableTemp = vertcat(dataTableTemp, props);
-                end
-                dataTable = dataTableTemp;
-                
-                
-                dataTable.Component = categorical(cellstr(dataTable.Component));
-            end
-            
-            dataTable.Condition = categorical(cellstr(dataTable.Condition));
-        end
-    end % methods(Access=protected)
-    
-    
     % --------------------------------------------------------------------
     %% Private methods ----------------------------------------------------
     % --------------------------------------------------------------------
     % to be called only by this class
     % --------------------------------------------------------------------
     methods (Access=private)
-                
-        %% setUpConditionMatrix
-        function conditionMatrix = getConditionMatrix( this, conditionVars )
-            
-            %-- total number of conditions is the product of the number of
-            % values of each condition variable
-            nConditions = 1;
-            for iVar = 1:length(conditionVars)
-                nConditions = nConditions * length(conditionVars(iVar).values);
-            end
-            
-            conditionMatrix = [];
-            
-            %-- recursion to create the condition matrix
-            % for each variable, we repeat the previous matrix as many
-            % times as values the current variable has and in each
-            % repetition we add a new column with one of the values of the
-            % current variable
-            % example: var1 = {a b} var2 = {e f g}
-            % step 1: matrix = [ a ;
-            %                    b ];
-            % step 2: matrix = [ a e ;
-            %                    b e ;
-            %                    a f ;
-            %                    b f ;
-            %                    a g ;
-            %                    b g ];
-            for iVar = 1:length(conditionVars)
-                nValues(iVar) = length(conditionVars(iVar).values);
-                conditionMatrix = [ repmat(conditionMatrix,nValues(iVar),1)  ceil((1:prod(nValues))/prod(nValues(1:end-1)))' ];
-            end
-        end
         
         function PlaySound(this,trialResult)
             

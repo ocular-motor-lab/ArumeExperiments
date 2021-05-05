@@ -7,7 +7,8 @@ classdef VOG  < handle
     end
     
     methods
-        function Connect(this, ip, port)
+        function result = Connect(this, ip, port)
+           result = 0;
            
             if ( ~exist('port','var') )
                 port = 9000;
@@ -28,6 +29,11 @@ classdef VOG  < handle
                 if ( ~exist('ip','var') )
                     ip = fileread('C:\Secure\EyeTracker\Debug\IP.txt');
                 end
+            elseif exist('C:\secure\OpenIris 1.3.7752.29719\Debug\EyeTrackerRemoteClient.dll')
+                asm = NET.addAssembly('C:\secure\OpenIris 1.3.7752.29719\Debug\EyeTrackerRemoteClient.dll');
+                if ( ~exist('ip','var') )
+                    ip = fileread('C:\secure\OpenIris 1.3.7752.29719\Debug\IP.txt');
+                end
             else
                 asm = NET.addAssembly('C:\secure\code\Debug\EyeTrackerRemoteClient.dll');
                 
@@ -36,7 +42,10 @@ classdef VOG  < handle
                 end
             end
             
-            this.eyeTracker = VORLab.VOG.Remote.EyeTrackerClient(ip, port);
+%             this.eyeTracker = VORLab.VOG.Remote.EyeTrackerClient(ip, port);
+            this.eyeTracker = OpenIris.EyeTrackerClient(ip, port);
+            
+            result = 1;
         end
         
         function result = IsRecording(this)

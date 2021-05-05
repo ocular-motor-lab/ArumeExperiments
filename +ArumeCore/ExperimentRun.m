@@ -48,7 +48,6 @@ classdef ExperimentRun < matlab.mixin.Copyable
             newRun.originalFutureTrialTable = experimentDesign.GetTrialTable();
             newRun.futureTrialTable         = newRun.originalFutureTrialTable;
         end
-        
         function run = LoadRunData( data )
             
             % create the new object

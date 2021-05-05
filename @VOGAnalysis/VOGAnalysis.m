@@ -1072,7 +1072,7 @@ classdef VOGAnalysis < handle
                 end
                 
                 for j=1:length(headSignals)
-                    signalName = ['Head' headSignals{j}];
+                    signalName = headSignals{j};
                     x = data.(signalName);
                     resampledData.(signalName) = nan(size(rest));
                     

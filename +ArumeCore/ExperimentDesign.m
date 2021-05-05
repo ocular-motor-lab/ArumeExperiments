@@ -51,6 +51,11 @@ classdef ExperimentDesign < handle
         % Set up the trial table when a new session is created
         function trialTable = SetUpTrialTable( this )
             trialTable = table();
+            trialTable.Condition = 1;
+            trialTable.BlockNumber = 1;
+            trialTable.BlockSequenceNumber = 1;
+            trialTable.BlockSequenceRepeat = 1;
+            trialTable.Session = 1;
         end
         
         % run initialization before the first trial is run
@@ -143,6 +148,9 @@ classdef ExperimentDesign < handle
     end
     
     methods (Access = public)
+        function trialTable = GetTrialTable(this)
+            trialTable = this.TrialTable;
+        end
         
         function trialTableOptions = GetDefaultTrialTableOptions(this)
             % Trial sequence and blocking

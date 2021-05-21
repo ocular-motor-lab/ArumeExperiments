@@ -219,8 +219,11 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
             
             shift = 0.5;
             
-            hl = 0.02; % grey line thickness
-            colorl = 0.6*[1 1 1]; % grey line color
+            hl = 0.02; % thin grey line thickness 
+            colorl = 0.6*[1 1 1]; % thin grey line color
+            
+            h2 = 0.02; % diagonal line thickness
+            color2 = 0.6*[1 1 1]; % diagonal line color
             
             CENTER_SQUARE = 0; % 1 for center blurry square 0 for circle
             
@@ -337,8 +340,8 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
                     corners = [
                         -1          0;
                         -1           L;
-                        -1+hl           L;
-                        -1+hl          0;
+                        -1+h2           L;
+                        -1+h2          0;
                         -1          0];
                     
                     corners(1,1) = max(corners(1,1), -1);
@@ -361,15 +364,15 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
                             corners = [1 ./(1+ corners(:,2))  corners(:,1) ./ (1+corners(:,2))];
                     end
                     
-                    patch(corners(:,1), corners(:,2),zeros(size(corners(:,2))), 'facecolor',colorl,'edgecolor','none');
+                    patch(corners(:,1), corners(:,2),zeros(size(corners(:,2))), 'facecolor',color2,'edgecolor','none');
                     
                     % draw diagonal lines
                     
                     corners = [
                         1          0;
                         1           L;
-                        1-hl           L;
-                        1-hl          0;
+                        1-h2           L;
+                        1-h2          0;
                         1          0];
                     
                     corners(1,1) = max(corners(1,1), -1);
@@ -392,7 +395,7 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
                             corners = [1 ./(1+ corners(:,2))  corners(:,1) ./ (1+corners(:,2))];
                     end
                     
-                    patch(corners(:,1), corners(:,2),zeros(size(corners(:,2))), 'facecolor',colorl,'edgecolor','none');
+                    patch(corners(:,1), corners(:,2),zeros(size(corners(:,2))), 'facecolor',color2,'edgecolor','none');
                 end
             end
             

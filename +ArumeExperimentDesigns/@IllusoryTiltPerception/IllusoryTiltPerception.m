@@ -23,6 +23,8 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
             dlg.targetDuration = { 100 '* (ms)' [100 30000] };
             dlg.Target_On_Until_Response = { {'0','{1}'} }; 
             dlg.responseDuration = { 1500 '* (ms)' [100 3000] };
+            
+            dlg.ImageFile = 'TiltWithBlur.tiff';
         end
         
         
@@ -59,7 +61,7 @@ classdef IllusoryTiltPerception < ArumeExperimentDesigns.SVV2AFC
             end
             
             
-            I = imread(fullfile(fileparts(mfilename('fullpath')),'TiltWithBlur.tiff'));
+            I = imread(fullfile(fileparts(mfilename('fullpath')),this.ExperimentOptions.ImageFile));
             Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
             
             Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');

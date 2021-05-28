@@ -92,14 +92,14 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
                     
                     this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
                 case 'NonIlusoryTiltRight'
-                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NonTiltBlur.tiff'));
+                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NonTilt.tiff'));
                     Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
                     
                     this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
                     
                 case 'NonIllusoryTiltLeft'
-                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NonTiltBlur.tiff'));
+                    I = imread(fullfile(fileparts(mfilename('fullpath')),'NonTilt.tiff'));
                     Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
                     

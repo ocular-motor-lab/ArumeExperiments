@@ -59,14 +59,14 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
                     Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
                     
-                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
                     
                 case 'IllusoryTiltLeft'
                     I = imread(fullfile(fileparts(mfilename('fullpath')),'TiltWithBlur.tiff'));
                     Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
                     
-                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
                 case 'RealSmallTiltLeft'
                     I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.jpg'));
                     Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
@@ -195,18 +195,20 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
             conditions{1,1} = 'IllusoryTiltLeft';
             conditions{1,2} = 'IlusoryTiltRight';
             
-            conditions{2,1} = 'RealSmallTiltLeft'; 
-            conditions{2,2} = 'RealSmallTiltRight'; 
+            conditions{2,1} = 'NonIlusoryTiltRight';
+            conditions{2,2} = 'NonIllusoryTiltLeft';
             
-            conditions{3,1} = 'RealLargeTiltLeft';
-            conditions{3,2} = 'RealLargeTiltRight';
+            conditions{3,1} = 'RealSmallTiltLeft'; 
+            conditions{3,2} = 'RealSmallTiltRight'; 
+            
+            conditions{4,1} = 'RealLargeTiltLeft';
+            conditions{4,2} = 'RealLargeTiltRight';
             
             % adding the non-illusory stimuli to the plot methods
             
-            % conditions{4,1} = 'RealLargeTiltLeft';
-            % conditions{4,2} = 'RealLargeTiltRight';
+
             
-            trialTorsion = nan(3,2,10,1000);
+            trialTorsion = nan(4,2,10,1000);
             
             for i=1:size(conditions,1)
                 for j=1:2
@@ -231,6 +233,9 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
             time = 0:0.002:20;
             time = time(1:end-1);
             figure
+
+            
+            
             subplot(2,4,1);
             plot(time, squeeze(trialTorsion(1,1,:,:))','b');
             hold
@@ -241,22 +246,20 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
             plot(time, squeeze(trialTorsion(2,1,:,:))','b');
             hold
             plot(time, squeeze(trialTorsion(2,2,:,:))','r');
-            title('Real tilt small')
+            title('NonIllusory tilt small')
             
             subplot(2,4,3);
             plot(time, squeeze(trialTorsion(3,1,:,:))','b');
             hold
             plot(time, squeeze(trialTorsion(3,2,:,:))','r');
+            title('Real tilt small')
+               
+            subplot(2,4,4);
+            plot(time, squeeze(trialTorsion(4,1,:,:))','b');
+            hold
+            plot(time, squeeze(trialTorsion(4,2,:,:))','r');
             title('Real tilt large')
-            
-            %adding a subplot for the non-illusory stimuli (small)
-            
-            %subplot(2,4,4);
-            %plot(time, squeeze(trialTorsion(3,1,:,:))','b');
-            %hold
-            %plot(time, squeeze(trialTorsion(3,2,:,:))','r');
-            %title('NonIllusory tilt small')
-            
+           
             subplot(2,4,5);
             plot(time, nanmean(squeeze(trialTorsion(1,1,:,:))),'b');
             hold
@@ -267,21 +270,19 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
             plot(time, nanmean(squeeze(trialTorsion(2,1,:,:))),'b');
             hold
             plot(time, nanmean(squeeze(trialTorsion(2,2,:,:))),'r');
-            title('Real tilt small (avg.)')
+            title('NonIllusory tilt (avg.)')
             
             subplot(2,4,7);
             plot(time, nanmean(squeeze(trialTorsion(3,1,:,:))),'b');
             hold
             plot(time, nanmean(squeeze(trialTorsion(3,2,:,:))),'r');
+            title('Real tilt small (avg.)')
+            
+            subplot(2,4,8);
+            plot(time, nanmean(squeeze(trialTorsion(4,1,:,:))),'b');
+            hold
+            plot(time, nanmean(squeeze(trialTorsion(4,2,:,:))),'r');
             title('Real tilt large (avg.)')
-            
-            %adding a subplot for the non-illusory stimuli
-            
-            %subplot(2,4,8);
-            %plot(time, nanmean(squeeze(trialTorsion(1,1,:,:))),'b');
-            %hold
-            %plot(time, nanmean(squeeze(trialTorsion(1,2,:,:))),'r');
-            %title('NonIllusory tilt (avg.)')
             
             
             set(get(gcf,'children'),'ylim',[-1 1])

@@ -41,6 +41,13 @@ classdef ExperimentRun < matlab.mixin.Copyable
     
     methods(Static=true)
         
+        %% setUpNewRun
+        function newRun = SetUpNewRun( experimentDesign )
+            newRun = ArumeCore.ExperimentRun();
+            newRun.pastTrialTable           = table([],categorical([]),'VariableNames',{'TrialNumber' 'TrialResult'});
+            newRun.originalFutureTrialTable = experimentDesign.GetTrialTable();
+            newRun.futureTrialTable         = newRun.originalFutureTrialTable;
+        end
         function run = LoadRunData( data )
             
             % create the new object

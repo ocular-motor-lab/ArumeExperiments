@@ -22,6 +22,7 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             dlg.Min_Dot_Diam = {0.1  '* (deg)' [0.01 100] };
             dlg.Max_Dot_Diam = {0.4  '* (deg)' [0.01 100] };
             dlg.Number_of_Dot_Sizes = {5 '* (N)' [1 100] };
+            dlg.Dot_Brightness = {255 '* (0-255)' [0 255] };
             
             dlg.OKN_Speed = 20;
             
@@ -47,7 +48,7 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             
             %% override defaults
             dlg.fixationDuration = { 500 '* (ms)' [1 3000] };
-            dlg.targetDuration = { 100 '* (ms)' [100 30000] };
+            dlg.targetDuration = { 100 '* (ms)' [30 30000] };
             dlg.Target_On_Until_Response = { {'0','{1}'} }; 
             dlg.responseDuration = { 1500 '* (ms)' [100 3000] };
         end
@@ -164,7 +165,7 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
            
                 [center(1), center(2)] = RectCenter(this.Graph.wRect);
                         this.s( this.s>63) = 63;
-                        Screen('DrawDots', graph.window, this.xymatrix, this.s, WhiteIndex(graph.window), center,1);  % change 1 to 0 to draw square dots
+                        Screen('DrawDots', graph.window, this.xymatrix, this.s, this.ExperimentOptions.Dot_Brightness, center,1);  % change 1 to 0 to draw square dots
                 
                 
                 this.t = this.t + dt;                         % update theta

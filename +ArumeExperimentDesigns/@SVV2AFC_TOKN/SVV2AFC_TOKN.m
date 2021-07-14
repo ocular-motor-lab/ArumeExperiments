@@ -34,6 +34,7 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 10;
+%             dlg.Total
             dlg.TrialsBeforeBreak = 150;
             dlg.TrialAbortAction = 'Repeat';
             
@@ -74,7 +75,7 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
             trialTableOptions.trialAbortAction = 'Delay';
-            trialTableOptions.trialsPerSession = 100;
+            trialTableOptions.trialsPerSession = 200;
             trialTableOptions.numberOfTimesRepeatBlockSequence = 5;
             trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
         end
@@ -99,7 +100,7 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             if (isempty(this.xymatrix))
                 % prepare dots
                 
-                mon_width   = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth;   % horizontal dimension of viewable screen (cm)
+                mon_width   = this.ExperimentOptions.DisplayOptions.ScreenWidth;   % horizontal dimension of viewable screen (cm)
                 v_dist      = this.ExperimentOptions.DisplayOptions.ScreenDistance ;   % viewing distance (cm)
                 
                 ndots       = this.ExperimentOptions.Number_of_Dots; % number of dots

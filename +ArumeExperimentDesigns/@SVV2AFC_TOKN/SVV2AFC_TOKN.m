@@ -243,12 +243,37 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
     % ---------------------------------------------------------------------
     methods ( Access = public )
       
+        function sessionDataTable = PrepareSessionDataTable(this, sessionDataTable, options)
+            
+            [right_spv, right_positionFiltered] = VOGAnalysis.GetSPV_Simple(this.Session.samplesDataTable.Time, this.Session.samplesDataTable.RightT);
+            [left_spv, left_positionFiltered] = VOGAnalysis.GetSPV_Simple(this.Session.samplesDataTable.Time, this.Session.samplesDataTable.LeftT);
+            
+            
+            sessionDataTable.AVG_leftSPV = nanmedian(left_spv);
+            sessionDataTable.AVG_rightSPV = nanmedian(right_spv);
+            sessionDataTable.AVG_leftTorsion = nanmedian(left_positionFiltered);
+            sessionDataTable.AVG_rightTorsion = nanmedian(right_positionFiltered);
+            
+            torsion = (left_positionFiltered + right_positionFiltered )/2;
+            medianTorsion = nanmedian(torsion);
+            trialDataTable = this.Session.trialDataTable;
+            
+            avgTorsionPerTrial = nan(height(trialDataTable,1));
+            % identify trials < median torsion and > median torsion
+            for i=1:
+                avgTorsionPerTrial(i)  = nanmean( trial start to trial end)
+            end
+            
+            trialsAbove = avgTorsionPerTrial>medianTorsion;
+            
+            % then calculate SVV for those two groups of trials
+        end
     end
     % ---------------------------------------------------------------------
     % Plot methods
     % ---------------------------------------------------------------------
     methods ( Access = public )
-         end
+    end
     
     % ---------------------------------------------------------------------
     % Utility methods

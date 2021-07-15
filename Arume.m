@@ -22,7 +22,7 @@ classdef Arume < handle
     % The projects can be managed with the GUI but also with command line.
     
     properties (Constant)
-        version_number = '1.0.20210330'
+        version_number = '1.0.20210715'
     end
     
     properties( SetAccess=private )

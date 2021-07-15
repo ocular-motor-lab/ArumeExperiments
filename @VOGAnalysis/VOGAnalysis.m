@@ -2166,12 +2166,12 @@ classdef VOGAnalysis < handle
             %       - spv: instantaneous slow phase velocity.
             %       - positionFiltered: corresponding filtered position signal.
             
-            firstPassVThrehold              = 1000;  %deg/s
+            firstPassVThrehold              = 100;  %deg/s
             firstPassMedfiltWindow          = 4;    %s
             firstPassMedfiltNanFraction     = 0.25;   %
             firstPassPadding                = 30;   %ms
             
-            secondPassVThrehold             = 100;   %deg/s
+            secondPassVThrehold             = 10;   %deg/s
             secondPassMedfiltWindow         = 1;    %s
             secondPassMedfiltNanFraction    = 0.5;   %
             secondPassPadding               = 30;   %ms
@@ -2189,7 +2189,7 @@ classdef VOGAnalysis < handle
             % used the velocity without first past of quick phases
             % to get a estimate of the spv and substract it from
             % the velocity
-            v2 = spv-nanmedfilt(spv,samplerate*firstPassMedfiltWindow,firstPassMedfiltNanFraction);
+            v2 = sgolayfilt(spv-nanmedfilt(spv,samplerate*firstPassMedfiltWindow,firstPassMedfiltNanFraction),1,11);
             
             % do a second pass for the quick phases (>10 deg/s)
             qp2 = boxcar(abs(v2)>secondPassVThrehold, round(secondPassPadding*samplerate/1000))>0;
@@ -2198,7 +2198,7 @@ classdef VOGAnalysis < handle
             % get a filted and decimated version of the spv at 1
             % sample per second only if one fifth of the samples
             % are not nan for the 1 second window
-            spv = nanmedfilt(spv,samplerate*secondPassMedfiltWindow,secondPassMedfiltNanFraction);
+            spv = nanmedfilt(sgolayfilt(spv,1,11),samplerate*secondPassMedfiltWindow,secondPassMedfiltNanFraction);
             positionFiltered = nanmedfilt(position,samplerate,secondPassMedfiltNanFraction);
         end
         
@@ -2489,8 +2489,8 @@ classdef VOGAnalysis < handle
             %%
             pupilSizeTh = resData.Properties.UserData.params.CleanUp.pupilSizeTh;
             FS = resData.Properties.UserData.sampleRate;
-            rawData = resData.Properties.UserData.calibratedData;
-            resData = resData.Properties.UserData.cleanedData;
+%             rawData = resData.Properties.UserData.calibratedData;
+%             resData = resData.Properties.UserData.cleanedData;
             
             
             if ( any(strcmp(rawData.Properties.VariableNames,'Time')))

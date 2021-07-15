@@ -374,32 +374,24 @@ classdef SVV2AFC < ArumeExperimentDesigns.EyeTracking
         
         function sessionDataTable = PrepareSessionDataTable(this, sessionDataTable, options)
             
+            if (iscategorical(this.Session.trialDataTable.TrialResult))
+                incorrectTrials = this.Session.trialDataTable.TrialResult~= 'CORRECT';
+            else
+                incorrectTrials = this.Session.trialDataTable.TrialResult>0;
+            end
+            
             
             angles = this.GetAngles();
-            angles(this.Session.trialDataTable.TrialResult>0) = [];
+            angles(incorrectTrials) = [];
             
             respones = this.GetLeftRightResponses();
-            respones(this.Session.trialDataTable.TrialResult>0) = [];
+            respones(incorrectTrials) = [];
             
-%             angles = angles(101:201);
-%             respones = respones(101:201);
             [SVV, a, p, allAngles, allResponses,trialCounts, SVVth] = ArumeExperimentDesigns.SVV2AFC.FitAngleResponses( angles, respones);
             
             
-            data = sessionDataTable;
-            if ( contains(this.Session.sessionCode,'LED') )
-                data.TiltSide = 'LeftTilt';
-            elseif (contains(this.Session.sessionCode,'RED'))
-                data.TiltSide = 'RightTilt';
-            elseif (contains(this.Session.sessionCode,'Upright'))
-                data.TiltSide = 'Upright';
-            end
-            data.TiltSide =categorical(cellstr(data.TiltSide));
-            
-            data.SVV = SVV;
-            data.SVVth = SVVth;
-            
-            sessionDataTable = data;
+            sessionDataTable.SVV = SVV;
+            sessionDataTable.SVVth = SVVth;
         end
         
         % Function that gets the angles of each trial with 0 meaning
@@ -501,51 +493,6 @@ classdef SVV2AFC < ArumeExperimentDesigns.EyeTracking
             ylabel({'Percent answered' 'tilted right'}, 'fontsize',16);
             xlabel('Angle (deg)', 'fontsize',16);
         end
-        
-        function plotResults = Plot_SVV_SigmoidUpDown(this)
-            analysisResults = 0;
-            
-            ds = this.Session.trialDataTable;
-            ds(ds.TrialResult>0,:) = [];
-            
-            figure('position',[400 100 1000 600],'color','w','name',this.Session.name)
-            
-            subds = ds(strcmp(ds.Position,'Up'),:);
-            subds((subds.Response==0 & subds.Angle<-50) | (subds.Response==1 & subds.Angle>50),:) = [];
-            
-            [SVV, a, p, allAngles, allResponses,trialCounts] = ArumeExperimentDesigns.SVV2AFC.FitAngleResponses( subds.Angle, subds.Response);
-            
-            set(gca,'nextplot','add', 'fontsize',12);
-            
-            plot( allAngles, allResponses,'^', 'color', [0.7 0.7 0.7], 'markersize',10,'linewidth',2)
-            plot(a,p, 'color', 'k','linewidth',2);
-            line([SVV,SVV], [0 100], 'color','k','linewidth',2);
-            plot(SVV, 0,'^', 'markersize',10, 'markerfacecolor','k', 'color','k','linewidth',2);
-            
-            
-            text(30, 80, sprintf('SVV UP: %0.2f°',SVV), 'fontsize',16,'HorizontalAlignment','right');
-                      
-            
-            subds = ds(strcmp(ds.Position,'Down'),:);
-            subds((subds.Response==0 & subds.Angle<-50) | (subds.Response==1 & subds.Angle>50),:) = [];
-            
-            [SVV, a, p, allAngles, allResponses,trialCounts] = ArumeExperimentDesigns.SVV2AFC.FitAngleResponses( subds.Angle, subds.Response);
-            
-            plot( allAngles, allResponses,'v', 'color', [0.7 0.7 0.7], 'markersize',10,'linewidth',2)
-            plot(a,p, 'color', 'k','linewidth',2);
-            line([SVV, SVV], [0 100], 'color','k','linewidth',2);
-            plot(SVV, 100,'v', 'markersize',10, 'markerfacecolor','k', 'color','k','linewidth',2);
-            
-            text(30, 60, sprintf('SVV DOWN: %0.2f°',SVV), 'fontsize',16,'HorizontalAlignment','right');
-            
-            
-            xlabel('Angle (deg)', 'fontsize',16);
-            ylabel({'Percent answered' 'tilted right'}, 'fontsize',16);
-            
-            set(gca,'xlim',[-30 30],'ylim',[-10 110])
-            set(gca,'xgrid','on')
-            set(gca,'xcolor',[0.3 0.3 0.3],'ycolor',[0.3 0.3 0.3]);
-        end 
     end
     
     % ---------------------------------------------------------------------

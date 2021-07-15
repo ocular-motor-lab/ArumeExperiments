@@ -65,11 +65,11 @@ classdef Display < handle
             
             graph.screens = Screen('Screens');
             graph.selectedScreen=max(graph.screens);
-             graph.selectedScreen=2;
+           %  graph.selectedScreen=2;
             
             %-- window
             Screen('Preference', 'ConserveVRAM', 64);
-            if (~exper.ExperimentOptions.Debug.DebugMode || max(graph.screens)<2)
+            if (~exper.ExperimentOptions.Debug.DebugMode)
                 [graph.window, graph.wRect] = Screen('OpenWindow', graph.selectedScreen, 0, [], [], [], 0, 10);
             else
                 [graph.window, graph.wRect] = Screen('OpenWindow', graph.selectedScreen, 0, [10 10 900 600], [], [], 0, 10);

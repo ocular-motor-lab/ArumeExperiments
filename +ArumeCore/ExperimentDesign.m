@@ -41,6 +41,8 @@ classdef ExperimentDesign < handle
                 dlg.DisplayOptions.ScreenWidth          = { 40 '* (cm)' [1 3000] };
                 dlg.DisplayOptions.ScreenHeight         = { 30 '* (cm)' [1 3000] };
                 dlg.DisplayOptions.ScreenDistance       = { 135 '* (cm)' [1 3000] };
+                dlg.DisplayOptions.ShowTrialTable       = { {'0','{1}'} };
+                dlg.DisplayOptions.PlaySound            = { {'0','{1}'} };
                 
                 dlg.HitKeyBeforeTrial = 0;
                 dlg.TrialDuration = 10;
@@ -510,7 +512,7 @@ classdef ExperimentDesign < handle
                             % experiment is set to ask for hit key before
                             % every trial
                             if ( (~isempty(this.Session.currentRun.pastTrialTable) && this.Session.currentRun.pastTrialTable.TrialResult(end) == Enum.trialResult.ABORT) ...
-                                     || this.ExperimentOptions.HitKeyBeforeTrial )
+                                    || this.ExperimentOptions.HitKeyBeforeTrial )
                                 dlgResult = this.Graph.DlgHitKey( 'Hit a key to continue',[],[]);
                                 if ( ~dlgResult )
                                     state = IDLE;
@@ -575,7 +577,9 @@ classdef ExperimentDesign < handle
                                         % -- POST TRIAL ---------------------------------------------
                                         %------------------------------------------------------------
                                         
-                                        this.PlaySound(thisTrialData.TrialResult);
+                                        if ( this.ExperimentOptions.DisplayOptions.PlaySound)
+                                            this.PlaySound(thisTrialData.TrialResult);
+                                        end
                                         
                                         thisTrialData.TimePostTrialStart = GetSecs;
                                         
@@ -608,16 +612,19 @@ classdef ExperimentDesign < handle
                                 end
                             end
                             
+                            
                             % -- Update past trial table
                             this.Session.currentRun.AddPastTrialData(thisTrialData);
                             
-                            % -- Display trial Table for last 20 trials
-                            data = this.Session.currentRun.pastTrialTable;
-                            varSelection = intersect(strsplit(this.ExperimentOptions.Debug.DisplayVariableSelection,' '),data.Properties.VariableNames,'stable');
-                            if ( ~this.ExperimentOptions.Debug.DebugMode )
-                                disp(data(max(1,end-20):end,varSelection));
-                            else
-                                disp(data);
+                            if ( this.ExperimentOptions.DisplayOptions.ShowTrialTable)
+                                % -- Display trial Table for last 20 trials
+                                data = this.Session.currentRun.pastTrialTable;
+                                varSelection = intersect(strsplit(this.ExperimentOptions.Debug.DisplayVariableSelection,' '),data.Properties.VariableNames,'stable');
+                                if ( ~this.ExperimentOptions.Debug.DebugMode )
+                                    disp(data(max(1,end-20):end,varSelection));
+                                else
+                                    disp(data);
+                                end
                             end
                             
                             

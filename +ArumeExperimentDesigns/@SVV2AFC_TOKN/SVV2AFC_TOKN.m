@@ -23,6 +23,7 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             dlg.Max_Dot_Diam = {0.4  '* (deg)' [0.01 100] };
             dlg.Number_of_Dot_Sizes = {5 '* (N)' [1 100] };
             dlg.Dot_Brightness = {255 '* (0-255)' [0 255] };
+            %dlg.Target_Brightness = {255 '* (0-255)' [0 255] };
             
             dlg.OKN_Speed = 20;
             
@@ -39,9 +40,9 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             dlg.TrialAbortAction = 'Repeat';
             
             
-            dlg.DisplayOptions.ScreenWidth          = { 121 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenHeight         = { 68 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenDistance       = { 60 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenWidth          = { 144 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenHeight         = { 82.4 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenDistance       = { 84.5 '* (cm)' [1 3000] };
                 dlg.DisplayOptions.ShowTrialTable       = { {'{0}','1'} };
                 dlg.DisplayOptions.PlaySound            = { {'{0}','1'} };
             

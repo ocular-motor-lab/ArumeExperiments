@@ -35,6 +35,7 @@ classdef SVV2AFC < ArumeExperimentDesigns.EyeTracking
             
             dlg.Type_of_line = { '{Radius}|Diameter'} ;
             dlg.Length_of_line = { 300 '* (pix)' [10 1000] };
+            dlg.Target_Brightness = { 255 '* ' [1 3000] };
             
             dlg.fixationDuration = { 500 '* (ms)' [1 3000] };
             dlg.targetDuration = { 100 '* (ms)' [100 30000] };
@@ -100,6 +101,7 @@ classdef SVV2AFC < ArumeExperimentDesigns.EyeTracking
 %                 end
 %             end
             
+                this.targetColor = this.targetColor/255*this.ExperimentOptions.Target_Brightness;
         end
         
         function [trialResult, thisTrialData] = runPreTrial( this, thisTrialData )

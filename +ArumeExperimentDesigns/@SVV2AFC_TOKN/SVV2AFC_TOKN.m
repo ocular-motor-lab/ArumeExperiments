@@ -175,7 +175,6 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
                 
                 
                 
-                
                 %-- Find the center of the screen
                 [mx, my] = RectCenter(graph.wRect);
                 

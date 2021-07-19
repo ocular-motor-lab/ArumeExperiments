@@ -255,20 +255,25 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             sessionDataTable.AVG_rightSPV = nanmedian(right_spv);
             sessionDataTable.AVG_leftTorsion = nanmedian(left_positionFiltered);
             sessionDataTable.AVG_rightTorsion = nanmedian(right_positionFiltered);
-            
-            torsion = (left_positionFiltered + right_positionFiltered )/2;
-            medianTorsion = nanmedian(torsion);
-            trialDataTable = this.Session.trialDataTable;
-            
-            avgTorsionPerTrial = nan(height(trialDataTable,1));
-            % identify trials < median torsion and > median torsion
-            for i=1:
-                avgTorsionPerTrial(i)  = nanmean( trial start to trial end)
-            end
-            
-            trialsAbove = avgTorsionPerTrial>medianTorsion;
-            
-            % then calculate SVV for those two groups of trials
+%             
+%              torsion = (left_positionFiltered + right_positionFiltered )/2;
+%              medianTorsion = nanmedian(torsion);
+%              trialDataTable = this.Session.trialDataTable;
+% %             
+%              avgTorsionPerTrial = nan(height(trialDataTable),1);
+% 
+% %             % identify trials < median torsion and > median torsion
+%              for i=1:height(trialDataTable);
+%                  FrameNumberstart = trialDataTable.EyeTrackerFrameNumberTrialStart (i)
+%                  FrameNumberend = trialDataTable(EyeTrackerFrameNumberTrialStop,i)
+%                  avgTorsionPerTrial(i)  = nanmean(samplesDataTable.trial start to trial end)
+%              end
+% %             
+%              trialsAbove = avgTorsionPerTrial>medianTorsion;
+%              trialsBelow = avgTorsionPerTrial<medianTorsion;
+%              
+%              trialDataTable.AboveorBelow = trialsAbove;
+% %             % then calculate SVV for those two groups of trials
         end
     end
     % ---------------------------------------------------------------------

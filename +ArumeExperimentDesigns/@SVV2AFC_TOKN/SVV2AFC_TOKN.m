@@ -53,6 +53,8 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             dlg.targetDuration = { 100 '* (ms)' [30 30000] };
             dlg.Target_On_Until_Response = { {'0','{1}'} }; 
             dlg.responseDuration = { 1500 '* (ms)' [100 3000] };
+            
+            dlg.Number_Of_Blocks_To_Run = 5;
         end
         
         
@@ -67,17 +69,13 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             
             i = i+1;
             conditionVars(i).name   = 'Position';
-            conditionVars(i).values = {'Up'};
-            
-            i = i+1;
-            conditionVars(i).name   = 'OKN';
-            conditionVars(i).values = {'CW' 'CCW'};
+            conditionVars(i).values = {'Up' 'Down'};
             
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
             trialTableOptions.trialAbortAction = 'Delay';
             trialTableOptions.trialsPerSession = 200;
-            trialTableOptions.numberOfTimesRepeatBlockSequence = 5;
+            trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.Number_Of_Blocks_To_Run;
             trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
         end
         

@@ -1,7 +1,7 @@
 classdef EyeTracking  < ArumeCore.ExperimentDesign
     
     properties
-        eyeTracker
+        eyeTracker;
     end
     
     % ---------------------------------------------------------------------

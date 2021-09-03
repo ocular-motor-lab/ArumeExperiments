@@ -12,6 +12,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             dlg = GetOptionsDialog@ArumeCore.ExperimentDesign(this, importing);
             
             dlg.UseEyeTracker       = { {'0' '{1}'} };
+            dlg.EyeTracker = { {'{OpenIris}' 'Fove'} };
             
             if ( exist('importing','var') && importing )
                 dlg.DataFiles = { {['uigetfile(''' fullfile(pwd,'*.txt') ''',''MultiSelect'', ''on'')']} };
@@ -153,45 +154,75 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
         end
         
         function [samplesDataTable, cleanedData, calibratedData, rawData] = PrepareSamplesDataTable(this, options)
-            samplesDataTable = table();
-            cleanedData = table();
-            calibratedData = table();
-            rawData = table();
             
-            if ( ~isprop(this.Session.currentRun, 'LinkedFiles' ) || ~isfield(this.Session.currentRun.LinkedFiles,  'vogDataFile') )
-                return;
+            if ( isfield(this.ExperimentOptions,'EyeTracker') )
+                eyeTrackerType = this.ExperimentOptions.EyeTracker;
+            else
+                eyeTrackerType = 'OpenIris';
             end
             
-            dataFiles = this.Session.currentRun.LinkedFiles.vogDataFile;
-            calibrationFiles = this.Session.currentRun.LinkedFiles.vogCalibrationFile;
+            switch(eyeTrackerType)
+                case 'OpenIris'
+                    
+                    samplesDataTable = table();
+                    cleanedData = table();
+                    calibratedData = table();
+                    rawData = table();
+                    
+                    if ( ~isprop(this.Session.currentRun, 'LinkedFiles' ) || ~isfield(this.Session.currentRun.LinkedFiles,  'vogDataFile') )
+                        return;
+                    end
+                    
+                    dataFiles = this.Session.currentRun.LinkedFiles.vogDataFile;
+                    calibrationFiles = this.Session.currentRun.LinkedFiles.vogCalibrationFile;
+                    
+                    if (~iscell(dataFiles) )
+                        dataFiles = {dataFiles};
+                    end
+                    
+                    if (~iscell(calibrationFiles) )
+                        calibrationFiles = {calibrationFiles};
+                    end
+                    
+                    if (length(calibrationFiles) == 1)
+                        calibrationFiles = repmat(calibrationFiles,size(dataFiles));
+                    elseif length(calibrationFiles) ~= length(dataFiles)
+                        error('ERROR preparing sample data set: The session should have the same number of calibration files as data files or 1 calibration file');
+                    end
+                    
+                    [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleData(this.Session.dataPath, dataFiles, calibrationFiles, options);
+                    
+                    a = Arume;
+                    % TODO: This needs to be improved
+                    cal = a.currentProject.findSession(this.Session.subjectCode,'Cal');
+                    if ( ~isempty(cal))
+                        % RECALIBRATE DATA WITH BEHAVIORAL CALIBRATION FROM ANOTHER
+                        % SESSION
                         
-            if (~iscell(dataFiles) )
-                dataFiles = {dataFiles};
-            end
-            
-            if (~iscell(calibrationFiles) )
-                calibrationFiles = {calibrationFiles};
-            end
-            
-            if (length(calibrationFiles) == 1)
-                calibrationFiles = repmat(calibrationFiles,size(dataFiles));
-            elseif length(calibrationFiles) ~= length(dataFiles)
-                error('ERROR preparing sample data set: The session should have the same number of calibration files as data files or 1 calibration file');
-            end
-            
-            [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleData(this.Session.dataPath, dataFiles, calibrationFiles, options);
-            
-            a = Arume;
-            cal = a.currentProject.findSession(this.Session.subjectCode,'Cal');
-            if ( ~isempty(cal))
-                % RECALIBRATE DATA WITH BEHAVIORAL CALIBRATION FROM ANOTHER
-                % SESSION
-                
-                reCalibratedData   = VOGAnalysis.CalibrateData(samplesDataTable, cal.analysisResults.calibrationTable);
-
-                disp('RECALIBRATING DATA');
-                cal.analysisResults.calibrationTable
-                samplesDataTable = reCalibratedData;
+                        reCalibratedData   = VOGAnalysis.CalibrateData(samplesDataTable, cal.analysisResults.calibrationTable);
+                        
+                        disp('RECALIBRATING DATA');
+                        cal.analysisResults.calibrationTable
+                        samplesDataTable = reCalibratedData;
+                    end
+                case 'Fove'
+                    
+                    samplesDataTable = table();
+                    cleanedData = table();
+                    calibratedData = table();
+                    rawData = table();
+                    
+                    if ( ~isprop(this.Session.currentRun, 'LinkedFiles' ) || ~isfield(this.Session.currentRun.LinkedFiles,  'vogDataFile') )
+                        return;
+                    end
+                    
+                    dataFiles = this.Session.currentRun.LinkedFiles.vogDataFile;
+                    if (~iscell(dataFiles) )
+                        dataFiles = {dataFiles};
+                    end
+                   
+                    [samplesDataTable, cleanedData, rawData] = VOGAnalysis.LoadCleanAndResampleDataFOVE(this.Session.dataPath, dataFiles, options);
+                    
             end
         end
         
@@ -289,7 +320,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                     end
                     
                     % average both eyes
-                    samplesData.(LRdataVars{i}) = nanmean(samplesData{:,{['Left' LRdataVars{i}],['Right' LRdataVars{i}]}},2);
+                    samplesData.(LRdataVars{i}) = mean(samplesData{:,{['Left' LRdataVars{i}],['Right' LRdataVars{i}]}},2,'omitnan');
                 end
                 
                 dataVars = { 'X' 'Y' 'T' 'LeftX' 'LeftY' 'LeftT' 'RightX' 'RightY' 'RightT'};
@@ -401,7 +432,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                     [vleft, xleft] = VOGAnalysis.GetSPV_SimpleQP(t, samplesDataTable.(['Left' LRdataVars{j}]), samplesDataTable.QuickPhase );
                     [vright, xright] = VOGAnalysis.GetSPV_SimpleQP(t, samplesDataTable.(['Right' LRdataVars{j}]), samplesDataTable.QuickPhase );
                     
-                    vmed = nanmedfilt(nanmean([vleft, vright],2),T,1/2);
+                    vmed = nanmedfilt(mean([vleft, vright],2),T,1/2,'omitnan');
                     samplesDataTable.(['SPV' LRdataVars{j}]) = vmed;
                 end
                 

@@ -317,7 +317,7 @@ classdef VOGAnalysis < handle
                     if ( min(dt) < 0 )
                         % replace the samples with negative time change
                         % with the typical (median) time between samples.
-                        dt(dt<=0) = nanmedian(dt(dt>0));
+                        dt(dt<=0) = median(dt(dt>0),'omitnan');
                         % go back from diff to real time starting on the
                         % first timestamp.
                         t = cumsum([t(1);dt]);
@@ -481,6 +481,88 @@ classdef VOGAnalysis < handle
             eventTable = horzcat(t,tt);
         end
         
+        % FOVE specific functions
+        function [samplesDataTable, cleanedData, calibratedData, rawData] = LoadCleanAndResampleDataFOVE(dataFolder, dataFiles, params)
+            
+            samplesDataTable = table();
+            rawData = table();
+            cleanedData = table();
+            
+            for i=1:length(dataFiles)
+                dataFile = dataFiles{i};
+                cprintf('blue','++ VOGAnalysis :: Reading data File %d of %d = %s ...\n', i, length(dataFiles), dataFile);
+                
+                dataFilePath = fullfile(dataFolder, dataFile);
+                
+                % load and preprocess data
+                
+                [rawDataFile] = VOGAnalysis.LoadFOVEdata(dataFilePath);
+                cleanedDataFile         = VOGAnalysis.CleanData(rawDataFile, params);
+                fileSamplesDataSet      = VOGAnalysis.ResampleData(cleanedDataFile, params);
+                
+                % add a column to indicate which file the samples came from
+                fileSamplesDataSet  = [table(repmat(i,height(fileSamplesDataSet),1),'variablenames',{'FileNumber'}), fileSamplesDataSet];
+                rawDataFile         = [table(repmat(i,height(rawDataFile),1),       'variablenames',{'FileNumber'}), rawDataFile];
+                cleanedDataFile     = [table(repmat(i,height(cleanedDataFile),1),   'variablenames',{'FileNumber'}), cleanedDataFile];
+                
+                if( i>1)
+                    % fix timestamps while concatenating so they
+                    gapSeconds = 100; % gap to add in beteen files
+                    fileSamplesDataSet.Time = fileSamplesDataSet.Time - fileSamplesDataSet.Time(1) + samplesDataTable.Time(end) + gapSeconds;
+                    fileSamplesDataSet.FrameNumber = fileSamplesDataSet.FrameNumber - fileSamplesDataSet.FrameNumber(1) + samplesDataTable.FrameNumber(end) + gapSeconds*fileSamplesDataSet.Properties.UserData.sampleRate;
+                end
+                
+                samplesDataTable = cat(1,samplesDataTable,fileSamplesDataSet);
+                rawData = cat(1,rawData,rawDataFile);
+                cleanedData = cat(1,cleanedData,cleanedDataFile);
+                calibratedData = rawData;
+            end
+        end
+        
+        function [data] = LoadFOVEdata(dataFile)
+            opts = delimitedTextImportOptions("NumVariables", 39);
+            
+            % Specify range and delimiter
+            opts.DataLines = [2, Inf];
+            opts.Delimiter = ",";
+            
+            % Specify column names and types
+            %opts.VariableNames = ["VarName1", "ApplicationTime", "UserMark", "GazeConvergencerayposx", "GazeConvergencerayposy", "GazeConvergencerayposz", "GazeConvergenceraydirx", "GazeConvergenceraydiry", "GazeConvergenceraydirz", "GazeConvergencedistance", "Eyerayleftposx", "Eyerayleftposy", "Eyerayleftposz", "Eyerayleftdirx", "Eyerayleftdiry", "Eyerayleftdirz", "Eyerayrightposx", "Eyerayrightposy", "Eyerayrightposz", "Eyerayrightdirx", "Eyerayrightdiry", "Eyerayrightdirz", "EyeStateleft", "EyeStateright", "Pupilradiusmillimetersleft", "Pupilradiusmillimetersright", "GazedObject", "Eyetorsiondegreesleft", "Eyetorsiondegreesright", "HeadRotation", "PupilShapeleft", "PupilShaperight", "IPD", "IrisRadiusleft", "IrisRadiusright", "VarName36", "VarName37", "VarName38", "VarName39", "VarName40"];
+            %opts.VariableTypes = ["string", "double", "string", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "categorical", "categorical", "double", "double", "string", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double"];
+            opts.VariableNames = ["VarName1", "ApplicationTime", "UserMark", "GazeConvergencerayposx", "GazeConvergencerayposy", "GazeConvergencerayposz", "GazeConvergenceraydirx", "GazeConvergenceraydiry", "GazeConvergenceraydirz", "GazeConvergencedistance", "Eyerayleftposx", "Eyerayleftposy", "Eyerayleftposz", "Eyerayleftdirx", "Eyerayleftdiry", "Eyerayleftdirz", "Eyerayrightposx", "Eyerayrightposy", "Eyerayrightposz", "Eyerayrightdirx", "Eyerayrightdiry", "Eyerayrightdirz", "EyeStateleft", "EyeStateright", "Pupilradiusmillimetersleft", "Pupilradiusmillimetersright", "GazedObject", "Eyetorsiondegreesleft", "Eyetorsiondegreesright", "HeadRotationw", "HeadRotationx", "HeadRotationy", "HeadRotationz", "HeadPositionx", "HeadPositiony", "HeadPositionz", "IPD", "IrisRadiusleft", "IrisRadiusright"];
+            opts.VariableTypes = ["string", "double", "string", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "categorical", "categorical", "double", "double", "string", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double"];
+            
+            % Specify file level properties
+            opts.ExtraColumnsRule = "ignore";
+            opts.EmptyLineRule = "read";
+            
+            % Specify variable properties
+            %opts = setvaropts(opts, ["VarName1", "UserMark", "GazedObject"], "WhitespaceRule", "preserve");
+            %opts = setvaropts(opts, ["VarName1", "UserMark", "EyeStateleft", "EyeStateright", "GazedObject"], "EmptyFieldRule", "auto");
+            %opts = setvaropts(opts, ["GazeConvergencerayposx", "GazeConvergencerayposy", "GazeConvergencerayposz", "GazeConvergenceraydirx", "GazeConvergenceraydiry", "GazeConvergenceraydirz", "GazeConvergencedistance", "Eyerayleftposx", "Eyerayleftposy", "Eyerayleftposz", "Eyerayleftdirx", "Eyerayleftdiry", "Eyerayleftdirz", "Eyerayrightposx", "Eyerayrightposy", "Eyerayrightposz", "Eyerayrightdirx", "Eyerayrightdiry", "Eyerayrightdirz", "Pupilradiusmillimetersleft", "Pupilradiusmillimetersright", "Eyetorsiondegreesleft", "Eyetorsiondegreesright", "IrisRadiusleft", "IrisRadiusright", "VarName36", "VarName37", "VarName39", "VarName40"], "TrimNonNumeric", true);
+            %opts = setvaropts(opts, ["GazeConvergencerayposx", "GazeConvergencerayposy", "GazeConvergencerayposz", "GazeConvergenceraydirx", "GazeConvergenceraydiry", "GazeConvergenceraydirz", "GazeConvergencedistance", "Eyerayleftposx", "Eyerayleftposy", "Eyerayleftposz", "Eyerayleftdirx", "Eyerayleftdiry", "Eyerayleftdirz", "Eyerayrightposx", "Eyerayrightposy", "Eyerayrightposz", "Eyerayrightdirx", "Eyerayrightdiry", "Eyerayrightdirz", "Pupilradiusmillimetersleft", "Pupilradiusmillimetersright", "Eyetorsiondegreesleft", "Eyetorsiondegreesright", "IrisRadiusleft", "IrisRadiusright", "VarName36", "VarName37", "VarName39", "VarName40"], "ThousandsSeparator", ",");
+            opts = setvaropts(opts, ["VarName1", "UserMark", "GazedObject"], "WhitespaceRule", "preserve");
+            opts = setvaropts(opts, ["VarName1", "UserMark", "EyeStateleft", "EyeStateright", "GazedObject"], "EmptyFieldRule", "auto");
+            opts = setvaropts(opts, ["Eyetorsiondegreesright", "IrisRadiusleft", "IrisRadiusright"], "TrimNonNumeric", true);
+            opts = setvaropts(opts, ["Eyetorsiondegreesright", "IrisRadiusleft", "IrisRadiusright"], "ThousandsSeparator", ",");
+            
+            data = readtable(dataFile, opts);
+            
+            % Add the fields that Arume is expecting
+            data.FrameNumber = (1:height(data))';
+            data.LeftFrameNumberRaw = data.FrameNumber;
+            data.RightFrameNumberRaw = data.FrameNumber;
+            data.Time = data.ApplicationTime;
+            
+            %% Do the transformation from raw data to degs
+            data.RightX = -asind(data.Eyerayrightdirx./cosd(asind(data.Eyerayrightdiry))); %(the horizontal component of the right eye)
+            data.RightY = asind(data.Eyerayrightdiry); %(the vertical axis)
+            data.LeftX = -asind(data.Eyerayleftdirx./cosd(asind(data.Eyerayleftdiry)));
+            data.LeftY = asind(data.Eyerayleftdiry);
+            data.RightT = data.Eyetorsiondegreesright;
+            data.LeftT = data.Eyetorsiondegreesleft;
+
+        end
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -702,7 +784,7 @@ classdef VOGAnalysis < handle
                 x = data{:,field};
                 x(targetOnForDriftCorrection) = nan;
                 trend.(field) = nanmedfilt(x,windowSize);
-                trend.(field) = trend.(field) - nanmedian(trend{1:min(50000,end), field});
+                trend.(field) = trend.(field) - median(trend{1:min(50000,end), field},'omitnan');
                 detrendedData{:,field} = data{:,field} - trend{:,field};
             end
         end
@@ -721,6 +803,7 @@ classdef VOGAnalysis < handle
             
             try
                 tic
+                
                 
                 % find what signals are present in the data
                 [eyes, eyeSignals, headSignals] = VOGAnalysis.GetEyesAndSignals(calibratedData);
@@ -844,7 +927,7 @@ classdef VOGAnalysis < handle
 %                         cleanedData.([eyes{i} 'Pupil']) = pupilSmooth;
                         
                         % find blinks and other abnormal pupil sizes or eye movements
-                        pth = nanstd(pupilSmooth)*params.CleanUp.pupilSizeTh; %pth = nanmean(pupilSmooth)*params.CleanUp.pupilSizeTh/100;
+                        pth = std(pupilSmooth,'omitnan')*params.CleanUp.pupilSizeTh; %pth = mean(pupilSmooth,'omitnan')*params.CleanUp.pupilSizeTh/100;
                         pupilSizeChangeOutOfrange = abs(pupilSmooth-pupil) > pth ...                 % pupil size far from smooth pupil size
                             | abs([0;diff(pupil)*rawSampleRate]) > params.CleanUp.pupilSizeChangeTh;        % pupil size changes too suddenly from sample to sample
                         
@@ -915,12 +998,14 @@ classdef VOGAnalysis < handle
                     
                     % TODO: maybe better than blink span find the first N samples
                     % around the blink that are within a more stringent criteria
-                    if ( params.CleanUp.Interpolate_Spikes_of_Bad_Data )
-                        badData  = boxcar( badData  & ~spikes, round(params.CleanUp.BadDataPadding/1000*rawSampleRate))>0;
-                        badDataT = boxcar( badDataT & ~spikest, round(params.CleanUp.BadDataPadding/1000*rawSampleRate))>0;
-                    else
-                        badData  = boxcar( badData, round(params.CleanUp.BadDataPadding/1000*rawSampleRate))>0;
-                        badDataT = boxcar( badDataT, round(params.CleanUp.BadDataPadding/1000*rawSampleRate))>0;
+                    if ( params.CleanUp.BadDataPadding > 0 )
+                        if ( params.CleanUp.Interpolate_Spikes_of_Bad_Data)
+                            badData  = boxcar( badData  & ~spikes, round(params.CleanUp.BadDataPadding/1000*rawSampleRate))>0;
+                            badDataT = boxcar( badDataT & ~spikest, round(params.CleanUp.BadDataPadding/1000*rawSampleRate))>0;
+                        else
+                            badData  = boxcar( badData, round(params.CleanUp.BadDataPadding/1000*rawSampleRate))>0;
+                            badDataT = boxcar( badDataT, round(params.CleanUp.BadDataPadding/1000*rawSampleRate))>0;
+                        end
                     end
                     
                     cleanedData.([eyes{i} 'Spikes']) = spikes;
@@ -1661,13 +1746,13 @@ classdef VOGAnalysis < handle
                         qp1_props.GoodTrhought(i)   = sum(isnan(vel(qpidx))) == 0;
                         
                         qp1_props.Amplitude(i)      = max(pos(qpidx)) - min(pos(qpidx));
-                        qp1_props.MeanPosition(i)   = nanmean(pos(qpidx));
+                        qp1_props.MeanPosition(i)   = mean(pos(qpidx),'omitnan');
                         
                         [m,mi] = max(abs(vel(qpidx)));
                         qp1_props.PeakSpeed(i)      = m;
                         qp1_props.PeakVelocity(i)   = m*sign(vel(qpidx(mi)));
                         qp1_props.PeakVelocityIdx(i)= qpidx(1) -1 + mi;
-                        qp1_props.MeanVelocity(i)   = nanmean(vel(qpidx));
+                        qp1_props.MeanVelocity(i)   = mean(vel(qpidx),'omitnan');
                     end
                     
                     props.(eyes{k}).(rows{j}) = qp1_props;
@@ -1682,17 +1767,17 @@ classdef VOGAnalysis < handle
                 for i=1:size(qp,1)
                     qpidx = qp(i,1):qp(i,2);
                     qp2_props.PeakSpeed(i) = max(speed(qpidx));
-                    qp2_props.MeanSpeed(i) = nanmean(speed(qpidx));
+                    qp2_props.MeanSpeed(i) = mean(speed(qpidx),'omitnan');
                 end
                 props.(eyes{k}).XY = qp2_props;
             end
             
             % properties common for all eyes and components
             if ( any(contains(eyes,'Left')) && any(contains(eyes,'Right')) )
-                quickPhaseTable.Amplitude      = nanmean([ props.Left.XY.Amplitude props.Right.XY.Amplitude],2);
-                quickPhaseTable.Displacement   = nanmean([ props.Left.XY.Displacement props.Right.XY.Displacement],2);
-                quickPhaseTable.PeakSpeed      = nanmean([ props.Left.XY.PeakSpeed props.Right.XY.PeakSpeed],2);
-                quickPhaseTable.MeanSpeed      = nanmean([ props.Left.XY.MeanSpeed props.Right.XY.MeanSpeed],2);
+                quickPhaseTable.Amplitude      = mean([ props.Left.XY.Amplitude props.Right.XY.Amplitude],2,'omitnan');
+                quickPhaseTable.Displacement   = mean([ props.Left.XY.Displacement props.Right.XY.Displacement],2,'omitnan');
+                quickPhaseTable.PeakSpeed      = mean([ props.Left.XY.PeakSpeed props.Right.XY.PeakSpeed],2,'omitnan');
+                quickPhaseTable.MeanSpeed      = mean([ props.Left.XY.MeanSpeed props.Right.XY.MeanSpeed],2,'omitnan');
             elseif(any(contains(eyes,'Left')))
                 quickPhaseTable.Amplitude      = props.Left.XY.Amplitude;
                 quickPhaseTable.Displacement   = props.Left.XY.Displacement;
@@ -1718,7 +1803,7 @@ classdef VOGAnalysis < handle
                 field  = fieldsToAverageAcrossEyes{i};
                 for j=1:3
                     if ( any(contains(eyes,'Left')) && any(contains(eyes,'Right')) )
-                        quickPhaseTable.([rows{j} '_' field ]) = nanmean([ props.Left.(rows{j}).(field) props.Right.(rows{j}).(field)],2);
+                        quickPhaseTable.([rows{j} '_' field ]) = mean([ props.Left.(rows{j}).(field) props.Right.(rows{j}).(field)],2,'omitnan');
                     elseif(any(contains(eyes,'Left')))
                         quickPhaseTable.([rows{j} '_' field ]) = props.Left.(rows{j}).(field);
                     elseif(any(contains(eyes,'Right')))
@@ -1826,12 +1911,12 @@ classdef VOGAnalysis < handle
                         sp1_props.GoodTrhought(i)   = sum(isnan(vel(spidx))) == 0;
                         
                         sp1_props.Amplitude(i)      = max(pos(spidx)) - min(pos(spidx));
-                        sp1_props.MeanPosition(i)   = nanmean(pos(spidx));
+                        sp1_props.MeanPosition(i)   = mean(pos(spidx),'omitnan');
                         
                         [m,mi] = max(vel(spidx));
                         sp1_props.PeakVelocity(i)   = m;
                         sp1_props.PeakVelocityIdx(i)= spidx(1) -1 + mi;
-                        sp1_props.MeanVelocity(i)   = nanmean(vel(spidx));
+                        sp1_props.MeanVelocity(i)   = mean(vel(spidx),'omitnan');
                         
                         %                         if ( sp1_props.GoodTrhought(i) )
                         %                             fun = @(x,xdata)(-x(1) + x(1)*exp(-1/x(2)*xdata)+xdata*x(3));
@@ -1858,7 +1943,7 @@ classdef VOGAnalysis < handle
                 for i=1:size(sp,1)
                     spidx = sp(i,1):sp(i,2);
                     sp2_props.PeakSpeed(i) = max(speed(spidx));
-                    sp2_props.MeanSpeed(i) = nanmean(speed(spidx));
+                    sp2_props.MeanSpeed(i) = mean(speed(spidx),'omitnan');
                 end
                 props.(eyes{k}).XY = sp2_props;
             end
@@ -1866,10 +1951,10 @@ classdef VOGAnalysis < handle
             % properties common for all eyes and components
             % properties common for all eyes and components
             if ( any(contains(eyes,'Left')) && any(contains(eyes,'Right')) )
-                slowPhaseTable.Amplitude      = nanmean([ props.Left.XY.Amplitude props.Right.XY.Amplitude],2);
-                slowPhaseTable.Displacement   = nanmean([ props.Left.XY.Displacement props.Right.XY.Displacement],2);
-                slowPhaseTable.PeakSpeed      = nanmean([ props.Left.XY.PeakSpeed props.Right.XY.PeakSpeed],2);
-                slowPhaseTable.MeanSpeed      = nanmean([ props.Left.XY.MeanSpeed props.Right.XY.MeanSpeed],2);
+                slowPhaseTable.Amplitude      = mean([ props.Left.XY.Amplitude props.Right.XY.Amplitude],2,'omitnan');
+                slowPhaseTable.Displacement   = mean([ props.Left.XY.Displacement props.Right.XY.Displacement],2,'omitnan');
+                slowPhaseTable.PeakSpeed      = mean([ props.Left.XY.PeakSpeed props.Right.XY.PeakSpeed],2,'omitnan');
+                slowPhaseTable.MeanSpeed      = mean([ props.Left.XY.MeanSpeed props.Right.XY.MeanSpeed],2,'omitnan');
             elseif(any(contains(eyes,'Left')))
                 slowPhaseTable.Amplitude      = props.Left.XY.Amplitude;
                 slowPhaseTable.Displacement   = props.Left.XY.Displacement;
@@ -1897,7 +1982,7 @@ classdef VOGAnalysis < handle
                 field  = fieldsToAverageAcrossEyes{i};
                 for j=1:3
                     if ( any(contains(eyes,'Left')) && any(contains(eyes,'Right')) )
-                        slowPhaseTable.([rows{j} '_' field ]) = nanmean([ props.Left.(rows{j}).(field) props.Right.(rows{j}).(field)],2);
+                        slowPhaseTable.([rows{j} '_' field ]) = mean([ props.Left.(rows{j}).(field) props.Right.(rows{j}).(field)],2,'omitnan');
                     elseif(any(contains(eyes,'Left')))
                         slowPhaseTable.([rows{j} '_' field ]) = props.Left.(rows{j}).(field);
                     elseif(any(contains(eyes,'Right')))
@@ -2089,7 +2174,7 @@ classdef VOGAnalysis < handle
             end
             badHeadMoving = nan(size(b));
             if ( ismember('Q1', headSignals) )
-                badHeadMoving = boxcar(cleanedData.HeadMotion > nanmedian(cleanedData.HeadMotion)*params.HFAC,10)>0;
+                badHeadMoving = boxcar(cleanedData.HeadMotion > median(cleanedData.HeadMotion,'omitnan')*params.HFAC,10)>0;
                 b = b | badHeadMoving;
             end
             
@@ -2517,7 +2602,7 @@ classdef VOGAnalysis < handle
                 axes(h(i))
                 %                 plot(rawDataTime, rawData.([eyes{i} 'PupilRaw']))
                 plot(rawDataTime, rawData.([eyes{i} 'Pupil']),'linewidth',2);
-                pth = nanmean(rawData.([eyes{i} 'Pupil']))*pupilSizeTh/100;
+                pth = mean(rawData.([eyes{i} 'Pupil']),'omitnan')*pupilSizeTh/100;
                 plot(rawDataTime, rawData.([eyes{i} 'Pupil'])+pth,'linewidth',1);
                 plot(rawDataTime, rawData.([eyes{i} 'Pupil'])-pth,'linewidth',1);
                 plot(rawDataTime, abs([0;diff(rawData.([eyes{i} 'Pupil']))]))
@@ -2712,13 +2797,13 @@ classdef VOGAnalysis < handle
             figure
             time = data.Time/1000/60;
             subplot(3,1,1,'nextplot','add')
-            plot(time, data.LeftX-nanmedian(data.LeftX), 'color', [ MEDIUM_BLUE ])
-            plot(time, data.RightX-nanmedian(data.RightX), 'color', [ MEDIUM_RED])
+            plot(time, data.LeftX-median(data.LeftX,'omitnan'), 'color', [ MEDIUM_BLUE ])
+            plot(time, data.RightX-median(data.RightX,'omitnan'), 'color', [ MEDIUM_RED])
             ylabel('Horizontal (deg)','fontsize', 16);
             
             subplot(3,1,2,'nextplot','add')
-            plot(time, data.LeftY-nanmedian(data.LeftY), 'color', [ MEDIUM_BLUE ])
-            plot(time, data.RightY-nanmedian(data.RightY), 'color', [ MEDIUM_RED])
+            plot(time, data.LeftY-median(data.LeftY,'omitnan'), 'color', [ MEDIUM_BLUE ])
+            plot(time, data.RightY-median(data.RightY,'omitnan'), 'color', [ MEDIUM_RED])
             ylabel('Vertical (deg)','fontsize', 16);
             
             subplot(3,1,3,'nextplot','add')

@@ -256,7 +256,7 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
                  Rowoftrialstart = trialDataTable.SampleStartTrial(j);
                  Rowoftrialend = trialDataTable.SampleStopTrial(j);
                  %Calculation Torsion Average per trial
-                 trialDataTable.TorsionAvg(j) = nanmean((samplesDataTable.RightT(Rowoftrialstart:Rowoftrialend)+samplesDataTable.LeftT(Rowoftrialstart:Rowoftrialend))/2);
+                 trialDataTable.TorsionAvg(j) = mean((samplesDataTable.RightT(Rowoftrialstart:Rowoftrialend)+samplesDataTable.LeftT(Rowoftrialstart:Rowoftrialend))/2,'omitnan');
 
                 % Find duration of time stimulus is being shown 
                 Timetrialstart = samplesDataTable.Time(Rowoftrialstart);
@@ -270,20 +270,20 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
                 samplesDuringStim = Timestimulusstart < samplesDataTable.Time & samplesDataTable.Time < Timestimulusend;
                 %Adding a column to the Trial Data Table that lists the
                 %average Torsion only during stimulus presentation 
-                trialDataTable.TorsionAvgDuringStim(j) = nanmean((samplesDataTable.RightT(samplesDuringStim) + samplesDataTable.LeftT(samplesDuringStim))/2);
+                trialDataTable.TorsionAvgDuringStim(j) = mean((samplesDataTable.RightT(samplesDuringStim) + samplesDataTable.LeftT(samplesDuringStim))/2,'omitnan');
 
              end
             
              %Adding a Column to TrialDataTable that indicates whether
              %Torsion average during trial for stimulus was above or below
              %the average for all trials during stimulus presentation
-             trialDataTable.AboveStimTorsionAvg(trialDataTable.TorsionAvgDuringStim < nanmean(trialDataTable.TorsionAvgDuringStim)) = 0;
-             trialDataTable.AboveStimTorsionAvg(trialDataTable.TorsionAvgDuringStim > nanmean(trialDataTable.TorsionAvgDuringStim)) = 1;
+             trialDataTable.AboveStimTorsionAvg(trialDataTable.TorsionAvgDuringStim < mean(trialDataTable.TorsionAvgDuringStim,'omitnan')) = 0;
+             trialDataTable.AboveStimTorsionAvg(trialDataTable.TorsionAvgDuringStim > mean(trialDataTable.TorsionAvgDuringStim,'omitnan')) = 1;
              
              %Adding a column to the table that indicates above or below
              %average per trial for total torsion.
-             trialDataTable.AboveTotalTorsionAvg(trialDataTable.TorsionAvg < nanmean(trialDataTable.TorsionAvg)) = 0;
-             trialDataTable.AboveTotalTorsionAvg(trialDataTable.TorsionAvg > nanmean(trialDataTable.TorsionAvg)) = 1;
+             trialDataTable.AboveTotalTorsionAvg(trialDataTable.TorsionAvg < mean(trialDataTable.TorsionAvg,'omitnan')) = 0;
+             trialDataTable.AboveTotalTorsionAvg(trialDataTable.TorsionAvg > mean(trialDataTable.TorsionAvg,'omitnan')) = 1;
         end
         
         
@@ -294,10 +294,10 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             
             % Addition of Average slowphase velocity and filtered torsion
             % amplitude of all trials into session data table
-            sessionDataTable.AVG_leftSPV = nanmedian(left_spv);
-            sessionDataTable.AVG_rightSPV = nanmedian(right_spv);
-            sessionDataTable.AVG_leftTorsion = nanmedian(left_positionFiltered);
-            sessionDataTable.AVG_rightTorsion = nanmedian(right_positionFiltered);
+            sessionDataTable.AVG_leftSPV = median(left_spv,'omitnan');
+            sessionDataTable.AVG_rightSPV = median(right_spv,'omitnan');
+            sessionDataTable.AVG_leftTorsion = median(left_positionFiltered,'omitnan');
+            sessionDataTable.AVG_rightTorsion = median(right_positionFiltered,'omitnan');
             
             % Identifying completed trials, classified as "CORRECT"
             correctTrials = this.Session.trialDataTable.TrialResult=='CORRECT';
@@ -318,8 +318,8 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             
             % Determining average torsion during stimulus for trials that
             % were on above average vs. below average.
-            THighTorsion = nanmean(trialDataTable.TorsionAvgDuringStim( correctTrials & trialDataTable.AboveStimTorsionAvg));
-            TLowTorsion = nanmean(trialDataTable.TorsionAvgDuringStim( correctTrials & ~trialDataTable.AboveStimTorsionAvg));
+            THighTorsion = mean(trialDataTable.TorsionAvgDuringStim( correctTrials & trialDataTable.AboveStimTorsionAvg),'omitnan');
+            TLowTorsion = mean(trialDataTable.TorsionAvgDuringStim( correctTrials & ~trialDataTable.AboveStimTorsionAvg),'omitnan');
             
             %Calculating SVV for the trials above and below average
             [SVVHighTorsion, aHighTorsion, pHighTorsion, allAnglesHighTorsion, allResponsesHighTorsion,trialCountsHighTorsion, SVVthHighTorsion, SVVstdHighTorsion] = ...
@@ -360,8 +360,8 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             
             % Calculating average torsion for trials above and below
             % average torsion during stimulus presentation
-            THighTorsion = nanmean(trialDataTable.TorsionAvgDuringStim( correctTrials & trialDataTable.AboveStimTorsionAvg));
-            TLowTorsion = nanmean(trialDataTable.TorsionAvgDuringStim( correctTrials & ~trialDataTable.AboveStimTorsionAvg));
+            THighTorsion = mean(trialDataTable.TorsionAvgDuringStim( correctTrials & trialDataTable.AboveStimTorsionAvg),'omitnan');
+            TLowTorsion = mean(trialDataTable.TorsionAvgDuringStim( correctTrials & ~trialDataTable.AboveStimTorsionAvg),'omitnan');
             
             
             %Calculating SVV

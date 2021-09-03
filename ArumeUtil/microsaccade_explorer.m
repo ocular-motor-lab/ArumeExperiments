@@ -657,13 +657,13 @@ if (~isempty(handles.data.left.x ) )
     if isfield( handles.data,'right') && isempty(handles.data.right.x)
         set(handles.PlotRight, 'value', 0);
     end
-    meanx = nanmean(handles.data.left.x(idx));
-    meany = nanmean(handles.data.left.y(idx));
+    meanx = mean(handles.data.left.x(idx),'omitnan');
+    meany = mean(handles.data.left.y(idx),'omitnan');
 else
     set(handles.PlotLeft, 'value', 0);
     set(handles.PlotRight, 'value', 1);
-    meanx = nanmean(handles.data.right.x(idx));
-    meany = nanmean(handles.data.right.y(idx));
+    meanx = mean(handles.data.right.x(idx),'omitnan');
+    meany = mean(handles.data.right.y(idx),'omitnan');
 end
 
 

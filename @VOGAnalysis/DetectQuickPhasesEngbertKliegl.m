@@ -361,12 +361,12 @@ vel2 = vel(~blink,:);warning off MATLAB:divideByZero
 %vel2 =vel;
 
 % compute threshold
-medx = nanmedian(vel2(:,1));
-msdx = sqrt( nanmedian((vel2(:,1)-medx).^2) );
-medy = nanmedian(vel2(:,2));
-msdy = sqrt( nanmedian((vel2(:,2)-medy).^2) );
-medt = nanmedian(vel2(:,3));
-msdt = sqrt( nanmedian((vel2(:,3)-medt).^2) );
+medx = median(vel2(:,1),'omitnan');
+msdx = sqrt( median((vel2(:,1)-medx).^2,'omitnan') );
+medy = median(vel2(:,2),'omitnan');
+msdy = sqrt( median((vel2(:,2)-medy).^2,'omitnan') );
+medt = median(vel2(:,3),'omitnan');
+msdt = sqrt( median((vel2(:,3)-medt).^2,'omitnan') );
 
 if msdx<realmin
     msdx = sqrt( mean(vel2(:,1).^2) - (mean(vel2(:,1)))^2 );

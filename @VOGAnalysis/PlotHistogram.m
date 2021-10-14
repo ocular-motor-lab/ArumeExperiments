@@ -161,8 +161,8 @@ for i=1:length(data)
                 data{i} =  data{i}(idx);
             end
             
-            meanOfData(i) = nanmean(data{i});
-            stdOfData(i) = nanstd(data{i});
+            meanOfData(i) = mean(data{i},'omitnan');
+            stdOfData(i) = std(data{i},'omitnan');;
             
             % calculate histogram
             if ( strcmp( S.X_Axis, 'Normalize By Max' ) )
@@ -240,10 +240,10 @@ for i=1:length(data)
                 data_idx{jgroup} = find(groups{i} == jgroup);
                 
                 currData = data{i}(data_idx{jgroup});
-                groupMeans(jgroup) = nanmean(currData);
-                groupMedians(jgroup) = nanmedian(currData);
+                groupMeans(jgroup) = mean(currData,'omitnan');
+                groupMedians(jgroup) = median(currData,'omitnan');
                 groupModes(jgroup) = mode(currData);
-                groupStds(jgroup) = nanstd(currData);
+                groupStds(jgroup) = std(currData,'omitnan');
                 
                 
                 % calculate histogram
@@ -312,8 +312,8 @@ for i=1:length(data)
                 fits(i,:) =  mean(cat(3, group_fits{:}),3);
             end
             
-            meanOfData(i) = mean(groupMeans);
-            stdOfData(i) = nanstd(groupStds);
+            meanOfData(i) = mean(groupMeans,'omitnan');
+            stdOfData(i) = nan(groupStds,'omitnan');
             
             out.groupMeans(i, :) = groupMeans;
             out.groupStds(i, :) = groupStds;

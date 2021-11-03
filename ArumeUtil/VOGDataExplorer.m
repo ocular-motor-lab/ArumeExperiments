@@ -525,7 +525,7 @@ classdef VOGDataExplorer < matlab.apps.AppBase
             if ( isfield( app.data.Properties.UserData, 'sampleRate') )
                 app.samplerate = app.data.Properties.UserData.sampleRate;
             else
-                app.samplerate = 1/nanmedian(diff(app.data.Time));
+                app.samplerate = 1/median(diff(app.data.Time),'omitnan');
                 app.data.Properties.UserData.sampleRate = app.samplerate;
             end
             
@@ -986,7 +986,7 @@ classdef VOGDataExplorer < matlab.apps.AppBase
                 if ( ~isnan(app.axesTable.BaseScale(i)))
                     currentScale = app.yScales(find(app.yScales==app.axesTable.BaseScale(i),1,'first') + app.axesTable.ScaleFactor(i));
                     data1 = app.data{app.currentSampleIdx,app.linesTable.DataColumnNumber(app.linesTable.AxesHandle==app.axesTable.Handle(i) & app.linesTable.Show)};
-                    currentOffset = nanmean(data1(:));
+                    currentOffset = mean(data1(:),'omitnan');
                     if ( isnan(currentOffset) )
                         currentOffset = mean(get(app.axesTable.Handle(i),'ylim'));
                     end
@@ -1608,13 +1608,13 @@ classdef VOGDataExplorer < matlab.apps.AppBase
                         row_props.GoodTrhought(i)   = sum(isnan(vel(qpidx))) == 0;
                         
                         row_props.Amplitude(i)      = max(pos(qpidx)) - min(pos(qpidx));
-                        row_props.MeanPosition(i)   = nanmean(pos(qpidx));
+                        row_props.MeanPosition(i)   = mean(pos(qpidx),'omitnan');
                         
                         [m,mi] = max(abs(vel(qpidx)));
                         row_props.PeakSpeed(i)      = m;
                         row_props.PeakVelocity(i)   = m*sign(vel(qpidx(mi)));
                         row_props.PeakVelocityIdx(i)= qpidx(1) -1 + mi;
-                        row_props.MeanVelocity(i)   = nanmean(vel(qpidx));
+                        row_props.MeanVelocity(i)   = mean(vel(qpidx),'omitnan');
                     end
                     
                     props.(eyes{k}).(rows{j}) = row_props;
@@ -1630,7 +1630,7 @@ classdef VOGDataExplorer < matlab.apps.AppBase
                 for i=1:size(startStop,1)
                     qpidx = startStop(i,1):startStop(i,2);
                     qp2_props.PeakSpeed(i) = max(speed(qpidx));
-                    qp2_props.MeanSpeed(i) = nanmean(speed(qpidx));
+                    qp2_props.MeanSpeed(i) = mean(speed(qpidx),'omitnan');
                 end
                 props.(eyes{k}).XY = qp2_props;
             end
@@ -1652,7 +1652,7 @@ classdef VOGDataExplorer < matlab.apps.AppBase
                         continue;
                     end
                     if ( any(contains(eyesPresent,'Left')) && any(contains(eyesPresent,'Right')) )
-                        phaseTable.([rows{j} '_' field ]) = nanmean([ props.Left.(rows{j}).(field) props.Right.(rows{j}).(field)],2);
+                        phaseTable.([rows{j} '_' field ]) = mean([ props.Left.(rows{j}).(field) props.Right.(rows{j}).(field)],2,'omitnan');
                     elseif(any(contains(eyesPresent,'Left')))
                         phaseTable.([rows{j} '_' field ]) = props.Left.(rows{j}).(field);
                     elseif(any(contains(eyesPresent,'Right')))
@@ -1661,7 +1661,7 @@ classdef VOGDataExplorer < matlab.apps.AppBase
                 end
                 
                 if ( isfield(props,'Left') && isfield(props,'Right') && isfield(props.Left.XY,field) && isfield(props.Right.XY,field))
-                    phaseTable.(field) = nanmean([ props.Left.XY.(field) props.Right.XY.(field)],2);
+                    phaseTable.(field) = mean([ props.Left.XY.(field) props.Right.XY.(field)],2,'omitnan');
                 elseif ( isfield(props,'Left') && isfield(props.Left.XY,field))
                     phaseTable.(field) = props.Left.XY.(field);
                 elseif ( isfield(props,'Right') && isfield(props.Right.XY,field))

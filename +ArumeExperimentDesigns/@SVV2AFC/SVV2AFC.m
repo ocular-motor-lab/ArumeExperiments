@@ -446,7 +446,7 @@ classdef SVV2AFC < ArumeExperimentDesigns.EyeTracking
             end
             
             angles = this.GetAngles();
-            angles(this.Session.trialDataTable.TrialResult~='CORRECT') = [];
+            angles(this.Session.trialDataTable.TrialResult ~='CORRECT') = [];
             
             respones = this.GetLeftRightResponses();
             respones(this.Session.trialDataTable.TrialResult~='CORRECT') = [];

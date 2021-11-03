@@ -53,6 +53,8 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             dlg.targetDuration = { 100 '* (ms)' [30 30000] };
             dlg.Target_On_Until_Response = { {'0','{1}'} }; 
             dlg.responseDuration = { 1500 '* (ms)' [100 3000] };
+            
+            dlg.Number_Of_Blocks_To_Run = 5;
         end
         
         
@@ -67,17 +69,13 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
             
             i = i+1;
             conditionVars(i).name   = 'Position';
-            conditionVars(i).values = {'Up'};
-            
-            i = i+1;
-            conditionVars(i).name   = 'OKN';
-            conditionVars(i).values = {'CW' 'CCW'};
+            conditionVars(i).values = {'Up' 'Down'};
             
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
             trialTableOptions.trialAbortAction = 'Delay';
             trialTableOptions.trialsPerSession = 200;
-            trialTableOptions.numberOfTimesRepeatBlockSequence = 5;
+            trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.Number_Of_Blocks_To_Run;
             trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
         end
         
@@ -245,36 +243,179 @@ classdef SVV2AFC_TOKN < ArumeExperimentDesigns.SVV2AFC
     % ---------------------------------------------------------------------
     methods ( Access = public )
       
-        function sessionDataTable = PrepareSessionDataTable(this, sessionDataTable, options)
+        %Trial Data Table Preparation
+        function trialDataTable = PrepareTrialDataTable( this, trialDataTable, options)
+            trialDataTable = this.PrepareTrialDataTable@ArumeExperimentDesigns.EyeTracking(trialDataTable, options);
             
+            samplesDataTable = this.Session.samplesDataTable;
+            
+             
+            % identify trials < median torsion and > median torsion
+             
+             for j = 1:height(trialDataTable)
+                 Rowoftrialstart = trialDataTable.SampleStartTrial(j);
+                 Rowoftrialend = trialDataTable.SampleStopTrial(j);
+                 %Calculation Torsion Average per trial
+                 trialDataTable.TorsionAvg(j) = mean((samplesDataTable.RightT(Rowoftrialstart:Rowoftrialend)+samplesDataTable.LeftT(Rowoftrialstart:Rowoftrialend))/2,'omitnan');
+
+                % Find duration of time stimulus is being shown 
+                Timetrialstart = samplesDataTable.Time(Rowoftrialstart);
+                %Will need to change 0.5 to Fixation Duration from options
+                %of the session
+                Timestimulusstart = Timetrialstart + 0.5;
+                %Will need to change 0.3 to Target Duration from options
+                Timestimulusend = Timetrialstart + 0.5 + 0.03;
+                %Finding the times between the start and end of the
+                %stimulus in the Sample Data Table.
+                samplesDuringStim = Timestimulusstart < samplesDataTable.Time & samplesDataTable.Time < Timestimulusend;
+                %Adding a column to the Trial Data Table that lists the
+                %average Torsion only during stimulus presentation 
+                trialDataTable.TorsionAvgDuringStim(j) = mean((samplesDataTable.RightT(samplesDuringStim) + samplesDataTable.LeftT(samplesDuringStim))/2,'omitnan');
+
+             end
+            
+             %Adding a Column to TrialDataTable that indicates whether
+             %Torsion average during trial for stimulus was above or below
+             %the average for all trials during stimulus presentation
+             trialDataTable.AboveStimTorsionAvg(trialDataTable.TorsionAvgDuringStim < mean(trialDataTable.TorsionAvgDuringStim,'omitnan')) = 0;
+             trialDataTable.AboveStimTorsionAvg(trialDataTable.TorsionAvgDuringStim > mean(trialDataTable.TorsionAvgDuringStim,'omitnan')) = 1;
+             
+             %Adding a column to the table that indicates above or below
+             %average per trial for total torsion.
+             trialDataTable.AboveTotalTorsionAvg(trialDataTable.TorsionAvg < mean(trialDataTable.TorsionAvg,'omitnan')) = 0;
+             trialDataTable.AboveTotalTorsionAvg(trialDataTable.TorsionAvg > mean(trialDataTable.TorsionAvg,'omitnan')) = 1;
+        end
+        
+        
+        function sessionDataTable = PrepareSessionDataTable(this, sessionDataTable, options)
+            % Session Data Table preparation
             [right_spv, right_positionFiltered] = VOGAnalysis.GetSPV_Simple(this.Session.samplesDataTable.Time, this.Session.samplesDataTable.RightT);
             [left_spv, left_positionFiltered] = VOGAnalysis.GetSPV_Simple(this.Session.samplesDataTable.Time, this.Session.samplesDataTable.LeftT);
             
+            % Addition of Average slowphase velocity and filtered torsion
+            % amplitude of all trials into session data table
+            sessionDataTable.AVG_leftSPV = median(left_spv,'omitnan');
+            sessionDataTable.AVG_rightSPV = median(right_spv,'omitnan');
+            sessionDataTable.AVG_leftTorsion = median(left_positionFiltered,'omitnan');
+            sessionDataTable.AVG_rightTorsion = median(right_positionFiltered,'omitnan');
             
-            sessionDataTable.AVG_leftSPV = nanmedian(left_spv);
-            sessionDataTable.AVG_rightSPV = nanmedian(right_spv);
-            sessionDataTable.AVG_leftTorsion = nanmedian(left_positionFiltered);
-            sessionDataTable.AVG_rightTorsion = nanmedian(right_positionFiltered);
+            % Identifying completed trials, classified as "CORRECT"
+            correctTrials = this.Session.trialDataTable.TrialResult=='CORRECT';
             
-            torsion = (left_positionFiltered + right_positionFiltered )/2;
-            medianTorsion = nanmedian(torsion);
+            angles = this.GetAngles();
+            responses = this.GetLeftRightResponses();
+            
+            % Assigning the trial data table to a variable
             trialDataTable = this.Session.trialDataTable;
             
-            avgTorsionPerTrial = nan(height(trialDataTable,1));
-            % identify trials < median torsion and > median torsion
-            for i=1:
-                avgTorsionPerTrial(i)  = nanmean( trial start to trial end)
-            end
+            % Stimulus Angles for Torsion above and below average for all
+            % trials
+            anglesHighTorsion = angles(correctTrials & trialDataTable.AboveStimTorsionAvg);
+            responsesHighTorsion = responses(correctTrials & trialDataTable.AboveStimTorsionAvg);
+            %Low classification = for trials NOT (~) "AboveStimTorsionAvg"
+            anglesLowTorsion = angles(correctTrials & ~trialDataTable.AboveStimTorsionAvg);
+            responsesLowTorsion = responses(correctTrials & ~trialDataTable.AboveStimTorsionAvg);
             
-            trialsAbove = avgTorsionPerTrial>medianTorsion;
+            % Determining average torsion during stimulus for trials that
+            % were on above average vs. below average.
+            THighTorsion = mean(trialDataTable.TorsionAvgDuringStim( correctTrials & trialDataTable.AboveStimTorsionAvg),'omitnan');
+            TLowTorsion = mean(trialDataTable.TorsionAvgDuringStim( correctTrials & ~trialDataTable.AboveStimTorsionAvg),'omitnan');
             
-            % then calculate SVV for those two groups of trials
+            %Calculating SVV for the trials above and below average
+            [SVVHighTorsion, aHighTorsion, pHighTorsion, allAnglesHighTorsion, allResponsesHighTorsion,trialCountsHighTorsion, SVVthHighTorsion, SVVstdHighTorsion] = ...
+                ArumeExperimentDesigns.SVV2AFC.FitAngleResponses(anglesHighTorsion, responsesHighTorsion);
+            [SVVLowTorsion, aLowTorsion, pLowTorsion, allAnglesLowTorsion, allResponsesLowTorsion,trialCountsLowTorsion, SVVthLowTorsion, SVVstdLowTorsion] = ...
+                ArumeExperimentDesigns.SVV2AFC.FitAngleResponses(anglesLowTorsion, responsesLowTorsion);
+            
+            % Storing SVV and Torsion info from all trials into session
+            % table
+            sessionDataTable.SVV_HighTorsion = SVVHighTorsion;
+            sessionDataTable.SVV_LowTorsion = SVVLowTorsion;
+            sessionDataTable.T_HighTorsion = THighTorsion;
+            sessionDataTable.T_LowTorsion = TLowTorsion;
+            
         end
     end
     % ---------------------------------------------------------------------
     % Plot methods
     % ---------------------------------------------------------------------
     methods ( Access = public )
+        %Plotting SVV Sigmoid curve
+        function Plot_Sigmoid_By_Torsion(this, angles, responses)
+            
+            %Defining correct trials and getting angles, responses
+            correctTrials = this.Session.trialDataTable.TrialResult=='CORRECT';
+            
+            angles = this.GetAngles();
+            responses = this.GetLeftRightResponses();
+            
+            %Loading trial Data Table into variable 
+            trialDataTable = this.Session.trialDataTable;
+            
+            %Calculating same values as above, angles and responses for trials above and below average torsion during stimulus presentation
+            anglesHighTorsion = angles(correctTrials & trialDataTable.AboveStimTorsionAvg);
+            responsesHighTorsion = responses(correctTrials & trialDataTable.AboveStimTorsionAvg);
+            anglesLowTorsion = angles(correctTrials & ~trialDataTable.AboveStimTorsionAvg);
+            responsesLowTorsion = responses(correctTrials & ~trialDataTable.AboveStimTorsionAvg);
+            
+            % Calculating average torsion for trials above and below
+            % average torsion during stimulus presentation
+            THighTorsion = mean(trialDataTable.TorsionAvgDuringStim( correctTrials & trialDataTable.AboveStimTorsionAvg),'omitnan');
+            TLowTorsion = mean(trialDataTable.TorsionAvgDuringStim( correctTrials & ~trialDataTable.AboveStimTorsionAvg),'omitnan');
+            
+            
+            %Calculating SVV
+            [SVVHighTorsion, aHighTorsion, pHighTorsion, allAnglesHighTorsion, allResponsesHighTorsion,trialCountsHighTorsion, SVVthHighTorsion, SVVstdHighTorsion] = ...
+                ArumeExperimentDesigns.SVV2AFC.FitAngleResponses(anglesHighTorsion, responsesHighTorsion);
+            [SVVLowTorsion, aLowTorsion, pLowTorsion, allAnglesLowTorsion, allResponsesLowTorsion,trialCountsLowTorsion, SVVthLowTorsion, SVVstdLowTorsion] = ...
+                ArumeExperimentDesigns.SVV2AFC.FitAngleResponses(anglesLowTorsion, responsesLowTorsion);
+            
+            
+            % Making the figure 
+            figure('position',[400 400 600 400],'color','w','name',this.Session.name)
+            set(gca,'nextplot','add', 'fontsize',12);
+            
+            %Plotting all angles above average torsion during stimulus
+            %presentation as a red sigmoid
+            plot( allAnglesHighTorsion, allResponsesHighTorsion,'^', 'color', [1 0.7 0.7], 'markersize',10,'linewidth',2)
+            plot(aHighTorsion,pHighTorsion, 'color', 'r','linewidth',2);
+            %Plotting the SVV line for high torsion
+            line([SVVHighTorsion,SVVHighTorsion], [0 100], 'color','r','linewidth',2);
+            plot(SVVHighTorsion, 0,'^', 'markersize',10, 'markerfacecolor','r', 'color','r','linewidth',2);
+            
+            %Plotting all angles below average torsion during stimulus
+            %presentation as a blue sigmoid
+            plot( allAnglesLowTorsion, allResponsesLowTorsion,'^', 'color', [0.7 0.7 1], 'markersize',10,'linewidth',2)
+            plot(aLowTorsion,pLowTorsion, 'color', 'b','linewidth',2);
+            %Plotting the average SVV line for low torsion trials
+            line([SVVLowTorsion,SVVLowTorsion], [0 100], 'color','b','linewidth',2);
+            plot(SVVLowTorsion, 0,'^', 'markersize',10, 'markerfacecolor','b', 'color','b','linewidth',2);
+            
+            
+            
+            % Adding text to plots
+            
+            % Average SVV for high and low torsion trials, with 2 decimal
+            % places and threshold in parentheses
+            text(30, 80, sprintf('SVV high T: %0.2f°(%0.2f)',SVVHighTorsion,SVVthHighTorsion), 'fontsize',16,'HorizontalAlignment','right');
+            text(30, 70, sprintf('SVV low T: %0.2f°(%0.2f)',SVVLowTorsion,SVVthLowTorsion), 'fontsize',16,'HorizontalAlignment','right');
+            
+            % Including the average of torsion for the session as the
+            % average for trials above average vs. below average with two
+            % decimal places 
+            text(30, 55, sprintf('T high T: %0.2f°',THighTorsion), 'fontsize',16,'HorizontalAlignment','right');
+            text(30, 45, sprintf('T low T: %0.2f°',TLowTorsion), 'fontsize',16,'HorizontalAlignment','right');
+            
+            % Customizing the grid for the plot (defining axes, labels,
+            % etc.)
+            set(gca,'xlim',[-30 +30],'ylim',[-10 110])
+            set(gca,'xgrid','on')
+            set(gca,'xcolor',[0.3 0.3 0.3],'ycolor',[0.3 0.3 0.3]);
+            set(gca,'ytick',[0:25:100])
+            ylabel({'Percent answered' 'tilted right'}, 'fontsize',16);
+            xlabel('Angle (deg)', 'fontsize',16);
+        end
+        
     end
     
     % ---------------------------------------------------------------------

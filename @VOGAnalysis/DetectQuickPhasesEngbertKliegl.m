@@ -15,7 +15,7 @@ if ( ischar(data) )
             optionsDlg.Binocular_Minimum_Overlap = { {'0','{1}'} };
             optionsDlg.Remove_Overshoots = { {'0','{1}'} };
             optionsDlg.Overshoot_Interval = 30;
-            optionsDlg.Refine_Begining_And_End  = { {'0','{1}'} };
+            optionsDlg.Refine_Begining_And_End  = { {'{0}','1'} };
             optionsDlg.Recover_Monoculars       = { {'0','{1}'} };
             optionsDlg.Recover_Monoculars_Threshold = 10;
             
@@ -36,10 +36,24 @@ end
 
 samplerate = data.Properties.UserData.sampleRate;
 
-eyes = data.Properties.UserData.Eyes;
-eyeSignals = data.Properties.UserData.EyeSignals;
-LEFT = data.Properties.UserData.LEFT;
-RIGHT = data.Properties.UserData.RIGHT;
+eyes = {'Left' 'Right'};
+eyeSignals = {'X','Y', 'T'};
+LEFT = true;
+RIGHT = true;
+    
+if ( isfield( data.Properties.UserData, 'Eyes') )
+    eyes = data.Properties.UserData.Eyes;
+end
+
+if ( isfield( data.Properties.UserData, 'EyeSignals') )
+    eyeSignals = data.Properties.UserData.EyeSignals;
+end
+if ( isfield( data.Properties.UserData, 'LEFT') )
+    LEFT = data.Properties.UserData.LEFT;
+end
+if ( isfield( data.Properties.UserData, 'RIGHT') )
+    RIGHT = data.Properties.UserData.RIGHT;
+end
 
 %% FIND SACCADES in each component
 textprogressbar('++ DetectQuickPhaseEngbertKliegl :: Detecting quick phases using E&K method modified: ');
@@ -361,12 +375,12 @@ vel2 = vel(~blink,:);warning off MATLAB:divideByZero
 %vel2 =vel;
 
 % compute threshold
-medx = nanmedian(vel2(:,1));
-msdx = sqrt( nanmedian((vel2(:,1)-medx).^2) );
-medy = nanmedian(vel2(:,2));
-msdy = sqrt( nanmedian((vel2(:,2)-medy).^2) );
-medt = nanmedian(vel2(:,3));
-msdt = sqrt( nanmedian((vel2(:,3)-medt).^2) );
+medx = median(vel2(:,1),'omitnan');
+msdx = sqrt( median((vel2(:,1)-medx).^2,'omitnan') );
+medy = median(vel2(:,2),'omitnan');
+msdy = sqrt( median((vel2(:,2)-medy).^2,'omitnan') );
+medt = median(vel2(:,3),'omitnan');
+msdt = sqrt( median((vel2(:,3)-medt).^2,'omitnan') );
 
 if msdx<realmin
     msdx = sqrt( mean(vel2(:,1).^2) - (mean(vel2(:,1)))^2 );

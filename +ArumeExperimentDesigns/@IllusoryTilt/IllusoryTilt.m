@@ -218,8 +218,8 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
                         torsionLeft = s.LeftT(trialIdx);
                         torsionRight = s.RightT(trialIdx);
                         
-                        torsion = nanmedfilt(nanmean([torsionLeft, torsionRight],2),100,1/2);
-                        torsion = torsion - nanmean(torsion(1:1000));
+                        torsion = nanmedfilt(mean([torsionLeft, torsionRight],2,'omitnan'),100,1/2);
+                        torsion = torsion - mean(torsion(1:1000),'omitnan');
                     
                         if ( length(torsion)>10000)
                             torsion = torsion(1:10000);
@@ -261,27 +261,27 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
             title('Real tilt large')
            
             subplot(2,4,5);
-            plot(time, nanmean(squeeze(trialTorsion(1,1,:,:))),'b');
+            plot(time, mean(squeeze(trialTorsion(1,1,:,:)),'omitnan'),'b');
             hold
-            plot(time, nanmean(squeeze(trialTorsion(1,2,:,:))),'r');
+            plot(time, mean(squeeze(trialTorsion(1,2,:,:)),'omitnan'),'r');
             title('Illusory tilt (avg.)')
             
             subplot(2,4,6);
-            plot(time, nanmean(squeeze(trialTorsion(2,1,:,:))),'b');
+            plot(time, mean(squeeze(trialTorsion(2,1,:,:)),'omitnan'),'b');
             hold
-            plot(time, nanmean(squeeze(trialTorsion(2,2,:,:))),'r');
+            plot(time, mean(squeeze(trialTorsion(2,2,:,:)),'omitnan'),'r');
             title('NonIllusory tilt (avg.)')
             
             subplot(2,4,7);
-            plot(time, nanmean(squeeze(trialTorsion(3,1,:,:))),'b');
+            plot(time, mean(squeeze(trialTorsion(3,1,:,:)),'omitnan'),'b');
             hold
-            plot(time, nanmean(squeeze(trialTorsion(3,2,:,:))),'r');
+            plot(time, mean(squeeze(trialTorsion(3,2,:,:)),'omitnan'),'r');
             title('Real tilt small (avg.)')
             
             subplot(2,4,8);
-            plot(time, nanmean(squeeze(trialTorsion(4,1,:,:))),'b');
+            plot(time, mean(squeeze(trialTorsion(4,1,:,:)),'omitnan'),'b');
             hold
-            plot(time, nanmean(squeeze(trialTorsion(4,2,:,:))),'r');
+            plot(time, mean(squeeze(trialTorsion(4,2,:,:)),'omitnan'),'r');
             title('Real tilt large (avg.)')
             
             

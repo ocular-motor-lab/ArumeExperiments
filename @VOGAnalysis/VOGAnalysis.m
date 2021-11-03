@@ -520,33 +520,66 @@ classdef VOGAnalysis < handle
         end
         
         function [data] = LoadFOVEdata(dataFile)
-            opts = delimitedTextImportOptions("NumVariables", 39);
             
-            % Specify range and delimiter
-            opts.DataLines = [2, Inf];
-            opts.Delimiter = ",";
+            data = readtable(dataFile);
             
-            % Specify column names and types
-            %opts.VariableNames = ["VarName1", "ApplicationTime", "UserMark", "GazeConvergencerayposx", "GazeConvergencerayposy", "GazeConvergencerayposz", "GazeConvergenceraydirx", "GazeConvergenceraydiry", "GazeConvergenceraydirz", "GazeConvergencedistance", "Eyerayleftposx", "Eyerayleftposy", "Eyerayleftposz", "Eyerayleftdirx", "Eyerayleftdiry", "Eyerayleftdirz", "Eyerayrightposx", "Eyerayrightposy", "Eyerayrightposz", "Eyerayrightdirx", "Eyerayrightdiry", "Eyerayrightdirz", "EyeStateleft", "EyeStateright", "Pupilradiusmillimetersleft", "Pupilradiusmillimetersright", "GazedObject", "Eyetorsiondegreesleft", "Eyetorsiondegreesright", "HeadRotation", "PupilShapeleft", "PupilShaperight", "IPD", "IrisRadiusleft", "IrisRadiusright", "VarName36", "VarName37", "VarName38", "VarName39", "VarName40"];
-            %opts.VariableTypes = ["string", "double", "string", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "categorical", "categorical", "double", "double", "string", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double"];
-            opts.VariableNames = ["VarName1", "ApplicationTime", "UserMark", "GazeConvergencerayposx", "GazeConvergencerayposy", "GazeConvergencerayposz", "GazeConvergenceraydirx", "GazeConvergenceraydiry", "GazeConvergenceraydirz", "GazeConvergencedistance", "Eyerayleftposx", "Eyerayleftposy", "Eyerayleftposz", "Eyerayleftdirx", "Eyerayleftdiry", "Eyerayleftdirz", "Eyerayrightposx", "Eyerayrightposy", "Eyerayrightposz", "Eyerayrightdirx", "Eyerayrightdiry", "Eyerayrightdirz", "EyeStateleft", "EyeStateright", "Pupilradiusmillimetersleft", "Pupilradiusmillimetersright", "GazedObject", "Eyetorsiondegreesleft", "Eyetorsiondegreesright", "HeadRotationw", "HeadRotationx", "HeadRotationy", "HeadRotationz", "HeadPositionx", "HeadPositiony", "HeadPositionz", "IPD", "IrisRadiusleft", "IrisRadiusright"];
-            opts.VariableTypes = ["string", "double", "string", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "categorical", "categorical", "double", "double", "string", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double"];
+            % cleanup numeric columns they can actually have a text comment.
+            % here we will split them into two columns, one with the number and
+            % one with the comment
             
-            % Specify file level properties
-            opts.ExtraColumnsRule = "ignore";
-            opts.EmptyLineRule = "read";
+            numeric_columns = {...
+                'EyeRayLeftPosX', ...
+                'EyeRayLeftPosY', ...
+                'EyeRayLeftPosZ', ...
+                'EyeRayLeftDirX', ...
+                'EyeRayLeftDirY', ...
+                'EyeRayLeftDirZ', ...
+                'EyeRayRightPosX', ...
+                'EyeRayRightPosY', ...
+                'EyeRayRightPosZ', ...
+                'EyeRayRightDirX', ...
+                'EyeRayRightDirY', ...
+                'EyeRayRightDirZ', ...
+                'EyeTorsion_degrees_Left', ...
+                'EyeTorsion_degrees_Right', ...
+                'PupilRadius_millimeters_Left', ...
+                'PupilRadius_millimeters_Right', ...
+                'HeadRotationW', ...
+                'HeadRotationX', ...
+                'HeadRotationY', ...
+                'HeadRotationZ', ...
+                'HeadPositionX', ...
+                'HeadPositionY', ...
+                'HeadPositionZ', ...
+                'IrisRadiusLeft', ...
+                'IrisRadiusRight'};
             
-            % Specify variable properties
-            %opts = setvaropts(opts, ["VarName1", "UserMark", "GazedObject"], "WhitespaceRule", "preserve");
-            %opts = setvaropts(opts, ["VarName1", "UserMark", "EyeStateleft", "EyeStateright", "GazedObject"], "EmptyFieldRule", "auto");
-            %opts = setvaropts(opts, ["GazeConvergencerayposx", "GazeConvergencerayposy", "GazeConvergencerayposz", "GazeConvergenceraydirx", "GazeConvergenceraydiry", "GazeConvergenceraydirz", "GazeConvergencedistance", "Eyerayleftposx", "Eyerayleftposy", "Eyerayleftposz", "Eyerayleftdirx", "Eyerayleftdiry", "Eyerayleftdirz", "Eyerayrightposx", "Eyerayrightposy", "Eyerayrightposz", "Eyerayrightdirx", "Eyerayrightdiry", "Eyerayrightdirz", "Pupilradiusmillimetersleft", "Pupilradiusmillimetersright", "Eyetorsiondegreesleft", "Eyetorsiondegreesright", "IrisRadiusleft", "IrisRadiusright", "VarName36", "VarName37", "VarName39", "VarName40"], "TrimNonNumeric", true);
-            %opts = setvaropts(opts, ["GazeConvergencerayposx", "GazeConvergencerayposy", "GazeConvergencerayposz", "GazeConvergenceraydirx", "GazeConvergenceraydiry", "GazeConvergenceraydirz", "GazeConvergencedistance", "Eyerayleftposx", "Eyerayleftposy", "Eyerayleftposz", "Eyerayleftdirx", "Eyerayleftdiry", "Eyerayleftdirz", "Eyerayrightposx", "Eyerayrightposy", "Eyerayrightposz", "Eyerayrightdirx", "Eyerayrightdiry", "Eyerayrightdirz", "Pupilradiusmillimetersleft", "Pupilradiusmillimetersright", "Eyetorsiondegreesleft", "Eyetorsiondegreesright", "IrisRadiusleft", "IrisRadiusright", "VarName36", "VarName37", "VarName39", "VarName40"], "ThousandsSeparator", ",");
-            opts = setvaropts(opts, ["VarName1", "UserMark", "GazedObject"], "WhitespaceRule", "preserve");
-            opts = setvaropts(opts, ["VarName1", "UserMark", "EyeStateleft", "EyeStateright", "GazedObject"], "EmptyFieldRule", "auto");
-            opts = setvaropts(opts, ["Eyetorsiondegreesright", "IrisRadiusleft", "IrisRadiusright"], "TrimNonNumeric", true);
-            opts = setvaropts(opts, ["Eyetorsiondegreesright", "IrisRadiusleft", "IrisRadiusright"], "ThousandsSeparator", ",");
+            for i=1:length(numeric_columns)
+                colname = numeric_columns{i};
+                
+                % if it is already numeric (only numbers) do nothing and continue
+                if ( isnumeric(data.(colname) ) )
+                    continue;
+                end
+                
+                rows = contains(data.(colname),' - ');
+                temp = split(data{rows,colname},' - ');
+                
+                data{rows,colname} = temp(:,1);
+                data.(colname) = str2double(data.(colname));
+                
+                data.([colname '_comment']) = strings(height(data),1);
+                data.([colname '_comment'])(rows) = temp(:,2);
+                data.([colname '_comment']) = categorical(data.([colname '_comment']));
+            end
             
-            data = readtable(dataFile, opts);
+            data.EyeStateLeft = categorical(data.EyeStateLeft);
+            data.EyeStateRight = categorical(data.EyeStateRight);
+            
+            
+            framerate  = 1/mode(boxcar(diff(data.ApplicationTime),2)); % boxcar filter with 
+            
+
             
             % Add the fields that Arume is expecting
             data.FrameNumber = (1:height(data))';
@@ -555,13 +588,12 @@ classdef VOGAnalysis < handle
             data.Time = data.ApplicationTime;
             
             %% Do the transformation from raw data to degs
-            data.RightX = -asind(data.Eyerayrightdirx./cosd(asind(data.Eyerayrightdiry))); %(the horizontal component of the right eye)
-            data.RightY = asind(data.Eyerayrightdiry); %(the vertical axis)
-            data.LeftX = -asind(data.Eyerayleftdirx./cosd(asind(data.Eyerayleftdiry)));
-            data.LeftY = asind(data.Eyerayleftdiry);
-            data.RightT = data.Eyetorsiondegreesright;
-            data.LeftT = data.Eyetorsiondegreesleft;
-
+            data.RightX = -asind(data.EyeRayRightDirX./cosd(asind(data.EyeRayRightDirY))); %(the horizontal component of the right eye)
+            data.RightY = asind(data.EyeRayRightDirY); %(the vertical axis)
+            data.LeftX = -asind(data.EyeRayLeftDirX./cosd(asind(data.EyeRayLeftDirY)));
+            data.LeftY = asind(data.EyeRayLeftDirY);
+            data.RightT = data.EyeTorsion_degrees_Right;
+            data.LeftT = data.EyeTorsion_degrees_Left;
         end
     end
     
@@ -1762,6 +1794,7 @@ classdef VOGAnalysis < handle
                 speed = sqrt( data.([eyes{k} 'VelX']).^2 +  data.([eyes{k} 'VelY']).^2 );
                 qp2_props.Amplitude = sqrt( props.(eyes{k}).X.Amplitude.^2 + props.(eyes{k}).Y.Amplitude.^2);
                 qp2_props.Displacement = sqrt( (pos(qp(:,2),1) - pos(qp(:,1),1) ).^2 + ( pos(qp(:,2),2) - pos(qp(:,1),2) ).^2 );
+                qp2_props.Direction = atan2(pos(qp(:,2),2) - pos(qp(:,1),2), pos(qp(:,2),1) - pos(qp(:,1),1) );
                 qp2_props.PeakSpeed = nan(size(qp(:,1)));
                 qp2_props.MeanSpeed = nan(size(qp(:,1)));
                 for i=1:size(qp,1)
@@ -1778,16 +1811,19 @@ classdef VOGAnalysis < handle
                 quickPhaseTable.Displacement   = mean([ props.Left.XY.Displacement props.Right.XY.Displacement],2,'omitnan');
                 quickPhaseTable.PeakSpeed      = mean([ props.Left.XY.PeakSpeed props.Right.XY.PeakSpeed],2,'omitnan');
                 quickPhaseTable.MeanSpeed      = mean([ props.Left.XY.MeanSpeed props.Right.XY.MeanSpeed],2,'omitnan');
+                quickPhaseTable.Direction      = mean([ props.Left.XY.Direction props.Right.XY.Direction],2,'omitnan');
             elseif(any(contains(eyes,'Left')))
                 quickPhaseTable.Amplitude      = props.Left.XY.Amplitude;
                 quickPhaseTable.Displacement   = props.Left.XY.Displacement;
                 quickPhaseTable.PeakSpeed      = props.Left.XY.PeakSpeed;
                 quickPhaseTable.MeanSpeed      = props.Left.XY.MeanSpeed;
+                quickPhaseTable.Direction      = props.Left.XY.Direction;
             elseif(any(contains(eyes,'Right')))
                 quickPhaseTable.Amplitude      = props.Right.XY.Amplitude;
                 quickPhaseTable.Displacement   = props.Right.XY.Displacement;
                 quickPhaseTable.PeakSpeed      = props.Right.XY.PeakSpeed;
                 quickPhaseTable.MeanSpeed      = props.Right.XY.MeanSpeed;
+                quickPhaseTable.Direction      = props.Right.XY.Direction;
             end
             
             fieldsToAverageAcrossEyes = {...

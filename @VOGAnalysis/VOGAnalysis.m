@@ -484,6 +484,10 @@ classdef VOGAnalysis < handle
         % FOVE specific functions
         function [samplesDataTable, cleanedData, calibratedData, rawData] = LoadCleanAndResampleDataFOVE(dataFolder, dataFiles, params)
             
+            if (~iscell(dataFiles))
+                dataFiles = {dataFiles};
+            end
+
             samplesDataTable = table();
             rawData = table();
             cleanedData = table();
@@ -496,7 +500,7 @@ classdef VOGAnalysis < handle
                 
                 % load and preprocess data
                 
-                [rawDataFile] = VOGAnalysis.LoadFOVEdata(dataFilePath);
+                [rawDataFile]           = VOGAnalysis.LoadFOVEdata(dataFilePath);
                 cleanedDataFile         = VOGAnalysis.CleanData(rawDataFile, params);
                 fileSamplesDataSet      = VOGAnalysis.ResampleData(cleanedDataFile, params);
                 
@@ -521,13 +525,22 @@ classdef VOGAnalysis < handle
         
         function [data] = LoadFOVEdata(dataFile)
             
-            data = readtable(dataFile);
-            
-            % cleanup numeric columns they can actually have a text comment.
-            % here we will split them into two columns, one with the number and
-            % one with the comment
-            
+            % variables that are just numeric
             numeric_columns = {...
+                'ApplicationTime', ...
+                'HeadRotationW', ...
+                'HeadRotationX', ...
+                'HeadRotationY', ...
+                'HeadRotationZ', ...
+                'HeadPositionX', ...
+                'HeadPositionY', ...
+                'HeadPositionZ', ...
+                };
+            
+            % variables that are mostly numeric but have some text on them
+            % as well, for example something like '2.05 - Data_LowAccuracy'
+            % we will split the number and the text in 2 columns.
+            numeric_mixed_columns = {...
                 'EyeRayLeftPosX', ...
                 'EyeRayLeftPosY', ...
                 'EyeRayLeftPosZ', ...
@@ -544,18 +557,21 @@ classdef VOGAnalysis < handle
                 'EyeTorsion_degrees_Right', ...
                 'PupilRadius_millimeters_Left', ...
                 'PupilRadius_millimeters_Right', ...
-                'HeadRotationW', ...
-                'HeadRotationX', ...
-                'HeadRotationY', ...
-                'HeadRotationZ', ...
-                'HeadPositionX', ...
-                'HeadPositionY', ...
-                'HeadPositionZ', ...
                 'IrisRadiusLeft', ...
                 'IrisRadiusRight'};
             
-            for i=1:length(numeric_columns)
-                colname = numeric_columns{i};
+            % read the file
+            opts = detectImportOptions( dataFile );
+            opts = setvartype(opts, intersect(numeric_columns, opts.VariableNames), 'double');
+            opts = setvartype(opts, intersect(numeric_mixed_columns, opts.VariableNames), 'char');
+            data = readtable(dataFile, opts);
+            
+            % cleanup numeric columns they can actually have a text comment.
+            % here we will split them into two columns, one with the number and
+            % one with the comment
+            numeric_mixed_columns = intersect(numeric_mixed_columns, opts.VariableNames);
+            for i=1:length(numeric_mixed_columns)
+                colname = numeric_mixed_columns{i};
                 
                 % if it is already numeric (only numbers) do nothing and continue
                 if ( isnumeric(data.(colname) ) )
@@ -577,15 +593,20 @@ classdef VOGAnalysis < handle
             data.EyeStateRight = categorical(data.EyeStateRight);
             
             
-            framerate  = 1/mode(boxcar(diff(data.ApplicationTime),2)); % boxcar filter with 
-            
+
+
+
+            % fix the timestamps:
+            framerate  = 1/mode(boxcar(diff(data.ApplicationTime),2));
+            framenumberAprox = boxcar((data.ApplicationTime-data.ApplicationTime(1))*framerate,2);
+            newTimestamps = (framenumberAprox)/framerate+data.ApplicationTime(1);
 
             
             % Add the fields that Arume is expecting
-            data.FrameNumber = (1:height(data))';
+            data.FrameNumber = framenumberAprox-framenumberAprox(1)+1;
             data.LeftFrameNumberRaw = data.FrameNumber;
             data.RightFrameNumberRaw = data.FrameNumber;
-            data.Time = data.ApplicationTime;
+            data.Time = newTimestamps;
             
             %% Do the transformation from raw data to degs
             data.RightX = -asind(data.EyeRayRightDirX./cosd(asind(data.EyeRayRightDirY))); %(the horizontal component of the right eye)

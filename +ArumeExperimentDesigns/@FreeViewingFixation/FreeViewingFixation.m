@@ -14,7 +14,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
         function dlg = GetOptionsDialog( this, importing )
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
-            dlg.NumberOfRepetitions = {8 '* (N)' [1 100] };
+            dlg.NumberOfRepetitions = {1 '* (N)' [1 100] };
                          
             dlg.TargetSize = 0.5;
             
@@ -103,6 +103,12 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             Enum = ArumeCore.ExperimentDesign.getEnum();
             trialResult = Enum.trialResult.CORRECT;
             
+            % JORGE AT THE MEETING
+            experimentFolder = fileparts(mfilename('fullpath'));
+            imageFile = fullfile(experimentFolder,[thisTrialData.Image '.jpg']);
+            % END JORGE
+                
+
             I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.jpg')); % do we need these three lines and if so can we make it so that it's pulling whatever image we need for that trial?
             Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
             Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');

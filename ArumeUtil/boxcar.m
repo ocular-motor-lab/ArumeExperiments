@@ -3,6 +3,11 @@ function y = boxcar(x, n,n1)
 % Takes into account edge effects
 % Jorge Otero-Millan - Feb'2008
 
+if ( n==1 )
+    y = x;
+    return;
+end
+
 y = zeros(size(x));
 if ( size(x,2) > 1 )
     for icol = 1:size(x,2)

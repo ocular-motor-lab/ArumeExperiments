@@ -21,7 +21,7 @@ classdef IllusoryTilt < ArumeExperimentDesigns.EyeTracking
             dlg.BackgroundBrightness = 0;
             
             dlg.StimulusContrast0to100 = {10 '* (%)' [0 100] };
-            dlg.SmallTilt = {5 '* (deg)' [0 90] };
+            dlg.SmallTilt = {4 '* (deg)' [0 90] };
             dlg.LargeTilt = {30 '* (deg)' [0 90] };
             
             dlg.Initial_Fixation_Duration = {5 '* (s)' [1 100] };

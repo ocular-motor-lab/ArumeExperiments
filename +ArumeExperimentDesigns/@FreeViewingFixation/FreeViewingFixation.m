@@ -27,7 +27,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             
             dlg.Initial_Fixation_Duration = {2 '* (s)' [1 100] };
             
-            dlg.TrialDuration = {2 '* (s)' [1 100] };
+            dlg.TrialDuration = {5 '* (s)' [1 100] };
             dlg.HitKeyBeforeTrial = { {'0' '{1}'} };
         end
         
@@ -104,16 +104,28 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             trialResult = Enum.trialResult.CORRECT;
             
             % JORGE AT THE MEETING
-            experimentFolder = fileparts(mfilename('fullpath'));
-            imageFile = fullfile(experimentFolder,[thisTrialData.Image '.jpg']);
+            %experimentFolder = fileparts(mfilename('fullpath'));
+            %imageFile = fullfile(experimentFolder,[thisTrialData.Image '.jpg']);
             % END JORGE
-                
-
-            I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.jpg')); % do we need these three lines and if so can we make it so that it's pulling whatever image we need for that trial?
-            Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
-            Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
+            test = string(thisTrialData.Image)
+            imageFile = fullfile(fileparts(mfilename('fullpath')),[test + ".jpg"]);
+            I = imread(imageFile);
             
-             
+            switch thisTrialData.ImTilt
+                case '0'
+                    Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
+                    Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
+                case '30'        
+                    Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
+                    Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
+                case '-30'
+                    Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
+                    Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
+                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
+            end
+                    
 %             switch(thisTrialData.Image)
 %                 case 'IlusoryTiltRight'
 %                     I = imread(fullfile(fileparts(mfilename('fullpath')),'TiltWithBlur.tiff'));
@@ -199,38 +211,34 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
                 % --- Drawing of stimulus -----------------------------------------
                 % -----------------------------------------------------------------
                 
+                
                 %-- Find the center of the screen
                 [mx, my] = RectCenter(graph.wRect);
                                 
                 if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration )
-                    switch(thisTrialData.Image)
-                        case 'IlusoryTiltRight'
+                    switch (thisTrialData.ImTilt)
+                        case '-30'
+                            Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],-this.ExperimentOptions.ImTilt);
+                        case '0'
                             Screen('DrawTexture', this.Graph.window, this.stimTexture);
-                        case 'IllusoryTiltLeft'
-                            Screen('DrawTexture', this.Graph.window, this.stimTexture);
-                        case 'RealSmallTiltLeft'
-                            Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],-this.ExperimentOptions.SmallTilt);
-                        case 'RealSmallTiltRight'
-                            Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],this.ExperimentOptions.SmallTilt);
-                        case 'RealLargeTiltLeft'
-                            Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],-this.ExperimentOptions.LargeTilt);
-                        case 'RealLargeTiltRight'
-                            Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],this.ExperimentOptions.LargeTilt);
-                        case 'NonIlusoryTiltRight'
-                            Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],-this.ExperimentOptions.SmallTilt);
-                        case 'NonIllusoryTiltLeft'
-                            Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],this.ExperimentOptions.SmallTilt);
+                        case '30'
+                            Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],this.ExperimentOptions.ImTilt);
                     end
                 end
                 
                 %-- Draw target
-                
-                
+                % These commands are for the fixation dot
                 fixRect = [0 0 10 10];
                 fixRect = CenterRectOnPointd( fixRect, mx, my );
-                Screen('FillOval', graph.window,  this.targetColor, fixRect);
                 
-                this.Graph.Flip(this, thisTrialData, secondsRemaining);
+                switch (thisTrialData.Task)
+                    case 'Fixation'
+                        Screen('FillOval', graph.window,  this.targetColor, fixRect);
+                        this.Graph.Flip(this, thisTrialData, secondsRemaining);
+                    case 'FreeView'
+                        this.Graph.Flip(this, thisTrialData, secondsRemaining);
+                end
+                        
                 % -----------------------------------------------------------------
                 % --- END Drawing of stimulus -------------------------------------
                 % -----------------------------------------------------------------

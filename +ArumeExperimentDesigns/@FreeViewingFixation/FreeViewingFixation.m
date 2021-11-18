@@ -21,13 +21,11 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             dlg.BackgroundBrightness = 0;
             
             dlg.StimulusContrast0to100 = {100 '* (%)' [0 100] };
-            %dlg.SmallTilt = {5 '* (deg)' [0 90] };
-            %dlg.LargeTilt = {30 '* (deg)' [0 90] };
             dlg.ImTilt = {30 '* (deg)' [0 90] };
             
             dlg.Initial_Fixation_Duration = {2 '* (s)' [1 100] };
             
-            dlg.TrialDuration = {5 '* (s)' [1 100] };
+            dlg.TrialDuration = {12 '* (s)' [1 100] };
             dlg.HitKeyBeforeTrial = { {'0' '{1}'} };
         end
         
@@ -42,7 +40,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             
             i = i+1;
             conditionVars(i).name   = 'ImTilt';
-            conditionVars(i).values = {'-30' '0' '30'};
+            conditionVars(i).values = [-1 0 1] * this.ExperimentOptions.ImTilt;
             
             i = i+1;
             conditionVars(i).name   = 'Task';
@@ -54,48 +52,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             trialTableOptions.trialsPerSession = 1000;
             trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberOfRepetitions;
             trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
-            
-%              %-- condition variables ---------------------------------------
-%             i= 0;
-%             
-%             i = i+1;
-%             conditionVars(i).name   = 'Speed';
-%             conditionVars(i).values = this.ExperimentOptions.Max_Speed/this.ExperimentOptions.Number_of_Speeds * [0:this.ExperimentOptions.Number_of_Speeds];
-%             
-%             i = i+1;
-%             conditionVars(i).name   = 'Direction';
-%             conditionVars(i).values = {'CW' 'CCW'};
-%             
-%             i = i+1;
-%             conditionVars(i).name   = 'Stimulus';
-%             if ( this.ExperimentOptions.Do_Blank ) 
-%                 conditionVars(i).values = {'Blank' 'Dots'};
-%             else
-%                 conditionVars(i).values = {'Dots'};
-%             end
-%             
-%             trialTableOptions = this.GetDefaultTrialTableOptions();
-%             trialTableOptions.trialSequence = 'Random';
-%             trialTableOptions.trialAbortAction = 'Delay';
-%             trialTableOptions.trialsPerSession = 1000;
-%             trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberOfRepetitions;
-%             trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
-            
-
-            
-%             i= 0;
-%                                     
-%             i = i+1;
-%             conditionVars(i).name   = 'Image';
-%             %adding the non-illusory patterned image to line 40 condition variables  
-%             conditionVars(i).values = {'IlusoryTiltRight' 'IllusoryTiltLeft' 'RealSmallTiltLeft' 'RealSmallTiltRight' 'RealLargeTiltLeft' 'RealLargeTiltRight' 'NonIlusoryTiltRight' 'NonIllusoryTiltLeft'};
-%           
-%             trialTableOptions = this.GetDefaultTrialTableOptions();
-%             trialTableOptions.trialSequence = 'Random';
-%             trialTableOptions.trialAbortAction = 'Delay';
-%             trialTableOptions.trialsPerSession = 100;
-%             trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberOfRepetitions;
-%             trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
+      
         end
         
          
@@ -108,77 +65,15 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             %imageFile = fullfile(experimentFolder,[thisTrialData.Image '.jpg']);
             % END JORGE
             test = string(thisTrialData.Image)
-            imageFile = fullfile(fileparts(mfilename('fullpath')),[test + ".jpg"]);
+            imageFile = fullfile(fileparts(mfilename('fullpath')),[test + ".jpeg"]);
             I = imread(imageFile);
             
-            switch thisTrialData.ImTilt
-                case '0'
-                    Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
-                    Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
-                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
-                case '30'        
-                    Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
-                    Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
-                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
-                case '-30'
-                    Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
-                    Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
-                    this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
-            end
+            Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
+            Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
+            this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
+            
                     
-%             switch(thisTrialData.Image)
-%                 case 'IlusoryTiltRight'
-%                     I = imread(fullfile(fileparts(mfilename('fullpath')),'TiltWithBlur.tiff'));
-%                     Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
-%                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
-%                     
-%                     this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
-%                     
-%                 case 'IllusoryTiltLeft'
-%                     I = imread(fullfile(fileparts(mfilename('fullpath')),'TiltWithBlur.tiff'));
-%                     Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
-%                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
-%                     
-%                     this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
-%                 case 'RealSmallTiltLeft'
-%                     I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.jpg'));
-%                     Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
-%                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
-%                     
-%                     this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
-%                 case 'RealSmallTiltRight'
-%                     I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.jpg'));
-%                     Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
-%                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
-%                     
-%                     this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
-%                 case 'RealLargeTiltLeft'
-%                     I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.jpg'));
-%                     Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
-%                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
-%                     
-%                     this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
-%                 case 'RealLargeTiltRight'
-%                     I = imread(fullfile(fileparts(mfilename('fullpath')),'NaturalImage.jpg'));
-%                     Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
-%                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
-%                     
-%                     this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
-%                 case 'NonIlusoryTiltRight'
-%                     I = imread(fullfile(fileparts(mfilename('fullpath')),'NonTilt.tiff'));
-%                     Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
-%                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
-%                     
-%                     this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare(end:-1:1,:,:));
-%                     
-%                 case 'NonIllusoryTiltLeft'
-%                     I = imread(fullfile(fileparts(mfilename('fullpath')),'NonTilt.tiff'));
-%                     Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
-%                     Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
-%                     
-%                     this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
-%             end
-%             
+    
          end
             
         function [trialResult, thisTrialData] = runTrial( this, thisTrialData )
@@ -214,31 +109,26 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
                 
                 %-- Find the center of the screen
                 [mx, my] = RectCenter(graph.wRect);
-                                
-                if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration )
-                    switch (thisTrialData.ImTilt)
-                        case '-30'
-                            Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],-this.ExperimentOptions.ImTilt);
-                        case '0'
-                            Screen('DrawTexture', this.Graph.window, this.stimTexture);
-                        case '30'
-                            Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],this.ExperimentOptions.ImTilt);
-                    end
-                end
-                
-                %-- Draw target
-                % These commands are for the fixation dot
                 fixRect = [0 0 10 10];
                 fixRect = CenterRectOnPointd( fixRect, mx, my );
-                
-                switch (thisTrialData.Task)
-                    case 'Fixation'
-                        Screen('FillOval', graph.window,  this.targetColor, fixRect);
-                        this.Graph.Flip(this, thisTrialData, secondsRemaining);
-                    case 'FreeView'
-                        this.Graph.Flip(this, thisTrialData, secondsRemaining);
+
+                if ( secondsElapsed <= this.ExperimentOptions.Initial_Fixation_Duration )
+                    %-- Draw target
+                    % These commands are for the fixation dot
+                    hScreen('FillOval', graph.window,  this.targetColor, fixRect);
+                end
+
+                if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration )
+                    Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[],thisTrialData.ImTilt);
+
+                    switch (thisTrialData.Task)
+                        case 'Fixation'
+                            Screen('FillOval', graph.window,  this.targetColor, fixRect);
+                        case 'FreeView'
+                    end
                 end
                         
+                this.Graph.Flip(this, thisTrialData, secondsRemaining);
                 % -----------------------------------------------------------------
                 % --- END Drawing of stimulus -------------------------------------
                 % -----------------------------------------------------------------
@@ -255,6 +145,16 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
     % Plot methods
     % ---------------------------------------------------------------------
     methods ( Access = public )
+
+        function [outt] = Plot_Stephanie(this)
+            tt = this.Session.trialDataTable;
+            ss = this.Session.samplesDataTable;
+            rr = this.Session.analysisResults;
+
+            figure
+            polarhistogram(r.QuickPhases.Direction,36)
+        end
+
         function [out] = Plot_Torsion_by_image(this)
             %%
             t = this.Session.trialDataTable;

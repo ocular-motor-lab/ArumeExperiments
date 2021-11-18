@@ -462,6 +462,12 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             end
             
             if (updateTrialsAndSessionTables)
+                [qp, sp] = VOGAnalysis.GetQuickAndSlowPhaseTable(samplesDataTable);
+                analysisResults.QuickPhases = qp;
+                analysisResults.SlowPhases = sp;
+            end
+
+            if (0 && updateTrialsAndSessionTables)
                 ConditionVarsNames = {};
                 condition = [];
                 for i=1:length(this.Session.experimentDesign.ConditionVars)
@@ -475,7 +481,6 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                     end
                 end
                 
-                [qp, sp] = VOGAnalysis.GetQuickAndSlowPhaseTable(samplesDataTable);
                 
                 % Build a column for the samples with the trial number
                 samplesDataTable.TrialNumber = nan(size(samplesDataTable.FrameNumber));

@@ -475,7 +475,6 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                     end
                 end
                 
-                [qp, sp] = VOGAnalysis.GetQuickAndSlowPhaseTable(samplesDataTable);
                 
                 % Build a column for the samples with the trial number
                 samplesDataTable.TrialNumber = nan(size(samplesDataTable.FrameNumber));

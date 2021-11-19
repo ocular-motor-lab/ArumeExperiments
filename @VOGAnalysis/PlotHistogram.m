@@ -103,7 +103,7 @@ end
 % groups{1} = ones(1552,1);
 % groups{1}(1000:end) = 2;
 if ~isfield(p,'colors_array')||isempty(p.colors_array)
-    [COLORS colors_array] = CorrGui.get_nice_colors;
+    [COLORS colors_array] = get_nice_colors;
 else
     colors_array = p.colors_array;
 end
@@ -486,7 +486,7 @@ end
 function p = check_parameters( varargin )
 
 
-histogram_options = plot_histogram( 'get_options' );
+histogram_options = VOGAnalysis.PlotHistogram( 'get_options' );
 S = StructDlg(histogram_options,'',[],[],'off');
 
 if ( nargin >=1)
@@ -503,12 +503,12 @@ if ( nargin >=1)
     end
     p.addRequired('data', @(x)(isnumeric(x)&& length(x)>0)||iscell(x));
     p.addOptional('thebins', [], @(x)(isnumeric(x)));
-    p.addOptional('tit', 'Main sequence', @isstr);
-    p.addOptional('xlab', '', @(x)(isstr(x)||iscell(x)));
-    p.addOptional('ylab', 'Number',  @(x)(isstr(x)||iscell(x)));
+    p.addOptional('tit', 'Main sequence', @(x)(ischar(x)||isstring(x)));
+    p.addOptional('xlab', '', @(x)(ischar(x)||isstring(x)||iscell(x)));
+    p.addOptional('ylab', 'Number',  @(x)(ischar(x)||iscell(x)));
     p.addOptional('totaltimes', NaN, @(x)(isempty(x) || (isnumeric(x) && (size(x,2)==1)||size(x,1)==1)));
     p.addOptional('groups', [], @(x)(isnumeric(x)&& length(x)>1)||iscell(x)||isempty(x));
-    p.addOptional('leg', [], @(x)(isstr(x)||iscell(x)||isempty(x)));
+    p.addOptional('leg', [], @(x)(ischar(x)||iscell(x)||isempty(x)));
     p.addOptional('colors_array', '', @(x)(isnumeric(x) && any(size(x) == 3)));
 
     

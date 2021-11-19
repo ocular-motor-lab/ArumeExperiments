@@ -301,17 +301,19 @@ classdef ExperimentDesign < handle
         end
         
         function [dataTable, idx, selectedFilters] = FilterTableByConditionVariable(this, dataTable, Select_Conditions, columns, columnNames)
-            
+
+            ConditionVars = this.Session.experimentDesign.TrialTable.Properties.VariableNames(6:end);
+
             if (ischar(dataTable) )
                 switch(dataTable)
                     case 'get_filters'
                         Select_Conditions = struct();
                         Select_Conditions.All = { {'0', '{1}'}};
-                        for i=1:length(this.Session.experimentDesign.ConditionVars)
-                            name = this.Session.experimentDesign.ConditionVars(i).name;
-                            values = categorical(this.Session.experimentDesign.ConditionVars(i).values);
+                        for i=1:length(ConditionVars)
+                            name = ConditionVars{i};
+                            values = categories(this.Session.experimentDesign.TrialTable{:,ConditionVars{i}});
                             for j=1:numel(values)
-                                Select_Conditions.(strcat(name, '_', string(values(j)))) = { {'{0}', '1'}};
+                                Select_Conditions.(strcat(name, '_', genvarname(string(values(j))))) = { {'{0}', '1'}};
                             end
                         end
                         dataTable = Select_Conditions;
@@ -324,16 +326,12 @@ classdef ExperimentDesign < handle
             Select_ConditionsFilters = struct();
             Select_ConditionsFilters.All.VarName = 'All';
             Select_ConditionsFilters.All.VarValue = 1;
-            for i=1:length(this.Session.experimentDesign.ConditionVars)
-                name = this.Session.experimentDesign.ConditionVars(i).name;
-                if ( iscell(this.Session.experimentDesign.ConditionVars(i).values) )
-                    values = categorical(this.Session.experimentDesign.ConditionVars(i).values);
-                else
-                    values = this.Session.experimentDesign.ConditionVars(i).values;
-                end
+            for i=1:length(ConditionVars)
+                name = ConditionVars{i};
+                values = categories(this.Session.experimentDesign.TrialTable{:,ConditionVars{i}});
                 for j=1:numel(values)
-                    Select_ConditionsFilters.(strcat(name, '_', string(values(j)))).VarName = name;
-                    Select_ConditionsFilters.(strcat(name, '_', string(values(j)))).VarValue = values(j);
+                    Select_ConditionsFilters.(strcat(name, '_', genvarname(string(values(j))))).VarName = name;
+                    Select_ConditionsFilters.(strcat(name, '_', genvarname(string(values(j))))).VarValue = values(j);
                 end
             end
             

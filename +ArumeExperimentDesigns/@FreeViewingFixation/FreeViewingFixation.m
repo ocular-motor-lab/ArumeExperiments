@@ -146,119 +146,13 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
     % ---------------------------------------------------------------------
     methods ( Access = public )
 
-        function [outt] = Plot_Stephanie(this)
+        function [out] = Plot_Stephanie(this)
             tt = this.Session.trialDataTable;
             ss = this.Session.samplesDataTable;
             rr = this.Session.analysisResults;
 
             figure
             polarhistogram(r.QuickPhases.Direction,36)
-        end
-
-        function [out] = Plot_Torsion_by_image(this)
-            %%
-            t = this.Session.trialDataTable;
-            s = this.Session.samplesDataTable;
-            
-            conditions ={};
-            conditions{1,1} = 'IllusoryTiltLeft';
-            conditions{1,2} = 'IlusoryTiltRight';
-            
-            conditions{2,1} = 'NonIlusoryTiltRight';
-            conditions{2,2} = 'NonIllusoryTiltLeft';
-            
-            conditions{3,1} = 'RealSmallTiltLeft'; 
-            conditions{3,2} = 'RealSmallTiltRight'; 
-            
-            conditions{4,1} = 'RealLargeTiltLeft';
-            conditions{4,2} = 'RealLargeTiltRight';
-            
-            % adding the non-illusory stimuli to the plot methods
-            
-
-            
-            trialTorsion = nan(4,2,10,1000);
-            
-            for i=1:size(conditions,1)
-                for j=1:2
-                    trials = t(t.Image==conditions{i,j},:);
-                    for itrial = 1:height(trials)
-                        trialIdx = trials.SampleStartTrial(itrial):trials.SampleStopTrial(itrial);
-                        torsionLeft = s.LeftT(trialIdx);
-                        torsionRight = s.RightT(trialIdx);
-                        
-                        torsion = nanmedfilt(mean([torsionLeft, torsionRight],2,'omitnan'),100,1/2);
-                        torsion = torsion - mean(torsion(1:1000),'omitnan');
-                    
-                        if ( length(torsion)>10000)
-                            torsion = torsion(1:10000);
-                        end
-                        trialTorsion(i,j,itrial,1:length(torsion)) = torsion;
-                    end
-                end
-            end
-            
-            %%
-            time = 0:0.002:20;
-            time = time(1:end-1);
-            figure
-
-            
-            
-            subplot(2,4,1);
-            plot(time, squeeze(trialTorsion(1,1,:,:))','b');
-            hold
-            plot(time, squeeze(trialTorsion(1,2,:,:))','r');
-            title('Illusory tilt')
-            
-            subplot(2,4,2);
-            plot(time, squeeze(trialTorsion(2,1,:,:))','b');
-            hold
-            plot(time, squeeze(trialTorsion(2,2,:,:))','r');
-            title('NonIllusory tilt small')
-            
-            subplot(2,4,3);
-            plot(time, squeeze(trialTorsion(3,1,:,:))','b');
-            hold
-            plot(time, squeeze(trialTorsion(3,2,:,:))','r');
-            title('Real tilt small')
-               
-            subplot(2,4,4);
-            plot(time, squeeze(trialTorsion(4,1,:,:))','b');
-            hold
-            plot(time, squeeze(trialTorsion(4,2,:,:))','r');
-            title('Real tilt large')
-           
-            subplot(2,4,5);
-            plot(time, mean(squeeze(trialTorsion(1,1,:,:)),'omitnan'),'b');
-            hold
-            plot(time, mean(squeeze(trialTorsion(1,2,:,:)),'omitnan'),'r');
-            title('Illusory tilt (avg.)')
-            
-            subplot(2,4,6);
-            plot(time, mean(squeeze(trialTorsion(2,1,:,:)),'omitnan'),'b');
-            hold
-            plot(time, mean(squeeze(trialTorsion(2,2,:,:)),'omitnan'),'r');
-            title('NonIllusory tilt (avg.)')
-            
-            subplot(2,4,7);
-            plot(time, mean(squeeze(trialTorsion(3,1,:,:)),'omitnan'),'b');
-            hold
-            plot(time, mean(squeeze(trialTorsion(3,2,:,:)),'omitnan'),'r');
-            title('Real tilt small (avg.)')
-            
-            subplot(2,4,8);
-            plot(time, mean(squeeze(trialTorsion(4,1,:,:)),'omitnan'),'b');
-            hold
-            plot(time, mean(squeeze(trialTorsion(4,2,:,:)),'omitnan'),'r');
-            title('Real tilt large (avg.)')
-            
-            
-            set(get(gcf,'children'),'ylim',[-1 1])
-            
-            ylabel('Torsion (deg)');
-            xlabel('Time (s)');
-            legend({'left tilt','right tilt'});
         end
     end
 end

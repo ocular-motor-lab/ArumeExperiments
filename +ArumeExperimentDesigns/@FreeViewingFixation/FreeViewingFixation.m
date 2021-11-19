@@ -36,7 +36,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             
             i = i+1;
             conditionVars(i).name   = 'Image';
-            conditionVars(i).values = {'Im1' 'Im2' 'Im3' 'Im4' 'Im5' 'Im6' 'Im7' 'Im8' 'Im9' 'Im10' 'Im11' 'Im12' 'Im13' 'Im14' 'Im15' 'Im16' 'Im17' 'Im18' 'Im19' 'Im20' 'Im21' 'Im22' 'Im23' 'Im24'};
+            conditionVars(i).values = {'Im1' 'Im2' 'Im3' 'Im4' 'Im5' 'Im6' 'Im7' 'Im8' 'Im9' 'Im10' 'Im11' 'Im12' 'Im13' 'Im14' 'Im15' 'Im16' 'Im17' 'Im19' 'Im20' 'Im22' 'Im23' 'Im24'};
             
             i = i+1;
             conditionVars(i).name   = 'ImTilt';
@@ -115,7 +115,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
                 if ( secondsElapsed <= this.ExperimentOptions.Initial_Fixation_Duration )
                     %-- Draw target
                     % These commands are for the fixation dot
-                    hScreen('FillOval', graph.window,  this.targetColor, fixRect);
+                    Screen('FillOval', graph.window,  this.targetColor, fixRect);
                 end
 
                 if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration )

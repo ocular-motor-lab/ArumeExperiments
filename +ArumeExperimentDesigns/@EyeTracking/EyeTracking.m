@@ -462,11 +462,11 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             end
             
             if (updateTrialsAndSessionTables)
-                ConditionVarsNames = {};
+                ConditionVarsNames = this.Session.experimentDesign.TrialTable.Properties.VariableNames(6:end);
                 condition = [];
-                for i=1:length(this.Session.experimentDesign.ConditionVars)
-                    if ( numel(this.Session.experimentDesign.ConditionVars(i).values)>1)
-                        ConditionVarsNames{end+1} = this.Session.experimentDesign.ConditionVars(i).name;
+                for i=1:length(ConditionVarsNames)
+                    conditionVarLevels = categories(this.Session.experimentDesign.TrialTable{:,ConditionVarsNames{i}});
+                    if ( numel(conditionVarLevels)>1)
                         if (isempty(condition) )
                             condition = string(trialDataTable{:,ConditionVarsNames(i)});
                         else
@@ -540,7 +540,8 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                 if ( ~isempty(condition) )
                     varsToGroup = strcat('QP_mean_', qpDataVars(~contains(qpDataVars,'Left') & ~contains(qpDataVars,'Right')));
                     varsToGroup = horzcat({'QP_Rate' 'median_SPVX','median_SPVY','median_SPVT'}, varsToGroup);
-                
+                    varsToGroup = intersect(varsToGroup, trialDataTable.Properties.VariableNames);
+
                     trialDataTable.Condition = condition; % combination of condition variables
                     ConditionVarsNames = horzcat({'Condition'}, ConditionVarsNames);
                     for i=1:length(ConditionVarsNames)

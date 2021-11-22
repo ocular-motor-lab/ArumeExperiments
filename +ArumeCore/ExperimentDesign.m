@@ -311,7 +311,7 @@ classdef ExperimentDesign < handle
                         Select_Conditions.All = { {'0', '{1}'}};
                         for i=1:length(ConditionVars)
                             name = ConditionVars{i};
-                            values = categories(this.Session.experimentDesign.TrialTable{:,ConditionVars{i}});
+                            values = categories(categorical(this.Session.experimentDesign.TrialTable{:,ConditionVars{i}}));
                             for j=1:numel(values)
                                 Select_Conditions.(strcat(name, '_', genvarname(string(values(j))))) = { {'{0}', '1'}};
                             end

@@ -465,7 +465,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                 ConditionVarsNames = this.Session.experimentDesign.TrialTable.Properties.VariableNames(6:end);
                 condition = [];
                 for i=1:length(ConditionVarsNames)
-                    conditionVarLevels = categories(this.Session.experimentDesign.TrialTable{:,ConditionVarsNames{i}});
+                    conditionVarLevels = categories(categorical(this.Session.experimentDesign.TrialTable{:,ConditionVarsNames{i}}));
                     if ( numel(conditionVarLevels)>1)
                         if (isempty(condition) )
                             condition = string(trialDataTable{:,ConditionVarsNames(i)});
@@ -486,6 +486,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                 % add columns to quick and slow phases for trial number and
                 % also the values of each condition variable that
                 % corresponds with that trial
+                [qp, sp] = VOGAnalysis.GetQuickAndSlowPhaseTable(samplesDataTable);
                 qpDataVars = qp.Properties.VariableNames;
                 spDataVars = sp.Properties.VariableNames;
                 

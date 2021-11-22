@@ -16,11 +16,12 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             
             dlg.NumberOfRepetitions = {1 '* (N)' [1 100] };
                          
-            dlg.TargetSize = 0.5;
+            dlg.TargetSize = {0.5 '* (deg)' [0.1 10]};
             
             dlg.BackgroundBrightness = 0;
             
             dlg.StimulusContrast0to100 = {100 '* (%)' [0 100] };
+            dlg.StimSizeDeg = {20 '* (deg)' [1 100]};
             dlg.ImTilt = {30 '* (deg)' [0 90] };
             
             dlg.Initial_Fixation_Duration = {2 '* (s)' [1 100] };
@@ -36,7 +37,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             
             i = i+1;
             conditionVars(i).name   = 'Image';
-            conditionVars(i).values = {'Im1' 'Im2' 'Im3' 'Im4' 'Im5' 'Im6' 'Im7' 'Im8' 'Im9' 'Im10' 'Im11' 'Im12' 'Im13' 'Im14' 'Im15' 'Im16' 'Im17' 'Im19' 'Im20' 'Im22' 'Im23' 'Im24'};
+            conditionVars(i).values = {'Im01' 'Im02' 'Im03' 'Im04' 'Im05' 'Im06' 'Im07' 'Im08' 'Im09' 'Im10' 'Im11' 'Im12' 'Im13' 'Im14' 'Im15' 'Im16' 'Im17' 'Im19' 'Im20' 'Im22' 'Im23' 'Im24'};
             
             i = i+1;
             conditionVars(i).name   = 'ImTilt';
@@ -67,9 +68,27 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             test = string(thisTrialData.Image)
             imageFile = fullfile(fileparts(mfilename('fullpath')),[test + ".jpeg"]);
             I = imread(imageFile);
-            
+                
+            monitorWidthPix     = this.Graph.wRect(3);
+            monitorWidthCm      = this.ExperimentOptions.DisplayOptions.ScreenWidth;
+            monitorDistanceCm   = this.ExperimentOptions.DisplayOptions.ScreenDistance;
+            stimSizeDeg         = this.ExperimentOptions.DisplayOptions.StimSizeDeg;
+
+
+            % we will asume that pixels are square
+            monitorWidthDeg     = 2*atand(monitorWidthCm/monitorDistanceCm/2);
+            % asuming linearity (not completely true for very large displays
+            %             pixelsPerDeg        = monitorWidthPix/monitorWidthDeg;
+            %             stimSizePix         = pixelsPerDeg * stimSizeDeg;
+
+            % non linear aproximation
+            stimSizeCm  = tand(stimSizeDeg)*monitorDistanceCm;
+            stimSizePix = stimSizeCm/monitorWidthCm*monitorWidthPix;
+
+
+
             Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
-            Isquare = imresize(Isquare, [this.Graph.wRect(4) this.Graph.wRect(4)], 'bilinear');
+            Isquare = imresize(Isquare, [stimSizePix stimSizePix], 'bilinear');
             this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
             
                     

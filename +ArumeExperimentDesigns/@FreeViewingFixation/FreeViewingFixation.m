@@ -20,14 +20,20 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             
             dlg.BackgroundBrightness = 0;
             
-            dlg.StimulusContrast0to100 = {100 '* (%)' [0 100] };
-            dlg.StimSizeDeg = {20 '* (deg)' [1 100]};
+            dlg.StimulusContrast0to100 = {60 '* (%)' [0 100] };
+            dlg.StimSizeDeg = {20 '* (deg)' [1 100] };
             dlg.ImTilt = {30 '* (deg)' [0 90] };
             
             dlg.Initial_Fixation_Duration = {2 '* (s)' [1 100] };
             
             dlg.TrialDuration = {12 '* (s)' [1 100] };
             dlg.HitKeyBeforeTrial = { {'0' '{1}'} };
+
+            % Change the defaults for the screen parameters
+            dlg.DisplayOptions.ScreenWidth = { 144 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenHeight = { 80 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenDistance = { 90 '* (cm)' [1 3000] };
+            
         end
         
         % Set up the trial table when a new session is created
@@ -37,7 +43,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             
             i = i+1;
             conditionVars(i).name   = 'Image';
-            conditionVars(i).values = {'Im01' 'Im02' 'Im03' 'Im04' 'Im05' 'Im06' 'Im07' 'Im08' 'Im09' 'Im10' 'Im11' 'Im12' 'Im13' 'Im14' 'Im15' 'Im16' 'Im17' 'Im19' 'Im20' 'Im22' 'Im23' 'Im24'};
+            conditionVars(i).values = {'Im01' 'Im02' 'Im03' 'Im04' 'Im05' 'Im06' 'Im07' 'Im08' 'Im09' 'Im10' 'Im11' 'Im12' 'Im13' 'Im14' 'Im15' 'Im16' 'Im17' 'Im18' 'Im19' 'Im20' 'Im21' 'Im22' 'Im23'};
             
             i = i+1;
             conditionVars(i).name   = 'ImTilt';
@@ -69,32 +75,29 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             imageFile = fullfile(fileparts(mfilename('fullpath')),[test + ".jpeg"]);
             I = imread(imageFile);
                 
-            monitorWidthPix     = this.Graph.wRect(3);
-            monitorWidthCm      = this.ExperimentOptions.DisplayOptions.ScreenWidth;
-            monitorDistanceCm   = this.ExperimentOptions.DisplayOptions.ScreenDistance;
-            stimSizeDeg         = this.ExperimentOptions.DisplayOptions.StimSizeDeg;
-
+            monitorWidthPix     = this.Graph.wRect(3)
+            monitorWidthCm      = this.ExperimentOptions.DisplayOptions.ScreenWidth
+            monitorDistanceCm   = this.ExperimentOptions.DisplayOptions.ScreenDistance
+            stimSizeDeg         = this.ExperimentOptions.StimSizeDeg
 
             % we will asume that pixels are square
-            monitorWidthDeg     = 2*atand(monitorWidthCm/monitorDistanceCm/2);
+            monitorWidthDeg     = 2*atand(monitorWidthCm/monitorDistanceCm/2)
             % asuming linearity (not completely true for very large displays
             %             pixelsPerDeg        = monitorWidthPix/monitorWidthDeg;
             %             stimSizePix         = pixelsPerDeg * stimSizeDeg;
 
             % non linear aproximation
-            stimSizeCm  = tand(stimSizeDeg)*monitorDistanceCm;
-            stimSizePix = stimSizeCm/monitorWidthCm*monitorWidthPix;
-
-
+            stimSizeCm  = 2*tand(stimSizeDeg/2)*monitorDistanceCm
+            %stimSizePix = stimSizeCm/monitorWidthCm*monitorWidthPix;
+            stimSizePix = (monitorWidthPix/monitorWidthCm)*stimSizeCm
 
             Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
             Isquare = imresize(Isquare, [stimSizePix stimSizePix], 'bilinear');
             this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
             
-                    
-    
          end
             
+
         function [trialResult, thisTrialData] = runTrial( this, thisTrialData )
             
             Enum = ArumeCore.ExperimentDesign.getEnum();

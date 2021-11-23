@@ -1815,7 +1815,9 @@ classdef VOGAnalysis < handle
                 speed = sqrt( data.([eyes{k} 'VelX']).^2 +  data.([eyes{k} 'VelY']).^2 );
                 qp2_props.Amplitude = sqrt( props.(eyes{k}).X.Amplitude.^2 + props.(eyes{k}).Y.Amplitude.^2);
                 qp2_props.Displacement = sqrt( (pos(qp(:,2),1) - pos(qp(:,1),1) ).^2 + ( pos(qp(:,2),2) - pos(qp(:,1),2) ).^2 );
-                qp2_props.Direction = atan2(pos(qp(:,2),2) - pos(qp(:,1),2), pos(qp(:,2),1) - pos(qp(:,1),1) );
+%                 qp2_props.Direction = atan2(pos(qp(:,2),2) - pos(qp(:,1),2), pos(qp(:,2),1) - pos(qp(:,1),1) );
+                qp2_props.Direction = atan2(props.(eyes{k}).Y.Displacement, props.(eyes{k}).X.Displacement );
+%                 qp2_props.Direction = atan2(props.(eyes{k}).Y.Amplitude, props.(eyes{k}).X.Amplitude );
                 qp2_props.PeakSpeed = nan(size(qp(:,1)));
                 qp2_props.MeanSpeed = nan(size(qp(:,1)));
                 for i=1:size(qp,1)
@@ -1832,7 +1834,7 @@ classdef VOGAnalysis < handle
                 quickPhaseTable.Displacement   = mean([ props.Left.XY.Displacement props.Right.XY.Displacement],2,'omitnan');
                 quickPhaseTable.PeakSpeed      = mean([ props.Left.XY.PeakSpeed props.Right.XY.PeakSpeed],2,'omitnan');
                 quickPhaseTable.MeanSpeed      = mean([ props.Left.XY.MeanSpeed props.Right.XY.MeanSpeed],2,'omitnan');
-                quickPhaseTable.Direction      = mean([ props.Left.XY.Direction props.Right.XY.Direction],2,'omitnan');
+                quickPhaseTable.Direction      = mean([ props.Left.XY.Direction props.Right.XY.Direction],2,'omitnan'); % TODO: Fix circular statistics
             elseif(any(contains(eyes,'Left')))
                 quickPhaseTable.Amplitude      = props.Left.XY.Amplitude;
                 quickPhaseTable.Displacement   = props.Left.XY.Displacement;

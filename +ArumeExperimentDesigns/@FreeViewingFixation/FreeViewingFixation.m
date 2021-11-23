@@ -71,7 +71,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             %experimentFolder = fileparts(mfilename('fullpath'));
             %imageFile = fullfile(experimentFolder,[thisTrialData.Image '.jpg']);
             % END JORGE
-            test = string(thisTrialData.Image)
+            test = string(thisTrialData.Image);
             imageFile = fullfile(fileparts(mfilename('fullpath')),[test + ".jpeg"]);
             I = imread(imageFile);
                 
@@ -173,8 +173,44 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             ss = this.Session.samplesDataTable;
             rr = this.Session.analysisResults;
 
+            binsize = 10;
+            binedges = [0:binsize:360]/180*pi;
+            bincenters = [-binsize/2:binsize:360]/180*pi;
+
+            AnalysisResults_QuickPhases= rr.QuickPhases;
+
+            f = figure;
+            h1 = polarhistogram(AnalysisResults_QuickPhases.Left_Direction(find(AnalysisResults_QuickPhases.ImTilt == -30 & AnalysisResults_QuickPhases.Task == "Fixation" & AnalysisResults_QuickPhases.TrialNumber > 0)),bincenters,'Normalization','probability')
+            test1 = h1.Values
+            h2 = polarhistogram(AnalysisResults_QuickPhases.Left_Direction(find(AnalysisResults_QuickPhases.ImTilt == 0 & AnalysisResults_QuickPhases.Task == "Fixation" & AnalysisResults_QuickPhases.TrialNumber > 0)),bincenters,'Normalization','probability')
+            test2 = h2.Values
+            h3 = polarhistogram(AnalysisResults_QuickPhases.Left_Direction(find(AnalysisResults_QuickPhases.ImTilt == 30 & AnalysisResults_QuickPhases.Task == "Fixation" & AnalysisResults_QuickPhases.TrialNumber > 0)),bincenters,'Normalization','probability')
+            test3 = h3.Values
+            h4 = polarhistogram(AnalysisResults_QuickPhases.Left_Direction(find(AnalysisResults_QuickPhases.ImTilt == -30 & AnalysisResults_QuickPhases.Task == "FreeView" & AnalysisResults_QuickPhases.TrialNumber > 0)),bincenters,'Normalization','probability')
+            test4 = h4.Values
+            h5 = polarhistogram(AnalysisResults_QuickPhases.Left_Direction(find(AnalysisResults_QuickPhases.ImTilt == 0 & AnalysisResults_QuickPhases.Task == "FreeView" & AnalysisResults_QuickPhases.TrialNumber > 0)),bincenters,'Normalization','probability')
+            test5 = h5.Values
+            h6 = polarhistogram(AnalysisResults_QuickPhases.Left_Direction(find(AnalysisResults_QuickPhases.ImTilt == 30 & AnalysisResults_QuickPhases.Task == "FreeView" & AnalysisResults_QuickPhases.TrialNumber > 0)),bincenters,'Normalization','probability')
+            test6 = h6.Values
+
+            close(f);
+
             figure
-            polarhistogram(r.QuickPhases.Direction,36)
+            subplot(2,3,1)
+            polarplot(binedges,[test1 test1(1)],'LineWidth',2, 'Color', 'black')
+            title('-30 Images')
+            subplot(2,3,2)
+            polarplot(binedges,[test2 test2(1)],'LineWidth',2, 'Color', 'black')
+            title('0 Images')
+            subplot(2,3,3)
+            polarplot(binedges,[test3 test3(1)],'LineWidth',2, 'Color', 'black')
+            title('30 Images')
+            subplot(2,3,4)
+            polarplot(binedges,[test4 test4(1)],'LineWidth',2, 'Color', 'black')
+            subplot(2,3,5)
+            polarplot(binedges,[test5 test5(1)],'LineWidth',2, 'Color', 'black')
+            subplot(2,3,6)
+            polarplot(binedges,[test6 test6(1)],'LineWidth',2, 'Color', 'black')
         end
     end
 end

@@ -457,21 +457,7 @@ classdef Arume < handle
             if ( ~exist('sessions','var') )
                 sessions = this.selectedSessions;
             end
-            
-            allSessionsHaveSamplesPrepared = true;
-            for session = sessions
-                allSessionsHaveSamplesPrepared = ~isempty(session.samplesDataTable);
-            end
-            allSessionsHaveTrialsPrepared = true;
-            for session = sessions
-                allSessionsHaveTrialsPrepared = ~isempty(session.trialDataTable);
-            end
-            allSessionsHaveSessionPrepared = true;
-            for session = sessions
-                allSessionsHaveSessionPrepared = ~isempty(session.sessionDataTable);
-            end
-            
-            
+                        
             options = struct();
             options.Prepare_For_Analysis_And_Plots = { {'0','{1}'} };
             
@@ -486,13 +472,6 @@ classdef Arume < handle
                         end
                     end
                 end
-            end
-            
-            if ( allSessionsHaveTrialsPrepared )
-                options.Preclear_Trial_Table = { {'{0}','1'} };
-            end
-            if ( allSessionsHaveSessionPrepared )
-                options.Preclear_Session_Table = { {'{0}','1'} };
             end
         end
         

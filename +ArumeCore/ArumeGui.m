@@ -109,12 +109,12 @@ classdef ArumeGui < matlab.apps.AppBase
             app.tabSessionInfo = uitab(app.rightPanel);
             app.tabSessionInfo.Title = 'Session info';
             
-            app.tabSessionTable = uitab(app.rightPanel);
-            app.tabSessionTable.Title = 'Session table';
-            app.rightPanel.SelectionChangedFcn = @app.tabRightPanelCallBack;
-            
-            app.tabTrialTable = uitab(app.rightPanel);
-            app.tabTrialTable.Title = 'Trial table';
+%             app.tabSessionTable = uitab(app.rightPanel);
+%             app.tabSessionTable.Title = 'Session table';
+%             app.rightPanel.SelectionChangedFcn = @app.tabRightPanelCallBack;
+%             
+%             app.tabTrialTable = uitab(app.rightPanel);
+%             app.tabTrialTable.Title = 'Trial table';
             
             
             %  Construct the components
@@ -132,11 +132,11 @@ classdef ArumeGui < matlab.apps.AppBase
             app.infoBox.Position = [1 app.tabSessionInfo.Position(4)/5+2 app.tabSessionInfo.Position(3)-3 app.tabSessionInfo.Position(4)*4/5-35];
             app.infoBox.BackgroundColor = 'w';
             
-            app.sessionTable = uitable(app.tabSessionTable);
-            app.sessionTable.Position = [1 1 app.tabSessionInfo.Position(3)-3 app.tabSessionInfo.Position(4)-35];
-            
-            app.trialTable = uitable(app.tabTrialTable);
-            app.trialTable.Position = [1 1 app.tabSessionInfo.Position(3)-3 app.tabSessionInfo.Position(4)-35];
+%             app.sessionTable = uitable(app.tabSessionTable);
+%             app.sessionTable.Position = [1 1 app.tabSessionInfo.Position(3)-3 app.tabSessionInfo.Position(4)-35];
+%             
+%             app.trialTable = uitable(app.tabTrialTable);
+%             app.trialTable.Position = [1 1 app.tabSessionInfo.Position(3)-3 app.tabSessionInfo.Position(4)-35];
             
             
             app.commentsTextBox = 	uitextarea(app.tabSessionInfo);
@@ -490,7 +490,7 @@ classdef ArumeGui < matlab.apps.AppBase
             recentProjects = app.arumeController.configuration.recentProjects;
             recentProjects = recentProjects(~contains(recentProjects','.aruprj'));
                 
-            for i=1:length(recentProjects)
+            for i=1:min(length(recentProjects),10)
                 uimenu(app.menuProjectLoadRecentProject, ...
                     'Text'     , recentProjects{i}, ...
                     'Callback'  , @app.loadProject);
@@ -1029,8 +1029,8 @@ classdef ArumeGui < matlab.apps.AppBase
         function ClearAllPrepareAndAnalyses( app, ~, ~ )
             
             choice = questdlg(...
-                ['Are you sure you want to delete the data for app session?' ...
-                'You will need to prepare everything again'], ...
+                ['Are you sure you want to delete the analsys data for the sessions?' ...
+                'You will need to prepare everything again. You will not lose the raw data.'], ...
                 'Clear data', ...
                 'Yes','No','No');
             switch choice

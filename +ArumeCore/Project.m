@@ -40,6 +40,7 @@ classdef Project < handle
                         fullfile(this.path, ...
                         [this.name '_ArumeSessionTable.csv']));
                 end
+                cprintf('blue', '++ ARUME::Done saving project session table to disk.\n');
                 disp('======= ARUME EXCEL DATA SAVED TO DISK ==============================')
             catch err
                 disp('ERROR saving excel data');

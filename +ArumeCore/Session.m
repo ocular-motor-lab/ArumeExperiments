@@ -84,6 +84,7 @@ classdef Session < ArumeCore.DataDB
         
         % Struct with all the output of analyses
         analysisResults
+        analysisLog
         
     end
     
@@ -131,6 +132,10 @@ classdef Session < ArumeCore.DataDB
                 varName = res.name;
                 analysisResults.(varName) = this.ReadVariable(['AnalysisResults_' varName]);
             end
+        end
+
+        function sessionDataTable = get.analysisLog(this)
+            sessionDataTable = this.ReadVariable('analysisLog');
         end
         
     end
@@ -339,15 +344,6 @@ classdef Session < ArumeCore.DataDB
                 return;
             end
             
-            if ( isfield(options,'Preclear_Trial_Table') && options.Preclear_Trial_Table )
-                this.RemoveVariable('trialDataTable');
-            end
-            
-            if ( isfield(options,'Preclear_Session_Table') && options.Preclear_Session_Table)
-                this.RemoveVariable('sessionDataTable');
-            end
-            
-            
             %% 0) Create the basic trial data table (without custom experiment stuff)
             if ( options.Prepare_For_Analysis_And_Plots )
                 
@@ -395,7 +391,6 @@ classdef Session < ArumeCore.DataDB
                 
                 this.WriteVariable(trials,'trialDataTable');
                 
-                
                 %% 1) Prepare the sample data table
                 if ( isempty(this.samplesDataTable) )
                     % In most cases this will just be from EyeTracking
@@ -425,16 +420,37 @@ classdef Session < ArumeCore.DataDB
                         cprintf('red', sprintf('++ VOGAnalysis :: ERROR PREPARING SAMPLES. WE WILL TRY TO CONTINUE.\n'));
                     end
                 end
+                cprintf('blue', '++ ARUME::Done with samplesDataTable.\n');
                 
                 %% 2) Prepare the trial data table
                 trials = this.experimentDesign.PrepareTrialDataTable(trials, options);
                 if ( ~isempty(trials) )
                     this.WriteVariable(trials,'trialDataTable');
                 end
+                cprintf('blue', '++ ARUME::Done with trialDataTable.\n');
                 
                 %% 3) Prepare session data table
                 newSessionDataTable = this.GetBasicSessionDataTable();
                 newSessionDataTable = this.experimentDesign.PrepareSessionDataTable(newSessionDataTable, options);
+                newSessionDataTable.LastAnalysisDateTime = datestr(now);
+                
+                options = FlattenStructure(options); % eliminate strcuts with the struct so it can be made into a row of a table
+                opts = fieldnames(options);
+                s = this.experimentDesign.GetExperimentOptionsDialog(1);
+                for i=1:length(opts)
+                    if ( isempty(options.(opts{i})))
+                        newSessionDataTable.(['AnalysisOption_' opts{i}]) = {''};
+                    elseif ( ~ischar( options.(opts{i})) && numel(options.(opts{i})) <= 1)
+                        newSessionDataTable.(['AnalysisOption_' opts{i}]) = options.(opts{i});
+                    elseif (isfield( s, opts{i}) && iscell(s.(opts{i})) && iscell(s.(opts{i}){1}) && length(s.(opts{i}){1}) >1)
+                        newSessionDataTable.(['AnalysisOption_' opts{i}]) = categorical(cellstr(options.(opts{i})));
+                    elseif (~ischar(options.(opts{i})) && numel(options.(opts{i})) > 1 )
+                        newSessionDataTable.(['AnalysisOption_' opts{i}]) = {options.(opts{i})};
+                    else
+                        newSessionDataTable.(['AnalysisOption_' opts{i}]) = string(options.(opts{i}));
+                    end
+                end
+
                 if ( ~isempty(newSessionDataTable) )
                     this.WriteVariable(newSessionDataTable,'sessionDataTable');
                 end
@@ -443,6 +459,7 @@ classdef Session < ArumeCore.DataDB
         
         function runAnalysis(this, options)
             
+            cprintf('blue', '++ ARUME::Preparing for Analysis.\n');
             this.prepareForAnalysis(options);
             
             [results, samples, trials, sessionTable]  = this.experimentDesign.RunDataAnalyses( ...
@@ -463,6 +480,7 @@ classdef Session < ArumeCore.DataDB
                     this.WriteVariable(results,'AnalysisResults');
                 end
             end
+            cprintf('blue', '++ ARUME::Done with AnalysisResults.\n');
             
             if ( ~isempty(samples) )
                 this.WriteVariable(samples,'samplesDataTable');
@@ -475,6 +493,8 @@ classdef Session < ArumeCore.DataDB
             if ( ~isempty(sessionTable) )
                 this.WriteVariable(sessionTable,'sessionDataTable');
             end
+
+            cprintf('blue', '++ ARUME::Done saving session to disk.\n');
         end
                 
         function newSessionDataTable = GetBasicSessionDataTable(this)

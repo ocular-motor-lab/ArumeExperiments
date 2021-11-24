@@ -71,25 +71,25 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             %experimentFolder = fileparts(mfilename('fullpath'));
             %imageFile = fullfile(experimentFolder,[thisTrialData.Image '.jpg']);
             % END JORGE
-            test = string(thisTrialData.Image)
+            test = string(thisTrialData.Image);
             imageFile = fullfile(fileparts(mfilename('fullpath')),[test + ".jpeg"]);
             I = imread(imageFile);
                 
-            monitorWidthPix     = this.Graph.wRect(3)
-            monitorWidthCm      = this.ExperimentOptions.DisplayOptions.ScreenWidth
-            monitorDistanceCm   = this.ExperimentOptions.DisplayOptions.ScreenDistance
-            stimSizeDeg         = this.ExperimentOptions.StimSizeDeg
+            monitorWidthPix     = this.Graph.wRect(3);
+            monitorWidthCm      = this.ExperimentOptions.DisplayOptions.ScreenWidth;
+            monitorDistanceCm   = this.ExperimentOptions.DisplayOptions.ScreenDistance;
+            stimSizeDeg         = this.ExperimentOptions.StimSizeDeg;
 
             % we will asume that pixels are square
-            monitorWidthDeg     = 2*atand(monitorWidthCm/monitorDistanceCm/2)
+            monitorWidthDeg     = 2*atand(monitorWidthCm/monitorDistanceCm/2);
             % asuming linearity (not completely true for very large displays
             %             pixelsPerDeg        = monitorWidthPix/monitorWidthDeg;
             %             stimSizePix         = pixelsPerDeg * stimSizeDeg;
 
             % non linear aproximation
-            stimSizeCm  = 2*tand(stimSizeDeg/2)*monitorDistanceCm
+            stimSizeCm  = 2*tand(stimSizeDeg/2)*monitorDistanceCm;
             %stimSizePix = stimSizeCm/monitorWidthCm*monitorWidthPix;
-            stimSizePix = (monitorWidthPix/monitorWidthCm)*stimSizeCm
+            stimSizePix = (monitorWidthPix/monitorWidthCm)*stimSizeCm;
 
             Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
             Isquare = imresize(Isquare, [stimSizePix stimSizePix], 'bilinear');

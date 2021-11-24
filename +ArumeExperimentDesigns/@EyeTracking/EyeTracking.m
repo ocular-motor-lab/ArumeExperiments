@@ -369,6 +369,10 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             trialDataTable = this.Session.trialDataTable;
             varsToGroup = trialDataTable.Properties.UserData.EyeTrackingPrepareTrialDataTableVariables;
             
+            % IT IS TOO SLOW NOW! 11/23/2021 CANNOT DO ALL THIS WHEN THERE
+            % ARE MANY CONDITIONS OR MANY LEVELS
+            return;
+
             % Also calculate average across conditions for each of the
             % values of each condition variables. 
             % Also create a variable that containes all the combinations of
@@ -531,8 +535,11 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                 
                 
                 
-                
-                
+
+                % IT IS TOO SLOW NOW! 11/23/2021 CANNOT DO ALL THIS WHEN THERE
+                % ARE MANY CONDITIONS OR MANY LEVELS
+                return;
+
                 
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 % CALCULATE AVERAGE QP AND SP PROPERTIES ACROSS TRIALS

@@ -33,7 +33,7 @@ classdef DataDB < handle
                 mkdir(this.folder);
             end
         end
-                
+        
         function result = IsVariableInDB( this, variableName )
             d = dir( fullfile( this.folder, [variableName '.mat'] ) );
             if isempty(d)
@@ -93,6 +93,12 @@ classdef DataDB < handle
             end
         end
         
+        function WriteVariableIfNotEmpty( this, variable, variableName)
+            if ( ~isempty(variable) )
+                this.WriteVariable(variable,variableName);
+            end
+        end
+        
         function WriteVariable( this, variable, variableName )
             if ( ~this.READONLY )
                 try
@@ -122,10 +128,10 @@ classdef DataDB < handle
                 disp('ClusterDetection.DataDB: cannot write to the database, it is set as read only');
             end
         end
-
+        
         function ClearCache( this )
             this.cache = struct();
-        end 
+        end
     end
 end
 

@@ -585,7 +585,9 @@ classdef VOGAnalysis < handle
                 data.(colname) = str2double(data.(colname));
                 
                 data.([colname '_comment']) = strings(height(data),1);
-                data.([colname '_comment'])(rows) = temp(:,2);
+                if ( ~isempty(temp) )
+                    data.([colname '_comment'])(rows) = temp(:,2);
+                end
                 data.([colname '_comment']) = categorical(data.([colname '_comment']));
             end
             

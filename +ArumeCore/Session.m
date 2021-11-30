@@ -389,7 +389,7 @@ classdef Session < ArumeCore.DataDB
                     end
                 end
                 
-                this.WriteVariable(trials,'trialDataTable');
+                this.WriteVariableIfNotEmpty(trials,'trialDataTable');
                 
                 %% 1) Prepare the sample data table
                 if ( isempty(this.samplesDataTable) )
@@ -399,24 +399,12 @@ classdef Session < ArumeCore.DataDB
                     try
                         [samples, cleanedData, calibratedData, rawData] = this.experimentDesign.PrepareSamplesDataTable(options);
                         
-                        if ( ~isempty(samples) )
-                            this.WriteVariable(samples,'samplesDataTable');
-                        end
-                        
-                        if ( ~isempty(rawData) )
-                            this.WriteVariable(rawData,'rawDataTable');
-                        end
-                        
-                        if ( ~isempty(cleanedData) )
-                            this.WriteVariable(cleanedData,'cleanedData');
-                        end
-                        
-                        if ( ~isempty(calibratedData) )
-                            this.WriteVariable(calibratedData,'calibratedData');
-                        end
+                        this.WriteVariableIfNotEmpty(samples,'samplesDataTable');
+                        this.WriteVariableIfNotEmpty(rawData,'rawDataTable');
+                        this.WriteVariableIfNotEmpty(cleanedData,'cleanedData');
+                        this.WriteVariableIfNotEmpty(calibratedData,'calibratedData');
                     catch ex
                         getReport(ex)
-                        
                         cprintf('red', sprintf('++ VOGAnalysis :: ERROR PREPARING SAMPLES. WE WILL TRY TO CONTINUE.\n'));
                     end
                 end
@@ -424,9 +412,7 @@ classdef Session < ArumeCore.DataDB
                 
                 %% 2) Prepare the trial data table
                 trials = this.experimentDesign.PrepareTrialDataTable(trials, options);
-                if ( ~isempty(trials) )
-                    this.WriteVariable(trials,'trialDataTable');
-                end
+                this.WriteVariableIfNotEmpty(trials,'trialDataTable');
                 cprintf('blue', '++ ARUME::Done with trialDataTable.\n');
                 
                 %% 3) Prepare session data table
@@ -450,16 +436,15 @@ classdef Session < ArumeCore.DataDB
                         newSessionDataTable.(['AnalysisOption_' opts{i}]) = string(options.(opts{i}));
                     end
                 end
-
-                if ( ~isempty(newSessionDataTable) )
-                    this.WriteVariable(newSessionDataTable,'sessionDataTable');
-                end
+                
+                this.WriteVariableIfNotEmpty(newSessionDataTable,'sessionDataTable');
             end
         end
         
         function runAnalysis(this, options)
             
             cprintf('blue', '++ ARUME::Preparing for Analysis.\n');
+            
             this.prepareForAnalysis(options);
             
             [results, samples, trials, sessionTable]  = this.experimentDesign.RunDataAnalyses( ...
@@ -469,32 +454,20 @@ classdef Session < ArumeCore.DataDB
                 this.sessionDataTable, ...
                 options);
         
-            if ( ~isempty(results) )
-                if ( isstruct(results))
-                    fields = fieldnames(results);
-                    for i=1:length(fields)
-                        result = results.(fields{i});
-                        this.WriteVariable(result,['AnalysisResults_' fields{i}]);
-                    end
-                else
-                    this.WriteVariable(results,'AnalysisResults');
+            this.WriteVariableIfNotEmpty(samples,'samplesDataTable');
+            this.WriteVariableIfNotEmpty(trials,'trialDataTable');
+            this.WriteVariableIfNotEmpty(sessionTable,'sessionDataTable');
+            
+            % save the fields of AnalysisResults into separate variables
+            if ( isstruct(results))
+                for field=fieldnames(results)
+                    this.WriteVariableIfNotEmpty(results.(field{1}),['AnalysisResults_' field{1}]);
                 end
-            end
-            cprintf('blue', '++ ARUME::Done with AnalysisResults.\n');
-            
-            if ( ~isempty(samples) )
-                this.WriteVariable(samples,'samplesDataTable');
-            end
-            
-            if ( ~isempty(trials) )
-                this.WriteVariable(trials,'trialDataTable');
-            end
-            
-            if ( ~isempty(sessionTable) )
-                this.WriteVariable(sessionTable,'sessionDataTable');
+            else
+                this.WriteVariableIfNotEmpty(results,'AnalysisResults');
             end
 
-            cprintf('blue', '++ ARUME::Done saving session to disk.\n');
+            cprintf('blue', '++ ARUME::Done saving session analysis to disk.\n');
         end
                 
         function newSessionDataTable = GetBasicSessionDataTable(this)

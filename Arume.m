@@ -128,6 +128,7 @@ classdef Arume < handle
             end
             
             useGui = 1;
+            loadlast = 0;
             
             % option to clear the singleton
             if ( exist('command','var') )
@@ -145,6 +146,8 @@ classdef Arume < handle
                         clear arumeSingleton;
                         clear arumeController;
                         return;
+                    case 'last'
+                        loadlast = 1;
                 end
             end
             
@@ -154,6 +157,10 @@ classdef Arume < handle
                 
                 arumeSingleton = arumeController;
                 arumeSingleton.init();
+            end
+            
+            if ( loadlast )
+                projectPath = arumeSingleton.configuration.recentProjects{1};
             end
             
             if ( exist('projectPath','var') )
@@ -360,8 +367,11 @@ classdef Arume < handle
             this.currentProject.save();
         end
         
-        function options = getDefaultExperimentOptions(this, experiment)
-            options = ArumeCore.ExperimentDesign.GetDefaultExperimentOptions(experiment);
+        function options = getDefaultExperimentOptions(this, experiment, importing)
+            if ( ~exist('importing','var') )
+                importing = 0;
+            end
+            options = ArumeCore.ExperimentDesign.GetDefaultExperimentOptions(experiment, importing);
         end
         
         %

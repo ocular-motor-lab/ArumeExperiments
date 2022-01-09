@@ -484,8 +484,17 @@ classdef VOGAnalysis < handle
         % FOVE specific functions
         function [samplesDataTable, cleanedData, calibratedData, rawData] = LoadCleanAndResampleDataFOVE(dataFolder, dataFiles, params)
             
+            if ( nargin == 1)
+                [dataFolder, dataFiles,ext] = fileparts(dataFolder);
+                dataFiles = [dataFiles,ext];
+            end
+            
             if (~iscell(dataFiles))
                 dataFiles = {dataFiles};
+            end
+            
+            if  (~exist('params','var') )
+                params = VOGAnalysis.GetParameters;
             end
 
             samplesDataTable = table();
@@ -502,12 +511,18 @@ classdef VOGAnalysis < handle
                 
                 [rawDataFile]           = VOGAnalysis.LoadFOVEdata(dataFilePath);
                 cleanedDataFile         = VOGAnalysis.CleanData(rawDataFile, params);
-                fileSamplesDataSet      = VOGAnalysis.ResampleData(cleanedDataFile, params);
+                fileSamplesDataSet      = cleanedDataFile;
+%                 fileSamplesDataSet      = VOGAnalysis.ResampleData(cleanedDataFile, params);
+
+                rawsamplerate = rawDataFile.Properties.UserData.sampleRate;
                 
                 % add a column to indicate which file the samples came from
                 fileSamplesDataSet  = [table(repmat(i,height(fileSamplesDataSet),1),'variablenames',{'FileNumber'}), fileSamplesDataSet];
                 rawDataFile         = [table(repmat(i,height(rawDataFile),1),       'variablenames',{'FileNumber'}), rawDataFile];
                 cleanedDataFile     = [table(repmat(i,height(cleanedDataFile),1),   'variablenames',{'FileNumber'}), cleanedDataFile];
+                
+                % TODO: change if resampling! 
+                fileSamplesDataSet.Properties.UserData.sampleRate = rawsamplerate;
                 
                 if( i>1)
                     % fix timestamps while concatenating so they
@@ -595,17 +610,32 @@ classdef VOGAnalysis < handle
             data.EyeStateRight = categorical(data.EyeStateRight);
             
             
-
-
-
             % fix the timestamps:
             framerate  = 1/mode(boxcar(diff(data.ApplicationTime),2));
             framenumberAprox = boxcar((data.ApplicationTime-data.ApplicationTime(1))*framerate,2);
+            
+            %%
+            df = diff(floor(framenumberAprox));
+            idxzero = find(df==0);
+            
+            for i=1:length(idxzero)
+                idxmore = find(df>1);
+                [M,I] = min(abs(idxzero(i) - idxmore));
+                df(idxzero(i)) = 1;
+                idxToAdd = idxmore(I);
+                df(idxToAdd) = df(idxToAdd)-1;
+            end
+            framenumberAprox = cumsum([framenumberAprox(1);df]);
+            
+            
+            
             newTimestamps = (framenumberAprox)/framerate+data.ApplicationTime(1);
 
             
             % Add the fields that Arume is expecting
             data.FrameNumber = framenumberAprox-framenumberAprox(1)+1;
+            
+            
             data.LeftFrameNumberRaw = data.FrameNumber;
             data.RightFrameNumberRaw = data.FrameNumber;
             data.Time = newTimestamps;
@@ -617,6 +647,8 @@ classdef VOGAnalysis < handle
             data.LeftY = asind(data.EyeRayLeftDirY);
             data.RightT = data.EyeTorsion_degrees_Right;
             data.LeftT = data.EyeTorsion_degrees_Left;
+            
+            data.Properties.UserData.sampleRate = framerate;
         end
     end
     

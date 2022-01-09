@@ -212,11 +212,11 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                     calibratedData = table();
                     rawData = table();
                     
-                    if ( ~isprop(this.Session.currentRun, 'LinkedFiles' ) || ~isfield(this.Session.currentRun.LinkedFiles,  'vogDataFile') )
+                    if ( ~isprop(this.Session.currentRun, 'LinkedFiles' ) || ~isfield(this.Session.currentRun.LinkedFiles,  'foveDataFile') )
                         return;
                     end
                     
-                    dataFiles = this.Session.currentRun.LinkedFiles.vogDataFile;
+                    dataFiles = this.Session.currentRun.LinkedFiles.foveDataFile;
                     if (~iscell(dataFiles) )
                         dataFiles = {dataFiles};
                     end
@@ -229,83 +229,113 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
         function trialDataTable = PrepareTrialDataTable( this, trialDataTable, options)
             samplesData = this.Session.samplesDataTable;
             
+            if ( isfield(this.ExperimentOptions,'EyeTracker') )
+                eyeTrackerType = this.ExperimentOptions.EyeTracker;
+            else
+                eyeTrackerType = 'OpenIris';
+            end
+            
             if ( ~isempty( samplesData ) )
                 
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                % DEAL WITH OLD FILES THAT HAVE SOME MISSING FIELDS
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 
-                % Old versions did not have a file number column. This code
-                % recovers one from the events file.
-                if ( ~any(strcmp(trialDataTable.Properties.VariableNames,'FileNumber')) )
-                    % Find the file number that corresponds with each trial.
-                    if ( isfield(this.Session.currentRun.LinkedFiles, 'vogEventsFile'))
-                        ev = VOGAnalysis.ReadEventFiles(this.Session.dataPath, this.Session.currentRun.LinkedFiles.vogEventsFile);
-                        trialDataTable.FileNumber = ev.FileNumber(this.Session.currentRun.pastTrialTable.TrialResult=='CORRECT');
-                    else
-                        % if there are no event files assume all the data
-                        % comes from one single file
-                        trialDataTable.FileNumber = ones(size(trialDataTable.TrialNumber));
-                    end
-                end
-
-                % Old versions did not have a timestamp from the eye
-                % tracker to line up trials precisely. This reads the old
-                % event file to try to line them up.
-                if ( ~any(strcmp(trialDataTable.Properties.VariableNames,'EyeTrackerFrameNumberTrialStart')) )
-                    if ( height(trialDataTable) == 1 )
-                        trialDataTable.EyeTrackerFrameNumberTrialStart = samplesData.RawFrameNumber(1);
-                        trialDataTable.EyeTrackerFrameNumberTrialStop = samplesData.RawFrameNumber(end);
-                    else
-                        events = readtable(fullfile(this.Session.folder, this.Session.currentRun.LinkedFiles.vogEventsFile),'Delimiter',' ');
-                        % get frame number from event table
-                        % get trial duration from trialDataTable
-                        % calculate frame number off of those two things
-                        events = events(this.Session.currentRun.pastTrialTable.TrialResult=='CORRECT',:);
-                        trialDataTable.EyeTrackerFrameNumberTrialStart = events.Var2 - samplesData.LeftCameraRawFrameNumber(1)+1;
-                        if ( min(trialDataTable.EyeTrackerFrameNumberTrialStart) < 0 )
-                            % crappy fix for files recorded around july-aug
-                            % 2018. The data files and the event files have
-                            % different frame numbers so they cannot be
-                            % lined up exactly.
-                            daysForFirstTrialStart = datenum(events.Var1{1},'yyyy-mm-dd-HH:MM:SS');
-                            a = regexp(this.Session.currentRun.LinkedFiles.vogEventsFile,'.+PostProc\-(?<date>.+)\-events\.txt', 'names');
-                            daysForFileOpening = datenum(a.date,'yyyymmmdd-HHMMSS');
-                            secondsFromFileOpeningToFirstTrial = (daysForFirstTrialStart-daysForFileOpening)*24*60*60;
-                            frameNumberFirstTrialStart = min( secondsFromFileOpeningToFirstTrial*100,  max(samplesData.FrameNumber) - (trialDataTable.TimeTrialStop(end)-trialDataTable.TimeTrialStart(1))*100);
-                            trialDataTable.EyeTrackerFrameNumberTrialStart = (trialDataTable.TimeTrialStart-trialDataTable.TimeTrialStart(1))*100 + frameNumberFirstTrialStart;
+                switch(eyeTrackerType)
+                    case 'OpenIris'
+                        
+                        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                        % DEAL WITH OLD FILES THAT HAVE SOME MISSING FIELDS
+                        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                        
+                        % Old versions did not have a file number column. This code
+                        % recovers one from the events file.
+                        if ( ~any(strcmp(trialDataTable.Properties.VariableNames,'FileNumber')) )
+                            % Find the file number that corresponds with each trial.
+                            if ( isfield(this.Session.currentRun.LinkedFiles, 'vogEventsFile'))
+                                ev = VOGAnalysis.ReadEventFiles(this.Session.dataPath, this.Session.currentRun.LinkedFiles.vogEventsFile);
+                                trialDataTable.FileNumber = ev.FileNumber(this.Session.currentRun.pastTrialTable.TrialResult=='CORRECT');
+                            else
+                                % if there are no event files assume all the data
+                                % comes from one single file
+                                trialDataTable.FileNumber = ones(size(trialDataTable.TrialNumber));
+                            end
                         end
-                        trialDataTable.EyeTrackerFrameNumberTrialStop = (trialDataTable.TimeTrialStop - trialDataTable.TimeTrialStart)*100 + trialDataTable.EyeTrackerFrameNumberTrialStart;    
-                    end
+                        
+                        % Old versions did not have a timestamp from the eye
+                        % tracker to line up trials precisely. This reads the old
+                        % event file to try to line them up.
+                        if ( ~any(strcmp(trialDataTable.Properties.VariableNames,'EyeTrackerFrameNumberTrialStart')) )
+                            if ( height(trialDataTable) == 1 )
+                                trialDataTable.EyeTrackerFrameNumberTrialStart = samplesData.RawFrameNumber(1);
+                                trialDataTable.EyeTrackerFrameNumberTrialStop = samplesData.RawFrameNumber(end);
+                            else
+                                events = readtable(fullfile(this.Session.folder, this.Session.currentRun.LinkedFiles.vogEventsFile),'Delimiter',' ');
+                                % get frame number from event table
+                                % get trial duration from trialDataTable
+                                % calculate frame number off of those two things
+                                events = events(this.Session.currentRun.pastTrialTable.TrialResult=='CORRECT',:);
+                                trialDataTable.EyeTrackerFrameNumberTrialStart = events.Var2 - samplesData.LeftCameraRawFrameNumber(1)+1;
+                                if ( min(trialDataTable.EyeTrackerFrameNumberTrialStart) < 0 )
+                                    % crappy fix for files recorded around july-aug
+                                    % 2018. The data files and the event files have
+                                    % different frame numbers so they cannot be
+                                    % lined up exactly.
+                                    daysForFirstTrialStart = datenum(events.Var1{1},'yyyy-mm-dd-HH:MM:SS');
+                                    a = regexp(this.Session.currentRun.LinkedFiles.vogEventsFile,'.+PostProc\-(?<date>.+)\-events\.txt', 'names');
+                                    daysForFileOpening = datenum(a.date,'yyyymmmdd-HHMMSS');
+                                    secondsFromFileOpeningToFirstTrial = (daysForFirstTrialStart-daysForFileOpening)*24*60*60;
+                                    frameNumberFirstTrialStart = min( secondsFromFileOpeningToFirstTrial*100,  max(samplesData.FrameNumber) - (trialDataTable.TimeTrialStop(end)-trialDataTable.TimeTrialStart(1))*100);
+                                    trialDataTable.EyeTrackerFrameNumberTrialStart = (trialDataTable.TimeTrialStart-trialDataTable.TimeTrialStart(1))*100 + frameNumberFirstTrialStart;
+                                end
+                                trialDataTable.EyeTrackerFrameNumberTrialStop = (trialDataTable.TimeTrialStop - trialDataTable.TimeTrialStart)*100 + trialDataTable.EyeTrackerFrameNumberTrialStart;
+                            end
+                        end
+                        
+                        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                        % END OF DEALING WITH OLD FILES
+                        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                        
+                        
+                        
+                        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                        % LINE UP TRIALS AND SAMPLES DATA
+                        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                        
+                        % Find the samples that mark the begining and ends of trials
+                        trialDataTable.SampleStartTrial = nan(size(trialDataTable.TrialNumber));
+                        trialDataTable.SampleStopTrial = nan(size(trialDataTable.TrialNumber));
+                        if ( ~any(strcmp(samplesData.Properties.VariableNames, 'FileNumber')))
+                            samplesData.FileNumber = ones(size(samplesData.Time));
+                        end
+                        for i=1:height(trialDataTable)
+                            trialDataTable.SampleStartTrial(i) = find(samplesData.FileNumber' == trialDataTable.FileNumber(i) & samplesData.RawFrameNumber'>=trialDataTable.EyeTrackerFrameNumberTrialStart(i),1,'first');
+                            trialDataTable.SampleStopTrial(i) = find(samplesData.FileNumber' == trialDataTable.FileNumber(i) & samplesData.RawFrameNumber'<=trialDataTable.EyeTrackerFrameNumberTrialStop(i),1,'last');
+                        end
+                        
+                        % Build a column for the samples with the trial number
+                        samplesData.TrialNumber = nan(size(samplesData.FrameNumber));
+                        for i=1:height(trialDataTable)
+                            idx = trialDataTable.SampleStartTrial(i):trialDataTable.SampleStopTrial(i);
+                            samplesData.TrialNumber(idx) = trialDataTable.TrialNumber(i);
+                        end
+                    case 'Fove'
+                        % Find the samples that mark the begining and ends of trials
+                        trialDataTable.SampleStartTrial = nan(size(trialDataTable.TrialNumber));
+                        trialDataTable.SampleStopTrial = nan(size(trialDataTable.TrialNumber));
+                        if ( ~any(strcmp(samplesData.Properties.VariableNames, 'FileNumber')))
+                            samplesData.FileNumber = ones(size(samplesData.Time));
+                        end
+                        for i=1:height(trialDataTable)
+                            trialDataTable.SampleStartTrial(i) = find(samplesData.FileNumber' == trialDataTable.FileNumber(i) & samplesData.RawTime'>=trialDataTable.TrialStartTime(i),1,'first');
+                            trialDataTable.SampleStopTrial(i) = find(samplesData.FileNumber' == trialDataTable.FileNumber(i) & samplesData.RawTime'<=trialDataTable.TrialEndTime(i),1,'last');
+                        end
+                        
+                        % Build a column for the samples with the trial number
+                        samplesData.TrialNumber = nan(size(samplesData.FrameNumber));
+                        for i=1:height(trialDataTable)
+                            idx = trialDataTable.SampleStartTrial(i):trialDataTable.SampleStopTrial(i);
+                            samplesData.TrialNumber(idx) = trialDataTable.TrialNumber(i);
+                        end
                 end
                 
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                % END OF DEALING WITH OLD FILES
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                
-                
-                
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                % LINE UP TRIALS AND SAMPLES DATA
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                
-                % Find the samples that mark the begining and ends of trials
-                trialDataTable.SampleStartTrial = nan(size(trialDataTable.TrialNumber));
-                trialDataTable.SampleStopTrial = nan(size(trialDataTable.TrialNumber));
-                if ( ~any(strcmp(samplesData.Properties.VariableNames, 'FileNumber')))
-                    samplesData.FileNumber = ones(size(samplesData.Time));
-                end
-                for i=1:height(trialDataTable)
-                    trialDataTable.SampleStartTrial(i) = find(samplesData.FileNumber' == trialDataTable.FileNumber(i) & samplesData.RawFrameNumber'>=trialDataTable.EyeTrackerFrameNumberTrialStart(i),1,'first');
-                    trialDataTable.SampleStopTrial(i) = find(samplesData.FileNumber' == trialDataTable.FileNumber(i) & samplesData.RawFrameNumber'<=trialDataTable.EyeTrackerFrameNumberTrialStop(i),1,'last');
-                end
-                
-                % Build a column for the samples with the trial number
-                samplesData.TrialNumber = nan(size(samplesData.FrameNumber));
-                for i=1:height(trialDataTable)
-                    idx = trialDataTable.SampleStartTrial(i):trialDataTable.SampleStopTrial(i);
-                    samplesData.TrialNumber(idx) = trialDataTable.TrialNumber(i);
-                end
                 
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 % CALCULATE AVERAGE EYE MOVEMENT STATS FOR EACH TRIAL

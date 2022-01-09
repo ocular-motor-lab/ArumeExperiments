@@ -368,7 +368,7 @@ classdef VOGDataExplorer < matlab.apps.AppBase
                 radioButton = uiradiobutton(app.GroupbyButtonGroup);
                 radioButton.Text = groupByOptions{i};
                 radioButton.Position = [paddh (hcols1(1)-hrow*(i+1)-paddv) (wcols(1)-paddh*2) hrow];
-                if ( i==length(groupByOptions) )
+                if ( i==4 )
                     radioButton.Value = true;
                 end
             end

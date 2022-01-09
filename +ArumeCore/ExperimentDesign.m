@@ -765,9 +765,12 @@ classdef ExperimentDesign < handle
     
     methods ( Static = true )
         
-        function options = GetDefaultExperimentOptions(experiment)
+        function options = GetDefaultExperimentOptions(experiment, importing)
+            if ( ~exist('importing','var') )
+                importing = 0;
+            end
             experiment = ArumeCore.ExperimentDesign.Create(experiment);
-            optionsDlg = experiment.GetExperimentOptionsDialog( );
+            optionsDlg = experiment.GetExperimentOptionsDialog( importing);
             options = StructDlg(optionsDlg,'',[],[],'off');
         end
             

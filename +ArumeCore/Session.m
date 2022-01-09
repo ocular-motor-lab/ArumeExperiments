@@ -246,6 +246,12 @@ classdef Session < ArumeCore.DataDB
         function addFile(this, fileTag, filePath)
             
             [~,fileName, ext] = fileparts(filePath);
+            counter = 1;
+            fileNameOrig = fileName;
+            while ( exist(fullfile(this.dataPath, [fileName ext] ),'file') )
+                fileName = sprintf([fileNameOrig '_%02d'], counter);
+                counter = counter + 1;
+            end
             copyfile(filePath, fullfile(this.dataPath, [fileName ext] ));
                 
             if ( ~isfield(this.currentRun.LinkedFiles, fileTag) )

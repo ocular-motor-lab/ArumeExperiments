@@ -409,7 +409,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             % all conditions and avarege across those
             ConditionVarsNames = {};
             condition = [];
-            for i=1:length(this.Session.experimentDesign.ConditionVars)
+            for i=1:length(this.Session.experimentDesign.ConditionVars) %TODO CHANGE
                 if ( numel(this.Session.experimentDesign.ConditionVars(i).values)>1)
                     ConditionVarsNames{end+1} = this.Session.experimentDesign.ConditionVars(i).name;
                     if (isempty(condition) )
@@ -496,10 +496,10 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             end
             
             if (updateTrialsAndSessionTables)
-                ConditionVarsNames = this.Session.experimentDesign.TrialTable.Properties.VariableNames(6:end);
+                ConditionVarsNames = this.Session.currentRun.pastTrialTable.Properties.VariableNames(6:end);
                 condition = [];
                 for i=1:length(ConditionVarsNames)
-                    conditionVarLevels = categories(categorical(this.Session.experimentDesign.TrialTable{:,ConditionVarsNames{i}}));
+                    conditionVarLevels = categories(categorical(this.Session.currentRun.pastTrialTable{:,ConditionVarsNames{i}}));
                     if ( numel(conditionVarLevels)>1)
                         if (isempty(condition) )
                             condition = string(trialDataTable{:,ConditionVarsNames(i)});
@@ -529,6 +529,8 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                 sp.TrialNumber = samplesDataTable.TrialNumber(sp.StartIndex);
                 for i=1:numel(ConditionVarsNames)
                     if ( iscategorical(trialDataTable{qp.TrialNumber(~isnan(qp.TrialNumber)),ConditionVarsNames{i}}))
+                        qp{~isnan(qp.TrialNumber),ConditionVarsNames{i}} =  categorical(trialDataTable{qp.TrialNumber(~isnan(qp.TrialNumber)),ConditionVarsNames{i}});
+                    elseif iscellstr(trialDataTable{qp.TrialNumber(~isnan(qp.TrialNumber)),ConditionVarsNames{i}})
                         qp{~isnan(qp.TrialNumber),ConditionVarsNames{i}} =  categorical(trialDataTable{qp.TrialNumber(~isnan(qp.TrialNumber)),ConditionVarsNames{i}});
                     else
                         qp{:,ConditionVarsNames{i}} = nan(height(qp),1);

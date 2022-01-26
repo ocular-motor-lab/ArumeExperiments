@@ -923,6 +923,8 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         options.Number_of_bins = 36;
                         options.Feature =  {'{Direction}|NOTIMPLEMENTED'};
                         options.Component = { '{Both eyes combined}|Left eye|Right eye|Left and right eye' };
+                        options.Normalize = { '{No}|By area|By max' };
+                        options.Average = { {'{0}','1'} };
                         filterNames = fieldnames(this.FilterTableByConditionVariable('get_filters'));
                         options.DataToInclude = {filterNames};
                         options.Select_Trial_Conditions = this.FilterTableByConditionVariable('get_filters');
@@ -990,44 +992,99 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                     COLUMNS = {'Component','Condition', 'Session'};
             end
 
-            ELEMENTS = {};
-            for i=1:3
-                ELEMENTS{i} = unique(allprops.(COLUMNS{i}),'stable');
-            end
-            hforLegend = [];
-            for i=1:length(ELEMENTS{1})
-                figure('name',string(ELEMENTS{1}(i)))
-                for j=1:length(ELEMENTS{2})
-                    ax1 = subplot(nplot1(length(ELEMENTS{2})),nplot2(length(ELEMENTS{2})),j);
+            if ( ~options.Average)
+                ELEMENTS = {};
+                for i=1:3
+                    ELEMENTS{i} = unique(allprops.(COLUMNS{i}),'stable');
+                end
+                hforLegend = [];
+                for i=1:length(ELEMENTS{1})
+                    figure('name',string(ELEMENTS{1}(i)))
+                    for j=1:length(ELEMENTS{2})
+                        ax1 = subplot(nplot1(length(ELEMENTS{2})),nplot2(length(ELEMENTS{2})),j);
+                        ax = polaraxes('Units',ax1.Units,'Position',ax1.Position, 'nextplot','add'); % https://www.mathworks.com/matlabcentral/answers/443441-can-i-plot-multiple-polar-histograms-together
+                        delete(ax1);
+                        xdata = allprops(allprops.(COLUMNS{1})==ELEMENTS{1}(i) & allprops.(COLUMNS{2})==ELEMENTS{2}(j),:);
+                        tit = strcat(options.Feature, ' distribution - ', strrep(string(ELEMENTS{2}(j)), '_', ' '));
+                        xlab = [options.Feature '(' units ')'];
+                        for k=1:length(xdata.Data)
+                            angles = rad2deg(xdata.Data{k});
+                            binsize = 360/options.Number_of_bins;
+
+                            binedges = (-180-binsize/2):binsize:(180-binsize/2); % shift the bins to have one bin centered in zero
+                            bincenters = (binedges(1:end-1) + binedges(2:end))/2;
+
+                            angles(angles>max(binedges)) = -360+angles(angles>max(binedges)); % so the circular binning works with our bin shift
+
+                            h = histcounts(angles, binedges);
+                            switch(options.Normalize)
+                                case 'By area'
+                                    h = h/sum(h);
+                                case 'By max'
+                                    h = h/max(h);
+                            end
+
+                            radBinsCenter = deg2rad(bincenters);
+
+                            h = polarplot(ax, radBinsCenter([1:end 1]), h([1:end 1]));
+
+                            hforLegend(k) = h;
+
+                        end
+
+                        title(tit);
+                    end
+                end
+                ll = legend(hforLegend, strrep(string(ELEMENTS{3}),'_', ' '),'box','off');
+                set(ll,'Location','northeast');
+            else
+                ELEMENTS = {};
+                for i=1:3
+                    ELEMENTS{i} = unique(allprops.(COLUMNS{i}),'stable');
+                end
+                hforLegend = [];
+                figure()
+                for i=1:length(ELEMENTS{1})
+                    tit = strcat('Average ', options.Feature, ' distribution - ', strrep(string(ELEMENTS{1}(i)), '_', ' '));
+                    ax1 = subplot(nplot1(length(ELEMENTS{1})),nplot2(length(ELEMENTS{1})),i);
                     ax = polaraxes('Units',ax1.Units,'Position',ax1.Position, 'nextplot','add'); % https://www.mathworks.com/matlabcentral/answers/443441-can-i-plot-multiple-polar-histograms-together
                     delete(ax1);
-                    xdata = allprops(allprops.(COLUMNS{1})==ELEMENTS{1}(i) & allprops.(COLUMNS{2})==ELEMENTS{2}(j),:);
-                    tit = strcat(options.Feature, ' distribution - ', strrep(string(ELEMENTS{2}(j)), '_', ' '));
-                    xlab = [options.Feature '(' units ')'];
-                    for k=1:length(xdata.Data)
-                        angles = rad2deg(xdata.Data{k});
-                        binsize = 360/options.Number_of_bins;
-                        
-                        binedges = (-180-binsize/2):binsize:(180-binsize/2); % shift the bins to have one bin centered in zero
-                        bincenters = (binedges(1:end-1) + binedges(2:end))/2;
-                        
-                        angles(angles>max(binedges)) = -360+angles(angles>max(binedges)); % so the circular binning works with our bin shift
-                        
-                        h = histcounts(angles, binedges);
-                        
-                        radBinsCenter = deg2rad(bincenters);
-                        
-                        h = polarplot(ax, radBinsCenter([1:end 1]), h([1:end 1]));
-                        
-                        hforLegend(k) = h;
+                    for j=1:length(ELEMENTS{2})
+                        xdata = allprops(allprops.(COLUMNS{1})==ELEMENTS{1}(i) & allprops.(COLUMNS{2})==ELEMENTS{2}(j),:);
+                        allH = [];
+                        for k=1:length(xdata.Data)
+                            angles = rad2deg(xdata.Data{k});
+                            binsize = 360/options.Number_of_bins;
 
+                            binedges = (-180-binsize/2):binsize:(180-binsize/2); % shift the bins to have one bin centered in zero
+                            bincenters = (binedges(1:end-1) + binedges(2:end))/2;
+
+                            angles(angles>max(binedges)) = -360+angles(angles>max(binedges)); % so the circular binning works with our bin shift
+
+                            h = histcounts(angles, binedges);
+                            switch(options.Normalize)
+                                case 'By area'
+                                    h = h/sum(h);
+                                case 'By max'
+                                    h = h/max(h);
+                            end
+
+                            radBinsCenter = deg2rad(bincenters);
+
+                            allH = vertcat(allH, h);
+                        end
+
+                        havg = mean(allH, 1);
+                        h = polarplot(ax, radBinsCenter([1:end 1]), havg([1:end 1]));
+
+                        xlab = [options.Feature '(' units ')'];
+                        hforLegend(j) = h;
+                        title(tit);
                     end
-                        
-                    title(tit);
                 end
+                ll = legend(hforLegend, strrep(string(ELEMENTS{2}),'_', ' '),'box','off');
+                set(ll,'Location','northeast');
             end
-            ll = legend(hforLegend, strrep(string(ELEMENTS{3}),'_', ' '),'box','off');
-            set(ll,'Location','northeast');
 
         end
         

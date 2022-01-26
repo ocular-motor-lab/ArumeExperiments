@@ -570,6 +570,7 @@ classdef VOGAnalysis < handle
                 'EyeRayRightDirZ', ...
                 'EyeTorsion_degrees_Left', ...
                 'EyeTorsion_degrees_Right', ...
+                'GazeConvergenceDistance', ...
                 'PupilRadius_millimeters_Left', ...
                 'PupilRadius_millimeters_Right', ...
                 'IrisRadiusLeft', ...
@@ -640,6 +641,19 @@ classdef VOGAnalysis < handle
             data.RightFrameNumberRaw = data.FrameNumber;
             data.Time = newTimestamps;
             
+            % TODO: I am correcting for some occassions where the Dir
+            % vector is a bit longer than 1 and is causing some imaginary
+            % numbers to pop up. But not sure why this is the case. Should
+            % check with FOVE. 
+            R = sqrt(data.EyeRayRightDirX.^2 +  data.EyeRayRightDirY.^2 + data.EyeRayRightDirZ.^2);
+            data.EyeRayRightDirX  = data.EyeRayRightDirX ./ R;
+            data.EyeRayRightDirY  = data.EyeRayRightDirY ./ R;
+            data.EyeRayRightDirZ  = data.EyeRayRightDirZ ./ R;
+            L = sqrt(data.EyeRayLeftDirX.^2 +  data.EyeRayLeftDirY.^2 + data.EyeRayLeftDirZ.^2);
+            data.EyeRayLeftDirX  = data.EyeRayLeftDirX ./ L;
+            data.EyeRayLeftDirY  = data.EyeRayLeftDirY ./ L;
+            data.EyeRayLeftDirZ  = data.EyeRayLeftDirZ ./ L;
+
             %% Do the transformation from raw data to degs
             data.RightX = -asind(data.EyeRayRightDirX./cosd(asind(data.EyeRayRightDirY))); %(the horizontal component of the right eye)
             data.RightY = asind(data.EyeRayRightDirY); %(the vertical axis)

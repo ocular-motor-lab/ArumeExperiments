@@ -1045,7 +1045,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                 hforLegend = [];
                 figure()
                 for i=1:length(ELEMENTS{1})
-                    tit = strcat('Average ', options.Feature, ' distribution - ', strrep(string(ELEMENTS{1}(i)), '_', ' '));
+                    tit = ['Average ', options.Feature, ' distribution - ', strrep(string(ELEMENTS{1}(i)), '_', ' ')];
                     ax1 = subplot(nplot1(length(ELEMENTS{1})),nplot2(length(ELEMENTS{1})),i);
                     ax = polaraxes('Units',ax1.Units,'Position',ax1.Position, 'nextplot','add'); % https://www.mathworks.com/matlabcentral/answers/443441-can-i-plot-multiple-polar-histograms-together
                     delete(ax1);

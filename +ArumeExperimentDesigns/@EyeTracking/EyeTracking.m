@@ -926,7 +926,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         options.Normalize = { '{No}|By area|By max' };
                         options.Average = { {'{0}','1'} };
                         filterNames = fieldnames(this.FilterTableByConditionVariable('get_filters'));
-                        options.DataToInclude = {filterNames};
+                        options.Data_to_Include = {filterNames};
                         options.Select_Trial_Conditions = this.FilterTableByConditionVariable('get_filters');
                         options.Figures_Axes_Lines_Order = {{...
                             '{Sessions-Conditions-Components}' 'Sessions-Components-Conditions' ...
@@ -967,7 +967,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             
             allprops = table();
             for i=1:length(sessions)
-                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Select_Trial_Conditions, components, componentNames, options.DataToInclude);
+                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Select_Trial_Conditions, components, componentNames, options.Data_to_Include);
                 sessionProps.Session = categorical(cellstr(repmat(sessions(i).shortName,height(sessionProps),1)));
                 allprops = vertcat(allprops, sessionProps);
             end
@@ -999,7 +999,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                 end
                 hforLegend = [];
                 for i=1:length(ELEMENTS{1})
-                    figure('name',string(ELEMENTS{1}(i)))
+                    figure('name',string(ELEMENTS{1}(i)),'color','w')
                     for j=1:length(ELEMENTS{2})
                         ax1 = subplot(nplot1(length(ELEMENTS{2})),nplot2(length(ELEMENTS{2})),j);
                         ax = polaraxes('Units',ax1.Units,'Position',ax1.Position, 'nextplot','add'); % https://www.mathworks.com/matlabcentral/answers/443441-can-i-plot-multiple-polar-histograms-together
@@ -1043,9 +1043,9 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                     ELEMENTS{i} = unique(allprops.(COLUMNS{i}),'stable');
                 end
                 hforLegend = [];
-                figure()
+                figure('color','w')
                 for i=1:length(ELEMENTS{1})
-                    tit = ['Average ', options.Feature, ' distribution - ', strrep(string(ELEMENTS{1}(i)), '_', ' ')];
+                    tit = ['Average ' options.Feature ' distribution - ' strrep(char(ELEMENTS{1}(i)), '_', ' ')];
                     ax1 = subplot(nplot1(length(ELEMENTS{1})),nplot2(length(ELEMENTS{1})),i);
                     ax = polaraxes('Units',ax1.Units,'Position',ax1.Position, 'nextplot','add'); % https://www.mathworks.com/matlabcentral/answers/443441-can-i-plot-multiple-polar-histograms-together
                     delete(ax1);
@@ -1075,7 +1075,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         end
 
                         havg = mean(allH, 1);
-                        h = polarplot(ax, radBinsCenter([1:end 1]), havg([1:end 1]));
+                        h = polarplot(ax, radBinsCenter([1:end 1]), havg([1:end 1]),'linewidth',2);
 
                         xlab = [options.Feature '(' units ')'];
                         hforLegend(j) = h;

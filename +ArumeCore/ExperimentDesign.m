@@ -300,9 +300,13 @@ classdef ExperimentDesign < handle
             this.ExperimentOptions = newOptions;
         end
         
-        function [dataTable, idx, selectedFilters] = FilterTableByConditionVariable(this, dataTable, Select_Conditions, columns, columnNames)
+        function [dataTable, idx, selectedFilters] = FilterTableByConditionVariable(this, dataTable, Select_Conditions, columns, columnNames, DataToInclude)
+            
+            if ( ~exist('DataToInclude','var') )
+                DataToInclude = 'All';
+            end
 
-            ConditionVars = this.Session.experimentDesign.TrialTable.Properties.VariableNames(6:end);
+            ConditionVars = this.Session.currentRun.pastTrialTable.Properties.VariableNames(6:end);
 
             if (ischar(dataTable) )
                 switch(dataTable)
@@ -311,9 +315,11 @@ classdef ExperimentDesign < handle
                         Select_Conditions.All = { {'0', '{1}'}};
                         for i=1:length(ConditionVars)
                             name = ConditionVars{i};
-                            values = categories(categorical(this.Session.experimentDesign.TrialTable{:,ConditionVars{i}}));
-                            for j=1:numel(values)
-                                Select_Conditions.(strcat(name, '_', genvarname(string(values(j))))) = { {'{0}', '1'}};
+                            values = categories(categorical(this.Session.currentRun.pastTrialTable{:,ConditionVars{i}}));
+                            if ( numel(values) < 10 )
+                                for j=1:numel(values)
+                                    Select_Conditions.(strcat(name, '_', genvarname(string(values(j))))) = { {'{0}', '1'}};
+                                end
                             end
                         end
                         dataTable = Select_Conditions;
@@ -328,11 +334,26 @@ classdef ExperimentDesign < handle
             Select_ConditionsFilters.All.VarValue = 1;
             for i=1:length(ConditionVars)
                 name = ConditionVars{i};
-                values = categories(this.Session.experimentDesign.TrialTable{:,ConditionVars{i}});
-                for j=1:numel(values)
-                    Select_ConditionsFilters.(strcat(name, '_', genvarname(string(values(j))))).VarName = name;
-                    Select_ConditionsFilters.(strcat(name, '_', genvarname(string(values(j))))).VarValue = values(j);
+                if ( isnumeric(this.Session.currentRun.pastTrialTable{:,ConditionVars{i}}))
+                    values = unique(this.Session.currentRun.pastTrialTable{:,ConditionVars{i}});
+                else
+                    values = categories(categorical(this.Session.currentRun.pastTrialTable{:,ConditionVars{i}}));
                 end
+                if ( numel(values) < 10 )
+                    for j=1:numel(values)
+                        Select_ConditionsFilters.(strcat(name, '_', genvarname(string(values(j))))).VarName = name;
+                        Select_ConditionsFilters.(strcat(name, '_', genvarname(string(values(j))))).VarValue = values(j);
+                    end
+                end
+            end
+            switch(DataToInclude)
+                case 'All'
+                    DataToIncludeName = 'All';
+                    DataToIncludeValue = 1;
+                otherwise
+                    DataToIncludeNameValue = strsplit(DataToInclude,'_');
+                    DataToIncludeName = DataToIncludeNameValue{1};
+                    DataToIncludeValue = DataToIncludeNameValue{2};
             end
             
             selectedFilters = {};
@@ -348,8 +369,9 @@ classdef ExperimentDesign < handle
             dataTable = table();
             idx = table();
             for i=1:length(selectedFilters)
-                idxf = find(sessionDataTable.(Select_ConditionsFilters.(selectedFilters{i}).VarName) == Select_ConditionsFilters.(selectedFilters{i}).VarValue);
-                dataTable{i, {'Data' 'Condition' 'Idx'}} = {sessionDataTable(idxf,:), selectedFilters{i}, idxf};
+                idxf = sessionDataTable.(Select_ConditionsFilters.(selectedFilters{i}).VarName) == Select_ConditionsFilters.(selectedFilters{i}).VarValue;
+                idxf = idxf & sessionDataTable.(DataToIncludeName) == DataToIncludeValue;
+                dataTable{i, {'Data' 'Condition' 'Idx'}} = {sessionDataTable(idxf,:), selectedFilters{i}, find(idxf)};
             end
             
             

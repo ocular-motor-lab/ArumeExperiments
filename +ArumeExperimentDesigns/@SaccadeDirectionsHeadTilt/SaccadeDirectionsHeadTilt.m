@@ -82,11 +82,10 @@ classdef SaccadeDirectionsHeadTilt < ArumeExperimentDesigns.EyeTracking
                 end
             end
             
-            options = StructDlg(this.Session.experimentDesign.GetAnalysisOptionsDialog,'',[],[],'off');
-            options.Prepare_For_Analysis_And_Plots  =1;
-            
-%             this.Session.prepareForAnalysis(options);
-            
+            %             options = StructDlg(this.Session.experimentDesign.GetAnalysisOptionsDialog,'',[],[],'off');
+            %             options.Prepare_For_Analysis_And_Plots  =1;
+            %             this.Session.prepareForAnalysis(options);
+             
         end
         
     end

@@ -1782,107 +1782,92 @@ classdef VOGAnalysis < handle
         
         function [quickPhaseTable] = GetQuickPhaseTable(data)
             [eyes, eyeSignals] = VOGAnalysis.GetEyesAndSignals(data);
-            eyeSignals = setdiff(eyeSignals, {'Pupil', 'LowerLid' 'UpperLid'});
-            %% get QP properties
-            rows = eyeSignals;
+            % double check which components are actually in the data plus
+            % here we only care about 3D eye position. No lid movements or
+            % pupil size
+            components = intersect(eyeSignals, {'X', 'Y' 'T'});
+            doLeft = any(contains(eyes,'Left'));
+            doRight = any(contains(eyes,'Right'));
+            
             SAMPLERATE = data.Properties.UserData.sampleRate;
-            qp = data.QuickPhase;
-            qp = [find(diff([0;qp])>0) find(diff([qp;0])<0)];
             
-            % properties common for all eyes and components
+            % find the begining and ends of the quick-phases
             quickPhaseTable = [];
-            quickPhaseTable.StartIndex = qp(:,1);
-            quickPhaseTable.EndIndex = qp(:,2);
+            quickPhaseTable.StartIndex = find(diff([0;data.QuickPhase])>0);
+            quickPhaseTable.EndIndex = find(diff([data.QuickPhase;0])<0);
+            quickPhaseTable.DurationMs = (quickPhaseTable.EndIndex - quickPhaseTable.StartIndex) * 1000 / SAMPLERATE;
             
-            quickPhaseTable.DurationMs = (qp(:,2) - qp(:,1)) * 1000 / SAMPLERATE;
+            % number of quick-phases
+            n_qp = size(quickPhaseTable.StartIndex,1);
             
             textprogressbar('++ VOGAnalysis :: Calculating quick phases properties: ');
-            Nprogsteps = length(eyes)*length(rows)*size(qp,1)/100;
+            Nprogsteps = length(eyes)*length(components)*n_qp/100;
             tic
             
             props = [];
             for k=1:length(eyes)
-                for j=1:length(rows)
-                    pos = data.([eyes{k} rows{j}]);
-                    vel = data.([eyes{k} 'Vel' rows{j}]);
+                for j=1:length(components)
+                    pos = data.([eyes{k} components{j}]);
+                    vel = data.([eyes{k} 'Vel' components{j}]);
                     
+                    % properties specific for each component (X, Y, T...)
+                    % some of them can be calculated all at once as a
+                    % vector. Some others have to be calculated in a for
+                    % loop one by one
+                    comp_props.GoodBegining = nan(n_qp, 1);
+                    comp_props.GoodEnd = nan(n_qp, 1);
+                    comp_props.GoodTrhought = nan(n_qp, 1);
                     
-                    % properties specific for each component
-                    qp1_props.GoodBegining = nan(size(qp(:,1)));
-                    qp1_props.GoodEnd = nan(size(qp(:,1)));
-                    qp1_props.GoodTrhought = nan(size(qp(:,1)));
+                    comp_props.Amplitude = nan(n_qp, 1);
+                    comp_props.StartPosition = pos(quickPhaseTable.StartIndex);
+                    comp_props.EndPosition = pos(quickPhaseTable.EndIndex);
+                    comp_props.MeanPosition = nan(n_qp, 1);
+                    comp_props.Displacement = comp_props.EndPosition - comp_props.StartPosition;
                     
-                    qp1_props.Amplitude = nan(size(qp(:,1)));
-                    qp1_props.StartPosition = pos(qp(:,1));
-                    qp1_props.EndPosition = pos(qp(:,2));
-                    qp1_props.MeanPosition = nan(size(qp(:,1)));
-                    qp1_props.Displacement = pos(qp(:,2)) - pos(qp(:,1));
+                    comp_props.PeakSpeed = nan(n_qp, 1);
+                    comp_props.PeakVelocity = nan(n_qp, 1);
+                    comp_props.PeakVelocityIdx = nan(n_qp, 1);
+                    comp_props.MeanVelocity = nan(n_qp, 1);
                     
-                    qp1_props.PeakSpeed = nan(size(qp(:,1)));
-                    qp1_props.PeakVelocity = nan(size(qp(:,1)));
-                    qp1_props.PeakVelocityIdx = nan(size(qp(:,1)));
-                    qp1_props.MeanVelocity = nan(size(qp(:,1)));
-                    
-                    for i=1:size(qp,1)
+                    for i=1:n_qp
                         if ( mod(i,100) == 0 )
-                            textprogressbar((((k-1)*length(rows)+j-1)*size(qp,1)+i)/Nprogsteps);
+                            textprogressbar((((k-1)*length(components)+j-1)*n_qp+i)/Nprogsteps);
                         end
-                        qpidx = qp(i,1):qp(i,2);
-                        qp1_props.GoodBegining(i)   = qpidx(1)>1 && ~isnan(vel(qpidx(1)-1));
-                        qp1_props.GoodEnd(i)        = qpidx(end)<length(vel) && ~isnan(vel(qpidx(1)+1));
-                        qp1_props.GoodTrhought(i)   = sum(isnan(vel(qpidx))) == 0;
+                        qpidx = quickPhaseTable.StartIndex(i):quickPhaseTable.EndIndex(i);
+                        comp_props.GoodBegining(i)   = qpidx(1)>1 && ~isnan(vel(qpidx(1)-1));
+                        comp_props.GoodEnd(i)        = qpidx(end)<length(vel) && ~isnan(vel(qpidx(1)+1));
+                        comp_props.GoodTrhought(i)   = sum(isnan(vel(qpidx))) == 0;
                         
-                        qp1_props.Amplitude(i)      = max(pos(qpidx)) - min(pos(qpidx));
-                        qp1_props.MeanPosition(i)   = mean(pos(qpidx),'omitnan');
+                        comp_props.Amplitude(i)      = max(pos(qpidx)) - min(pos(qpidx));
+                        comp_props.MeanPosition(i)   = mean(pos(qpidx),'omitnan');
                         
                         [m,mi] = max(abs(vel(qpidx)));
-                        qp1_props.PeakSpeed(i)      = m;
-                        qp1_props.PeakVelocity(i)   = m*sign(vel(qpidx(mi)));
-                        qp1_props.PeakVelocityIdx(i)= qpidx(1) -1 + mi;
-                        qp1_props.MeanVelocity(i)   = mean(vel(qpidx),'omitnan');
+                        comp_props.PeakSpeed(i)      = m;
+                        comp_props.PeakVelocity(i)   = m*sign(vel(qpidx(mi)));
+                        comp_props.PeakVelocityIdx(i)= qpidx(1) -1 + mi;
+                        comp_props.MeanVelocity(i)   = mean(vel(qpidx),'omitnan');
                     end
                     
-                    props.(eyes{k}).(rows{j}) = qp1_props;
+                    props.(eyes{k}).(components{j}) = comp_props;
                 end
                 
-                pos = [data.([eyes{k} 'X']) data.([eyes{k} 'Y'])];
+                % properties for XY vector
                 speed = sqrt( data.([eyes{k} 'VelX']).^2 +  data.([eyes{k} 'VelY']).^2 );
-                qp2_props.Amplitude = sqrt( props.(eyes{k}).X.Amplitude.^2 + props.(eyes{k}).Y.Amplitude.^2);
-                qp2_props.Displacement = sqrt( (pos(qp(:,2),1) - pos(qp(:,1),1) ).^2 + ( pos(qp(:,2),2) - pos(qp(:,1),2) ).^2 );
-%                 qp2_props.Direction = atan2(pos(qp(:,2),2) - pos(qp(:,1),2), pos(qp(:,2),1) - pos(qp(:,1),1) );
-                qp2_props.Direction = atan2(props.(eyes{k}).Y.Displacement, props.(eyes{k}).X.Displacement );
-%                 qp2_props.Direction = atan2(props.(eyes{k}).Y.Amplitude, props.(eyes{k}).X.Amplitude );
-                qp2_props.PeakSpeed = nan(size(qp(:,1)));
-                qp2_props.MeanSpeed = nan(size(qp(:,1)));
-                for i=1:size(qp,1)
-                    qpidx = qp(i,1):qp(i,2);
-                    qp2_props.PeakSpeed(i) = max(speed(qpidx));
-                    qp2_props.MeanSpeed(i) = mean(speed(qpidx),'omitnan');
+                xy_props.Amplitude = sqrt( props.(eyes{k}).X.Amplitude.^2 + props.(eyes{k}).Y.Amplitude.^2);
+                xy_props.Displacement = sqrt( props.(eyes{k}).X.Displacement.^2 + props.(eyes{k}).Y.Displacement.^2 );
+                xy_props.Direction = atan2(props.(eyes{k}).Y.Displacement, props.(eyes{k}).X.Displacement );
+                xy_props.PeakSpeed = nan(n_qp, 1);
+                xy_props.MeanSpeed = nan(n_qp, 1);
+                for i=1:n_qp
+                    qpidx = quickPhaseTable.StartIndex(i):quickPhaseTable.EndIndex(i);
+                    xy_props.PeakSpeed(i) = max(speed(qpidx));
+                    xy_props.MeanSpeed(i) = mean(speed(qpidx),'omitnan');
                 end
-                props.(eyes{k}).XY = qp2_props;
+                props.(eyes{k}).XY = xy_props;
             end
             
-            % properties common for all eyes and components
-            if ( any(contains(eyes,'Left')) && any(contains(eyes,'Right')) )
-                quickPhaseTable.Amplitude      = mean([ props.Left.XY.Amplitude props.Right.XY.Amplitude],2,'omitnan');
-                quickPhaseTable.Displacement   = mean([ props.Left.XY.Displacement props.Right.XY.Displacement],2,'omitnan');
-                quickPhaseTable.PeakSpeed      = mean([ props.Left.XY.PeakSpeed props.Right.XY.PeakSpeed],2,'omitnan');
-                quickPhaseTable.MeanSpeed      = mean([ props.Left.XY.MeanSpeed props.Right.XY.MeanSpeed],2,'omitnan');
-                quickPhaseTable.Direction      = mean([ props.Left.XY.Direction props.Right.XY.Direction],2,'omitnan'); % TODO: Fix circular statistics
-            elseif(any(contains(eyes,'Left')))
-                quickPhaseTable.Amplitude      = props.Left.XY.Amplitude;
-                quickPhaseTable.Displacement   = props.Left.XY.Displacement;
-                quickPhaseTable.PeakSpeed      = props.Left.XY.PeakSpeed;
-                quickPhaseTable.MeanSpeed      = props.Left.XY.MeanSpeed;
-                quickPhaseTable.Direction      = props.Left.XY.Direction;
-            elseif(any(contains(eyes,'Right')))
-                quickPhaseTable.Amplitude      = props.Right.XY.Amplitude;
-                quickPhaseTable.Displacement   = props.Right.XY.Displacement;
-                quickPhaseTable.PeakSpeed      = props.Right.XY.PeakSpeed;
-                quickPhaseTable.MeanSpeed      = props.Right.XY.MeanSpeed;
-                quickPhaseTable.Direction      = props.Right.XY.Direction;
-            end
-            
+            % these are the properties that can be simply averaged across
+            % eyes for each component
             fieldsToAverageAcrossEyes = {...
                 'Amplitude'...
                 'StartPosition'...
@@ -1894,18 +1879,44 @@ classdef VOGAnalysis < handle
                 'MeanVelocity'};
             for i=1:length(fieldsToAverageAcrossEyes)
                 field  = fieldsToAverageAcrossEyes{i};
-                for j=1:3
-                    if ( any(contains(eyes,'Left')) && any(contains(eyes,'Right')) )
-                        quickPhaseTable.([rows{j} '_' field ]) = mean([ props.Left.(rows{j}).(field) props.Right.(rows{j}).(field)],2,'omitnan');
-                    elseif(any(contains(eyes,'Left')))
-                        quickPhaseTable.([rows{j} '_' field ]) = props.Left.(rows{j}).(field);
-                    elseif(any(contains(eyes,'Right')))
-                        quickPhaseTable.([rows{j} '_' field ]) = props.Right.(rows{j}).(field);
+                for j=1:length(components)
+                    if ( doLeft && doRight )
+                        quickPhaseTable.([components{j} '_' field ]) = mean([ props.Left.(components{j}).(field) props.Right.(components{j}).(field)],2,'omitnan');
+                    elseif(doLeft)
+                        quickPhaseTable.([components{j} '_' field ]) = props.Left.(components{j}).(field);
+                    elseif(doRight)
+                        quickPhaseTable.([components{j} '_' field ]) = props.Right.(components{j}).(field);
                     end
                 end
             end
+
+            % these are the properties that can be simply averaged across
+            % eyes for XY vector. Direction is special due to circular
+            % stats. Cannot just calculate the mean of the directions! 
+            if ( doLeft && doRight )
+                quickPhaseTable.Amplitude      = mean([ props.Left.XY.Amplitude props.Right.XY.Amplitude],2,'omitnan');
+                quickPhaseTable.Displacement   = mean([ props.Left.XY.Displacement props.Right.XY.Displacement],2,'omitnan');
+                quickPhaseTable.PeakSpeed      = mean([ props.Left.XY.PeakSpeed props.Right.XY.PeakSpeed],2,'omitnan');
+                quickPhaseTable.MeanSpeed      = mean([ props.Left.XY.MeanSpeed props.Right.XY.MeanSpeed],2,'omitnan');
+                quickPhaseTable.Direction      = atan2(quickPhaseTable.Y_Displacement, quickPhaseTable.X_Displacement ); 
+            elseif(doLeft)
+                quickPhaseTable.Amplitude      = props.Left.XY.Amplitude;
+                quickPhaseTable.Displacement   = props.Left.XY.Displacement;
+                quickPhaseTable.PeakSpeed      = props.Left.XY.PeakSpeed;
+                quickPhaseTable.MeanSpeed      = props.Left.XY.MeanSpeed;
+                quickPhaseTable.Direction      = props.Left.XY.Direction;
+            elseif(doRight)
+                quickPhaseTable.Amplitude      = props.Right.XY.Amplitude;
+                quickPhaseTable.Displacement   = props.Right.XY.Displacement;
+                quickPhaseTable.PeakSpeed      = props.Right.XY.PeakSpeed;
+                quickPhaseTable.MeanSpeed      = props.Right.XY.MeanSpeed;
+                quickPhaseTable.Direction      = props.Right.XY.Direction;
+            end
             
-            fieldsToDiffAcrossEyes = {...
+
+            % the vergence fields are calculated by substracting the left
+            % and the right eye
+            vergenceFields = {...
                 'Amplitude'...
                 'StartPosition'...
                 'EndPosition'...
@@ -1914,30 +1925,29 @@ classdef VOGAnalysis < handle
                 'PeakSpeed'...
                 'PeakVelocity'...
                 'MeanVelocity'};
-            for i=1:length(fieldsToDiffAcrossEyes)
-                field  = fieldsToDiffAcrossEyes{i};
-                for j=1:3
-                    if ( any(contains(eyes,'Left')) && any(contains(eyes,'Right')) )
-                        quickPhaseTable.([rows{j} '_' 'Vergence' field ]) = props.Left.(rows{j}).(field)- props.Right.(rows{j}).(field);
+            for i=1:length(vergenceFields)
+                field  = vergenceFields{i};
+                for j=1:length(components)
+                    if ( doLeft && doRight )
+                        quickPhaseTable.([components{j} '_' 'Vergence' field ]) = props.Left.(components{j}).(field)- props.Right.(components{j}).(field);
                     else
-                        quickPhaseTable.([rows{j} '_' 'Vergence' field ]) = nan(size(quickPhaseTable.StartIndex));
+                        quickPhaseTable.([components{j} '_' 'Vergence' field ]) = nan(size(quickPhaseTable.StartIndex));
                     end
                 end
             end
             
-            
-            
-            % merge props
+            % add to the main quick phase table the properties for each
+            % individual eye and components
             for k=1:length(eyes)
                 fields = fieldnames(props.(eyes{k}).XY);
                 for i=1:length(fields)
                     quickPhaseTable.([ eyes{k} '_' fields{i}]) = props.(eyes{k}).XY.(fields{i});
                 end
                 
-                for j=1:3
-                    fields = fieldnames(props.(eyes{k}).(rows{j}));
+                for j=1:length(components)
+                    fields = fieldnames(props.(eyes{k}).(components{j}));
                     for i=1:length(fields)
-                        quickPhaseTable.([ eyes{k} '_' rows{j} '_' fields{i}]) = props.(eyes{k}).(rows{j}).(fields{i});
+                        quickPhaseTable.([ eyes{k} '_' components{j} '_' fields{i}]) = props.(eyes{k}).(components{j}).(fields{i});
                     end
                 end
             end
@@ -2637,30 +2647,59 @@ classdef VOGAnalysis < handle
             linkaxes(h,'x')
         end
         
-        function PlotRawTraces(data)
+        function PlotRawTraces(data, eyetracker)
+            if ( ~exist('eyetracker','var'))
+                eyetracker = 'OpenIris';
+            end
             
-            MEDIUM_BLUE =  [0.1000 0.5000 0.8000];
-            MEDIUM_RED = [0.9000 0.2000 0.2000];
-            
-            figure
-            timeL = data.LeftSeconds;
-            timeR = data.RightSeconds;
-            
-            subplot(3,1,1,'nextplot','add')
-            plot(timeL, data.LeftPupilX, 'color', [ MEDIUM_BLUE ])
-            plot(timeR, data.RightPupilX, 'color', [ MEDIUM_RED])
-            ylabel('Horizontal (deg)','fontsize', 16);
-            
-            subplot(3,1,2,'nextplot','add')
-            plot(timeL, data.LeftPupilY, 'color', [ MEDIUM_BLUE ])
-            plot(timeR, data.RightPupilY, 'color', [ MEDIUM_RED])
-            ylabel('Vertical (deg)','fontsize', 16);
-            
-            subplot(3,1,3,'nextplot','add')
-            plot(timeL, data.LeftTorsion, 'color', [ MEDIUM_BLUE ])
-            plot(timeR, data.RightTorsion, 'color', [ MEDIUM_RED])
-            ylabel('Torsion (deg)','fontsize', 16);
-            xlabel('Time (s)');
+            switch(eyetracker)
+                case 'OpenIris'
+                    MEDIUM_BLUE =  [0.1000 0.5000 0.8000];
+                    MEDIUM_RED = [0.9000 0.2000 0.2000];
+                    
+                    figure
+                    timeL = data.LeftSeconds;
+                    timeR = data.RightSeconds;
+                    
+                    subplot(3,1,1,'nextplot','add')
+                    plot(timeL, data.LeftPupilX, 'color', [ MEDIUM_BLUE ])
+                    plot(timeR, data.RightPupilX, 'color', [ MEDIUM_RED])
+                    ylabel('Horizontal (deg)','fontsize', 16);
+                    
+                    subplot(3,1,2,'nextplot','add')
+                    plot(timeL, data.LeftPupilY, 'color', [ MEDIUM_BLUE ])
+                    plot(timeR, data.RightPupilY, 'color', [ MEDIUM_RED])
+                    ylabel('Vertical (deg)','fontsize', 16);
+                    
+                    subplot(3,1,3,'nextplot','add')
+                    plot(timeL, data.LeftTorsion, 'color', [ MEDIUM_BLUE ])
+                    plot(timeR, data.RightTorsion, 'color', [ MEDIUM_RED])
+                    ylabel('Torsion (deg)','fontsize', 16);
+                    xlabel('Time (s)');
+                case 'Fove'
+                    MEDIUM_BLUE =  [0.1000 0.5000 0.8000];
+                    MEDIUM_RED = [0.9000 0.2000 0.2000];
+                    
+                    figure
+                    timeL = cumsum([data.Time(1);max(diff(data.Time), median(diff(data.Time)))]);
+                    timeR = cumsum([data.Time(1);max(diff(data.Time), median(diff(data.Time)))]);
+                    
+                    subplot(3,1,1,'nextplot','add')
+                    plot(timeL, data.LeftX, 'color', [ MEDIUM_BLUE ])
+                    plot(timeR, data.RightX, 'color', [ MEDIUM_RED])
+                    ylabel('Horizontal (deg)','fontsize', 16);
+                    
+                    subplot(3,1,2,'nextplot','add')
+                    plot(timeL, data.LeftY, 'color', [ MEDIUM_BLUE ])
+                    plot(timeR, data.RightY, 'color', [ MEDIUM_RED])
+                    ylabel('Vertical (deg)','fontsize', 16);
+                    
+                    subplot(3,1,3,'nextplot','add')
+                    plot(timeL, data.LeftT, 'color', [ MEDIUM_BLUE ])
+                    plot(timeR, data.RightT, 'color', [ MEDIUM_RED])
+                    ylabel('Torsion (deg)','fontsize', 16);
+                    xlabel('Time (s)');
+            end
         end
         
         function PlotCleanAndResampledData(rawData, resData)
@@ -3009,6 +3048,7 @@ classdef VOGAnalysis < handle
     methods (Static)
         out = PlotMainsequence( varargin );
         out = PlotHistogram( varargin );
+        out = PlotPolarHistogram( varargin );
     end
 end
 

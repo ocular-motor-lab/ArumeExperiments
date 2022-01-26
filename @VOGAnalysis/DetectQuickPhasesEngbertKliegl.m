@@ -276,10 +276,10 @@ if ( params.Detection.Engbert.Refine_Begining_And_End )
         end
     end
     sac = newqp;
+    timeElapsed = toc;
+    textprogressbar(sprintf('Done in %0.2f seconds.', timeElapsed));
 end
 
-timeElapsed = toc;
-textprogressbar(sprintf('Done in %0.2f seconds.', timeElapsed));
 
 
 % build the zero and one vector

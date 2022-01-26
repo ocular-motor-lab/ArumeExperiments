@@ -496,7 +496,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             end
             
             if (updateTrialsAndSessionTables)
-                ConditionVarsNames = this.Session.currentRun.pastTrialTable.Properties.VariableNames(6:end);
+                ConditionVarsNames = this.Session.currentRun.pastTrialTable.Properties.VariableNames(6:end); % TODO: ugly! 
                 condition = [];
                 for i=1:length(ConditionVarsNames)
                     conditionVarLevels = categories(categorical(this.Session.currentRun.pastTrialTable{:,ConditionVarsNames{i}}));
@@ -616,9 +616,14 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
     methods ( Access = public )
         
         function Plot_VOG_RawData(this)
-            data = this.Session.rawDataTable;
-            
-            VOGAnalysis.PlotRawTraces(data);
+            switch(this.ExperimentOptions.EyeTracker) 
+                case 'OpenIris'
+                    data = this.Session.rawDataTable;
+                    VOGAnalysis.PlotRawTraces(data);
+                case 'Fove'
+                    data = this.Session.rawDataTable;
+                    VOGAnalysis.PlotRawTraces(data,'Fove');
+            end
         end
         
         function Plot_VOG_Data_Explorer(this)
@@ -805,6 +810,8 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         options = VOGAnalysis.PlotHistogram('get_options');
                         options.Feature =  {'{Amplitude}|PeakSpeed|Displacement|Direction'};
                         options.Component = { '{XY}|X|Y|T|All|X and Y' };
+                        filterNames = fieldnames(this.FilterTableByConditionVariable('get_filters'));
+                        options.DataToInclude = {filterNames};
                         options.Select_Trial_Conditions = this.FilterTableByConditionVariable('get_filters');
                         options.Figures_Axes_Lines_Order = {{...
                             '{Sessions-Conditions-Components}' 'Sessions-Components-Conditions' ...
@@ -835,7 +842,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             % components. This can be single or multiple. 
             switch(options.Component)
                 case 'XY'
-                    components = options.Feature;
+                    components = {options.Feature};
                     componentNames = {'Polar'};
                 case 'X'
                     components = {['X_' options.Feature]};
@@ -851,12 +858,12 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                     componentNames = {'Horizontal', 'Vertical', 'Torsion'};
                 case 'X and Y'
                     components = {['X_' options.Feature], ['Y_' options.Feature]};
-                    componentNames = {'Horizontal'};
+                    componentNames = {'Horizontal', 'Vertical'};
             end
             
             allprops = table();
             for i=1:length(sessions)
-                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Select_Trial_Conditions, components, componentNames);
+                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Select_Trial_Conditions, components, componentNames, options.DataToInclude);
                 sessionProps.Session = categorical(cellstr(repmat(sessions(i).shortName,height(sessionProps),1)));
                 allprops = vertcat(allprops, sessionProps);
             end
@@ -883,7 +890,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
 
             ELEMENTS = {};
             for i=1:3
-                ELEMENTS{i} = unique(allprops.(COLUMNS{i}),'stable')
+                ELEMENTS{i} = unique(allprops.(COLUMNS{i}),'stable');
             end
             for i=1:length(ELEMENTS{1})
                 figure('name',string(ELEMENTS{1}(i)))
@@ -898,6 +905,132 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             legend(out.forLegend, strrep(string(ELEMENTS{3}),'_', ' '),'box','off');
 
         end
+        
+        
+        function [out, options] = PlotAggregate_VOG_QuickPhase_Polar_Distribution(this, sessions, options)
+            
+            out = [];
+            if ( nargin == 1 )
+                % if passing no parameters get the default options
+                options = this.PlotAggregate_VOG_QuickPhase_Distribution('get_defaults');
+            end
+            
+            if ( ischar(sessions) )
+                command = sessions;
+                switch( command)
+                    case 'get_options'
+                        options = struct();%VOGAnalysis.PlotHistogram('get_options');
+                        options.Number_of_bins = 36;
+                        options.Feature =  {'{Direction}|NOTIMPLEMENTED'};
+                        options.Component = { '{Both eyes combined}|Left eye|Right eye|Left and right eye' };
+                        filterNames = fieldnames(this.FilterTableByConditionVariable('get_filters'));
+                        options.DataToInclude = {filterNames};
+                        options.Select_Trial_Conditions = this.FilterTableByConditionVariable('get_filters');
+                        options.Figures_Axes_Lines_Order = {{...
+                            '{Sessions-Conditions-Components}' 'Sessions-Components-Conditions' ...
+                            'Conditions-Sessions-Components' 'Conditions-Components-Sessions' ...
+                            'Components-Sessions-Conditions'  'Components-Conditions-Sessions'}};
+                        return;
+                    case 'get_defaults'
+                        optionsDlg = VOGAnalysis.PlotAggregate_VOG_QuickPhase_Distribution('get_options');
+                        options = StructDlg(optionsDlg,'',[],[],'off');
+                        return
+                end
+            end
+            
+            % Get the right units for the labels depending on the feature
+            % thatis being plotted
+            switch(options.Feature)
+                case 'Direction'
+                    units = 'Deg';
+            end
+
+            % Pick the variables that corresponds with the options for the
+            % components. This can be single or multiple. 
+            switch(options.Component)
+                case 'Both eyes combined'
+                    options.Component = { '{}|||' };
+                    components = {options.Feature};
+                    componentNames = {'Both eyes'};
+                case 'Left eye'
+                    components = {['Left_' options.Feature]};
+                    componentNames = {'Left eye'};
+                case 'Right eye'
+                    components = {['Right_' options.Feature]};
+                    componentNames = {'Right eye'};
+                case 'Left and right eye'
+                    components = {['Left_' options.Feature], ['Right_' options.Feature]};
+                    componentNames = {'Left eye', 'Right eye'};
+            end
+            
+            allprops = table();
+            for i=1:length(sessions)
+                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Select_Trial_Conditions, components, componentNames, options.DataToInclude);
+                sessionProps.Session = categorical(cellstr(repmat(sessions(i).shortName,height(sessionProps),1)));
+                allprops = vertcat(allprops, sessionProps);
+            end
+                        
+            nplot1 = [1 1 1 2 2 2 2 2 3 2 3 3 3 3 4 4 4 4 4 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5];
+            nplot2 = [1 2 3 2 3 3 4 4 3 5 4 4 5 5 4 5 5 5 5 5 5 5 5 5 6 6 6 6 6 6 7 7 7 7 7 7];
+            
+
+            COLUMNS = {'Session','Condition', 'Component'};
+            switch(options.Figures_Axes_Lines_Order)
+                case 'Sessions-Conditions-Components'
+                    COLUMNS = {'Session','Condition', 'Component'};
+                case 'Sessions-Components-Conditions'
+                    COLUMNS = {'Session', 'Component','Condition'};
+                case 'Conditions-Sessions-Components'
+                    COLUMNS = {'Condition', 'Session', 'Component'};
+                case 'Conditions-Components-Sessions'
+                    COLUMNS = {'Condition', 'Component', 'Session'};
+                case 'Components-Sessions-Conditions'
+                    COLUMNS = {'Component', 'Session','Condition'};
+                case 'Components-Conditions-Sessions'
+                    COLUMNS = {'Component','Condition', 'Session'};
+            end
+
+            ELEMENTS = {};
+            for i=1:3
+                ELEMENTS{i} = unique(allprops.(COLUMNS{i}),'stable');
+            end
+            hforLegend = [];
+            for i=1:length(ELEMENTS{1})
+                figure('name',string(ELEMENTS{1}(i)))
+                for j=1:length(ELEMENTS{2})
+                    ax1 = subplot(nplot1(length(ELEMENTS{2})),nplot2(length(ELEMENTS{2})),j);
+                    ax = polaraxes('Units',ax1.Units,'Position',ax1.Position, 'nextplot','add'); % https://www.mathworks.com/matlabcentral/answers/443441-can-i-plot-multiple-polar-histograms-together
+                    delete(ax1);
+                    xdata = allprops(allprops.(COLUMNS{1})==ELEMENTS{1}(i) & allprops.(COLUMNS{2})==ELEMENTS{2}(j),:);
+                    tit = strcat(options.Feature, ' distribution - ', strrep(string(ELEMENTS{2}(j)), '_', ' '));
+                    xlab = [options.Feature '(' units ')'];
+                    for k=1:length(xdata.Data)
+                        angles = rad2deg(xdata.Data{k});
+                        binsize = 360/options.Number_of_bins;
+                        
+                        binedges = (-180-binsize/2):binsize:(180-binsize/2); % shift the bins to have one bin centered in zero
+                        bincenters = (binedges(1:end-1) + binedges(2:end))/2;
+                        
+                        angles(angles>max(binedges)) = -360+angles(angles>max(binedges)); % so the circular binning works with our bin shift
+                        
+                        h = histcounts(angles, binedges);
+                        
+                        radBinsCenter = deg2rad(bincenters);
+                        
+                        h = polarplot(ax, radBinsCenter([1:end 1]), h([1:end 1]));
+                        
+                        hforLegend(k) = h;
+
+                    end
+                        
+                    title(tit);
+                end
+            end
+            ll = legend(hforLegend, strrep(string(ELEMENTS{3}),'_', ' '),'box','off');
+            set(ll,'Location','northeast');
+
+        end
+        
         
         function [out, options] = PlotAggregate(this, sessions, options)
             

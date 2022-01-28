@@ -300,14 +300,23 @@ classdef ExperimentDesign < handle
             this.ExperimentOptions = newOptions;
         end
         
-        function [dataTable, idx, selectedFilters] = FilterTableByConditionVariable(this, dataTable, Select_Conditions, columns, columnNames, DataToInclude)
+        function [dataTable, idx, selectedFilters] = FilterTableByConditionVariable(this, dataTable, Select_Conditions, columns, columnNames, DataToIncludeFilter1, DataToIncludeFilter2, datafilter)
             
-            if ( ~exist('DataToInclude','var') )
-                DataToInclude = 'All';
+            % if there are no filters just get everything
+            if ( ~exist('DataToIncludeFilter1','var') )
+                DataToIncludeFilter1 = 'All';
+            end
+            if ( ~exist('DataToIncludeFilter2','var') )
+                DataToIncludeFilter2 = 'All';
             end
 
+            % TODO: not great right now. But get all the columns from the
+            % trial table that have condition variables. 
             ConditionVars = this.Session.currentRun.pastTrialTable.Properties.VariableNames(6:end);
 
+            % get all the possible values of the condition variables. But
+            % only if they have less than 10 possible values. Otherwise it
+            % gets too cumbersome
             if (ischar(dataTable) )
                 switch(dataTable)
                     case 'get_filters'
@@ -327,8 +336,12 @@ classdef ExperimentDesign < handle
                 end
             end
             
+            % Add the All condition variable column to allow that filter to
+            % work like all others and not need special code later
             dataTable.All = ones(height(dataTable),1);
             
+            % Get the actual variable name and the value of that variable
+            % for the group filter
             Select_ConditionsFilters = struct();
             Select_ConditionsFilters.All.VarName = 'All';
             Select_ConditionsFilters.All.VarValue = 1;
@@ -346,16 +359,29 @@ classdef ExperimentDesign < handle
                     end
                 end
             end
-            switch(DataToInclude)
+
+            % Get the actual variable name and the value of that variable
+            % for the data to include filters
+            switch(DataToIncludeFilter1)
                 case 'All'
-                    DataToIncludeName = 'All';
-                    DataToIncludeValue = 1;
+                    DataToIncludeName1 = 'All';
+                    DataToIncludeValue1 = 1;
                 otherwise
-                    DataToIncludeNameValue = strsplit(DataToInclude,'_');
-                    DataToIncludeName = DataToIncludeNameValue{1};
-                    DataToIncludeValue = DataToIncludeNameValue{2};
+                    DataToIncludeNameValue1 = strsplit(DataToIncludeFilter1,'_');
+                    DataToIncludeName1 = DataToIncludeNameValue1{1};
+                    DataToIncludeValue1 = DataToIncludeNameValue1{2};
+            end
+            switch(DataToIncludeFilter2)
+                case 'All'
+                    DataToIncludeName2 = 'All';
+                    DataToIncludeValue2 = 1;
+                otherwise
+                    DataToIncludeNameValue2 = strsplit(DataToIncludeFilter2,'_');
+                    DataToIncludeName2 = DataToIncludeNameValue2{1};
+                    DataToIncludeValue2 = DataToIncludeNameValue2{2};
             end
             
+            % find which filters have been selected
             selectedFilters = {};
             
             filters = fieldnames(Select_Conditions);
@@ -365,17 +391,20 @@ classdef ExperimentDesign < handle
                 end
             end
             
+            % create a table with one row per filter and in each row the
+            % filter name and the filtered table
             sessionDataTable = dataTable;
             dataTable = table();
             idx = table();
             for i=1:length(selectedFilters)
                 idxf = sessionDataTable.(Select_ConditionsFilters.(selectedFilters{i}).VarName) == Select_ConditionsFilters.(selectedFilters{i}).VarValue;
-                idxf = idxf & sessionDataTable.(DataToIncludeName) == DataToIncludeValue;
+                idxf = idxf & sessionDataTable.(DataToIncludeName1) == DataToIncludeValue1 & sessionDataTable.(DataToIncludeName2) == DataToIncludeValue2;
                 dataTable{i, {'Data' 'Condition' 'Idx'}} = {sessionDataTable(idxf,:), selectedFilters{i}, find(idxf)};
             end
             
-            
-            
+            % get the specific components we want and if more than one
+            % replicate the rows as many time as needed but with the data
+            % from the particular component
             if ( exist('columns','var'))
                 dataTableTemp = table();
                 for j=1:height(dataTable)
@@ -393,7 +422,18 @@ classdef ExperimentDesign < handle
                 
                 dataTable.Component = categorical(cellstr(dataTable.Component));
             end
-            
+
+            % apply data filters. For each row get only the elements of the
+            % table that meet a particular condition
+            if ( exist('datafilter','var'))
+                for j=1:height(dataTable)
+                    data = sessionDataTable(dataTable.Idx{j},:);
+                    rowsToKeep = eval(datafilter);
+                    dataTable.Data{j}  = dataTable.Data{j}(rowsToKeep,:);
+                    dataTable.Idx{j}  = dataTable.Idx{j}(rowsToKeep,:);
+                end
+            end
+
             dataTable.Condition = categorical(cellstr(dataTable.Condition));
         end
     end

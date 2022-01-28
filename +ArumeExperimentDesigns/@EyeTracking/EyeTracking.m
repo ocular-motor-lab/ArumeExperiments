@@ -926,12 +926,18 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         options.Normalize = { '{No}|By area|By max' };
                         options.Average = { {'{0}','1'} };
                         filterNames = fieldnames(this.FilterTableByConditionVariable('get_filters'));
-                        options.Data_to_Include = {filterNames};
-                        options.Select_Trial_Conditions = this.FilterTableByConditionVariable('get_filters');
+                        options.Trials_to_Include_Filter1 = {filterNames};
+                        options.Trials_to_Include_Filter2 = {filterNames};
+                        options.Trial_Groups_To_Plot = this.FilterTableByConditionVariable('get_filters');
                         options.Figures_Axes_Lines_Order = {{...
-                            '{Sessions-Conditions-Components}' 'Sessions-Components-Conditions' ...
-                            'Conditions-Sessions-Components' 'Conditions-Components-Sessions' ...
-                            'Components-Sessions-Conditions'  'Components-Conditions-Sessions'}};
+                            '{Sessions-Groups-Components}' 'Sessions-Components-Groups' ...
+                            'Groups-Sessions-Components' 'Groups-Components-Sessions' ...
+                            'Components-Sessions-Groups'  'Components-Groups-Sessions'}};
+                        options.QuickPhase_Filter = {{...
+                            '{data.Amplitude > 0}' ...
+                            'data.Amplitude <= 1' 'data.Amplitude <= 3' 'data.Amplitude <= 5' 'data.Amplitude < 10' ...
+                            'data.Amplitude > 1' 'data.Amplitude > 3' 'data.Amplitude > 5' 'data.Amplitude > 10'
+                            }};
                         return;
                     case 'get_defaults'
                         optionsDlg = VOGAnalysis.PlotAggregate_VOG_QuickPhase_Distribution('get_options');
@@ -967,7 +973,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             
             allprops = table();
             for i=1:length(sessions)
-                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Select_Trial_Conditions, components, componentNames, options.Data_to_Include);
+                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Trial_Groups_To_Plot, components, componentNames, options.Trials_to_Include_Filter1, options.Trials_to_Include_Filter2, options.QuickPhase_Filter);
                 sessionProps.Session = categorical(cellstr(repmat(sessions(i).shortName,height(sessionProps),1)));
                 allprops = vertcat(allprops, sessionProps);
             end
@@ -978,17 +984,17 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
 
             COLUMNS = {'Session','Condition', 'Component'};
             switch(options.Figures_Axes_Lines_Order)
-                case 'Sessions-Conditions-Components'
+                case 'Sessions-Groups-Components'
                     COLUMNS = {'Session','Condition', 'Component'};
-                case 'Sessions-Components-Conditions'
+                case 'Sessions-Components-Groups'
                     COLUMNS = {'Session', 'Component','Condition'};
-                case 'Conditions-Sessions-Components'
+                case 'Groups-Sessions-Components'
                     COLUMNS = {'Condition', 'Session', 'Component'};
-                case 'Conditions-Components-Sessions'
+                case 'Groups-Components-Sessions'
                     COLUMNS = {'Condition', 'Component', 'Session'};
-                case 'Components-Sessions-Conditions'
+                case 'Components-Sessions-Groups'
                     COLUMNS = {'Component', 'Session','Condition'};
-                case 'Components-Conditions-Sessions'
+                case 'Components-Groups-Sessions'
                     COLUMNS = {'Component','Condition', 'Session'};
             end
 

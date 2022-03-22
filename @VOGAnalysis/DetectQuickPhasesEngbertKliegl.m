@@ -82,6 +82,7 @@ textprogressbar(1/Nprogsteps);
 
 lrsac = [];
 xy = cell(size(eyes));
+radEyes = {};
 for k=1:length(eyes)
     
     xy{k} = data{:,{[eyes{k} 'X'], [eyes{k} 'Y'], [eyes{k} 'T']}};
@@ -116,6 +117,7 @@ for k=1:length(eyes)
     end
     
     lrsac.(eyes{k}) = sac;
+    radEyes{k} = rad;
 end
 
 textprogressbar(2/Nprogsteps);
@@ -295,6 +297,13 @@ yesNo(us) = yesNo(us)- diff([ius;length(stops)+1]);
 yesNo = cumsum(yesNo)>0;
 
 data.QuickPhase = yesNo;
+info.Engbert_Vth = rad;
+
+for k=1:length(eyes)
+    cprintf('blue', sprintf('++ VOGAnalysis :: Engbert thresholds %s (H V T deg/s) %0.1f %0.1f %0.1f\n', ...
+        eyes{k}, radEyes{k}(1), radEyes{k}(2), radEyes{k}(3) ));
+end
+
 end
 
 function v = engbert_vecvel(xx,SAMPLING,TYPE)

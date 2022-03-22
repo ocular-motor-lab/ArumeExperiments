@@ -102,6 +102,39 @@ classdef VOGAnalysis < handle
             if ( any(strcmp('HeadT',calibratedData.Properties.VariableNames)))
                 headSignals{end+1} = 'HeadT';
             end
+
+            if ( any(strcmp('HeadRoll',calibratedData.Properties.VariableNames)))
+                headSignals{end+1} = 'Roll';
+            end
+            if ( any(strcmp('HeadPitch',calibratedData.Properties.VariableNames)))
+                headSignals{end+1} = 'Pitch';
+            end
+            if ( any(strcmp('HeadYaw',calibratedData.Properties.VariableNames)))
+                headSignals{end+1} = 'Yaw';
+            end
+            if ( any(strcmp('HeadRollVel',calibratedData.Properties.VariableNames)))
+                headSignals{end+1} = 'RollVel';
+            end
+            if ( any(strcmp('HeadPitchVel',calibratedData.Properties.VariableNames)))
+                headSignals{end+1} = 'PitchVel';
+            end
+            if ( any(strcmp('HeadYawVel',calibratedData.Properties.VariableNames)))
+                headSignals{end+1} = 'YawVel';
+            end
+
+
+            if ( any(strcmp('HeadRotationW',calibratedData.Properties.VariableNames)))
+                headSignals{end+1} = 'RotationW';
+            end
+            if ( any(strcmp('HeadRotationX',calibratedData.Properties.VariableNames)))
+                headSignals{end+1} = 'RotationX';
+            end
+            if ( any(strcmp('HeadRotationY',calibratedData.Properties.VariableNames)))
+                headSignals{end+1} = 'RotationY';
+            end
+            if ( any(strcmp('HeadRotationZ',calibratedData.Properties.VariableNames)))
+                headSignals{end+1} = 'RotationZ';
+            end
         end
     end
     
@@ -257,14 +290,22 @@ classdef VOGAnalysis < handle
                 
             else
                 % OLD VERSION OF THE DATA FILES (text file does not have headers)
-                
-                varnames = {
-                    'LeftFrameNumberRaw' 'LeftSeconds' 'LeftX' 'LeftY' 'LeftPupilWidth' 'LeftPupilHeight' 'LeftPupilAngle' 'LeftIrisRadius' 'LeftTorsionAngle' 'LeftUpperEyelid' 'LeftLowerEyelid' 'LeftDataQuality' ...
-                    'RightFrameNumberRaw' 'RightSeconds' 'RightX' 'RightY' 'RightPupilWidth' 'RightPupilHeight' 'RightPupilAngle' 'RightIrisRadius' 'RightTorsionAngle'  'RightUpperEyelid' 'RightLowerEyelid' 'RightDataQuality' ...
-                    'AccelerometerX' 'AccelerometerY' 'AccelerometerZ' 'GyroX' 'GyroY' 'GyroZ' 'MagnetometerX' 'MagnetometerY' 'MagnetometerZ' ...
-                    'KeyEvent' ...
-                    'Int0' 'Int1' 'Int2' 'Int3' 'Int4' 'Int5' 'Int6' 'Int7' ...
-                    'Double0' 'Double1' 'Double2' 'Double3' 'Double4' 'Double5' 'Double6' 'Double7' };
+                if ( width(dataFromFile) == 50)
+                    varnames = {
+                        'LeftFrameNumberRaw' 'LeftSeconds' 'LeftX' 'LeftY' 'LeftPupilWidth' 'LeftPupilHeight' 'LeftPupilAngle' 'LeftIrisRadius' 'LeftTorsionAngle' 'LeftUpperEyelid' 'LeftLowerEyelid' 'LeftDataQuality' ...
+                        'RightFrameNumberRaw' 'RightSeconds' 'RightX' 'RightY' 'RightPupilWidth' 'RightPupilHeight' 'RightPupilAngle' 'RightIrisRadius' 'RightTorsionAngle'  'RightUpperEyelid' 'RightLowerEyelid' 'RightDataQuality' ...
+                        'AccelerometerX' 'AccelerometerY' 'AccelerometerZ' 'GyroX' 'GyroY' 'GyroZ' 'MagnetometerX' 'MagnetometerY' 'MagnetometerZ' ...
+                        'KeyEvent' ...
+                        'Int0' 'Int1' 'Int2' 'Int3' 'Int4' 'Int5' 'Int6' 'Int7' ...
+                        'Double0' 'Double1' 'Double2' 'Double3' 'Double4' 'Double5' 'Double6' 'Double7' };
+                elseif ( width(dataFromFile) == 49)
+                    varnames = {
+                        'LeftFrameNumberRaw' 'LeftSeconds' 'LeftX' 'LeftY' 'LeftPupilWidth' 'LeftPupilHeight' 'LeftPupilAngle' 'LeftIrisRadius' 'LeftTorsionAngle' 'LeftUpperEyelid' 'LeftLowerEyelid' 'LeftDataQuality' ...
+                        'RightFrameNumberRaw' 'RightSeconds' 'RightX' 'RightY' 'RightPupilWidth' 'RightPupilHeight' 'RightPupilAngle' 'RightIrisRadius' 'RightTorsionAngle'  'RightUpperEyelid' 'RightLowerEyelid' 'RightDataQuality' ...
+                        'AccelerometerX' 'AccelerometerY' 'AccelerometerZ' 'GyroX' 'GyroY' 'GyroZ' 'MagnetometerX' 'MagnetometerY' 'MagnetometerZ' ...
+                        'Int0' 'Int1' 'Int2' 'Int3' 'Int4' 'Int5' 'Int6' 'Int7' ...
+                        'Double0' 'Double1' 'Double2' 'Double3' 'Double4' 'Double5' 'Double6' 'Double7' };
+                end
                 dataFromFile.Properties.VariableNames = varnames;
                 
                 data.Time                   = dataFromFile.LeftSeconds - dataFromFile.LeftSeconds(1);
@@ -405,7 +446,10 @@ classdef VOGAnalysis < handle
                 % loading calibrations for files recorded with the old
                 % version of the eye tracker (the one that did not combine
                 % all the files in a folder).
-                [res, text] = system(['C:\secure\Code\EyeTrackerTests\TestLoadCalibration\bin\Debug\TestLoadCalibration.exe "' file ' "']);
+                temppath = pwd;
+                cd ('D:\OneDrive\UC Berkeley\OMlab - JOM\Code\EyeTrackerTests\TestLoadCalibration\bin\Debug\')
+                [res, text] = system(['TestLoadCalibration.exe "' file ' "']);
+                cd(temppath);
                 
                 if ( res  ~= 0 )
                     disp(text);
@@ -1258,7 +1302,7 @@ classdef VOGAnalysis < handle
                 end
                 
                 for j=1:length(headSignals)
-                    signalName = headSignals{j};
+                    signalName = ['Head' headSignals{j}];
                     x = data.(signalName);
                     resampledData.(signalName) = nan(size(rest));
                     
@@ -2509,6 +2553,7 @@ classdef VOGAnalysis < handle
                         optionsDlg.Show_Horizontal = { {'0','{1}'} };
                         optionsDlg.Show_Vertical = { {'0','{1}'} };
                         optionsDlg.Show_Torsion = { {'0','{1}'} };
+                        optionsDlg.Show_Head = { {'{0}','1'} };
                         optionsDlg.Highlight_Quick_Phases = { {'{0}','1'} };
                         
                         optionsDlg.Range_H_pos = { 50 '* (deg)' [0.1 100] };
@@ -2564,17 +2609,20 @@ classdef VOGAnalysis < handle
             comps2 = {'X', 'Y', 'T'};
             
             figure('color','w')
-            hvt = [1 1 1];
+            hvth = [1 1 1 0];
             for i=1:length(comps)
                 if ( ~options.(['Show_' comps{i}]) )
-                    hvt(i) = 0;
+                    hvth(i) = 0;
                 end
+            end
+            if ( options.Show_Head)
+                hvth(4) = 1;
             end
             
             % setup axes
-            hvtAxes = cumsum(hvt);
+            hvtAxes = cumsum(hvth);
             if ( options.Show_Position && options.Show_Velocity )
-                [h, ~] = tight_subplot(sum(hvt), 2);%, gap, marg_h, marg_w)
+                [h, ~] = tight_subplot(sum(hvth), 2);%, gap, marg_h, marg_w)
                 hPos = h(1:2:end);
                 hVel = h(2:2:end);
                 hAxesForYLabel = hPos;
@@ -2617,20 +2665,26 @@ classdef VOGAnalysis < handle
                         end
                     end
                 end
-                
-                for i=1:sum(hvt)
+                axes(hPos(hvtAxes(4)));
+                plot(data.Time, data.HeadRoll)
+                plot(data.Time, data.HeadYaw)
+                plot(data.Time, data.HeadPitch)
+
+                for i=1:sum(hvth(1:3))
                     set(hPos(i),'ylim',xlimPos(i,:),'xlim',[min(data.Time) max(data.Time)])
                 end
             end
             
             % plot velocity
             if ( options.Show_Velocity )
+
+
                 axes(hVel(1));
                 title('Velocity (deg/s) vs. time (s)')
                 
                 for i=1:length(comps)
                     if ( options.(['Show_' comps{i}]) )
-                        axes(hPos(hvtAxes(i)));
+                        axes(hVel(hvtAxes(i)));
                         for j=1:length(eyes)
                             if ( lr(j) )
                                 
@@ -2646,7 +2700,12 @@ classdef VOGAnalysis < handle
                     end
                 end
                 
-                for i=1:sum(hvt)
+                axes(hVel(hvtAxes(4)));
+                plot(data.Time, data.HeadRollVel)
+                plot(data.Time, data.HeadYawVel)
+                plot(data.Time, data.HeadPitchVel)
+
+                for i=1:sum(hvth(1:3))
                     set(hVel(i),'ylim',xlimVel(i,:),'xlim',[min(data.Time) max(data.Time)])
                 end
             end

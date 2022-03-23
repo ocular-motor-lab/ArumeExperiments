@@ -2665,14 +2665,14 @@ classdef VOGAnalysis < handle
                         end
                     end
                 end
-                axes(hPos(hvtAxes(4)));
-                plot(data.Time, data.HeadRoll)
-                plot(data.Time, data.HeadYaw)
-                plot(data.Time, data.HeadPitch)
-
-                for i=1:sum(hvth(1:3))
-                    set(hPos(i),'ylim',xlimPos(i,:),'xlim',[min(data.Time) max(data.Time)])
-                end
+%                 axes(hPos(hvtAxes(4)));
+%                 plot(data.Time, data.HeadRoll)
+%                 plot(data.Time, data.HeadYaw)
+%                 plot(data.Time, data.HeadPitch)
+% 
+%                 for i=1:sum(hvth(1:3))
+%                     set(hPos(i),'ylim',xlimPos(i,:),'xlim',[min(data.Time) max(data.Time)])
+%                 end
             end
             
             % plot velocity

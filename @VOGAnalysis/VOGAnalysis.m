@@ -2020,14 +2020,16 @@ classdef VOGAnalysis < handle
             
 
             % Add head position during the quick-phase
-            quickPhaseTable.HeadYaw = nan(n_qp,1);
-            quickPhaseTable.HeadPitch = nan(n_qp,1);
-            quickPhaseTable.HeadRoll = nan(n_qp,1);
-            for i=1:n_qp
-                qpidx = quickPhaseTable.StartIndex(i):quickPhaseTable.EndIndex(i);
-                quickPhaseTable.HeadYaw(i) = mean(data.HeadYaw(qpidx),1,'omitnan');
-                quickPhaseTable.HeadPitch(i) = mean(data.HeadPitch(qpidx),1,'omitnan');
-                quickPhaseTable.HeadRoll(i) = mean(data.HeadRoll(qpidx),1,'omitnan');
+            if ( length(intersect(data.Properties.VariableNames,{'HeadRoll' 'HeadYaw' 'HeadPitch'})) == 3)
+                quickPhaseTable.HeadYaw = nan(n_qp,1);
+                quickPhaseTable.HeadPitch = nan(n_qp,1);
+                quickPhaseTable.HeadRoll = nan(n_qp,1);
+                for i=1:n_qp
+                    qpidx = quickPhaseTable.StartIndex(i):quickPhaseTable.EndIndex(i);
+                    quickPhaseTable.HeadYaw(i) = mean(data.HeadYaw(qpidx),1,'omitnan');
+                    quickPhaseTable.HeadPitch(i) = mean(data.HeadPitch(qpidx),1,'omitnan');
+                    quickPhaseTable.HeadRoll(i) = mean(data.HeadRoll(qpidx),1,'omitnan');
+                end
             end
 
             quickPhaseTable = struct2table(quickPhaseTable);

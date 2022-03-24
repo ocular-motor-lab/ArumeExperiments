@@ -2665,14 +2665,14 @@ classdef VOGAnalysis < handle
                         end
                     end
                 end
-                axes(hPos(hvtAxes(4)));
-                plot(data.Time, data.HeadRoll)
-                plot(data.Time, data.HeadYaw)
-                plot(data.Time, data.HeadPitch)
-
-                for i=1:sum(hvth(1:3))
-                    set(hPos(i),'ylim',xlimPos(i,:),'xlim',[min(data.Time) max(data.Time)])
-                end
+%                 axes(hPos(hvtAxes(4)));
+%                 plot(data.Time, data.HeadRoll)
+%                 plot(data.Time, data.HeadYaw)
+%                 plot(data.Time, data.HeadPitch)
+% 
+%                 for i=1:sum(hvth(1:3))
+%                     set(hPos(i),'ylim',xlimPos(i,:),'xlim',[min(data.Time) max(data.Time)])
+%                 end
             end
             
             % plot velocity
@@ -2734,21 +2734,22 @@ classdef VOGAnalysis < handle
                     timeL = data.LeftSeconds;
                     timeR = data.RightSeconds;
                     
-                    subplot(3,1,1,'nextplot','add')
+                    h(1) = subplot(3,1,1,'nextplot','add');
                     plot(timeL, data.LeftPupilX, 'color', [ MEDIUM_BLUE ])
                     plot(timeR, data.RightPupilX, 'color', [ MEDIUM_RED])
                     ylabel('Horizontal (deg)','fontsize', 16);
                     
-                    subplot(3,1,2,'nextplot','add')
+                    h(2) = subplot(3,1,2,'nextplot','add');
                     plot(timeL, data.LeftPupilY, 'color', [ MEDIUM_BLUE ])
                     plot(timeR, data.RightPupilY, 'color', [ MEDIUM_RED])
                     ylabel('Vertical (deg)','fontsize', 16);
                     
-                    subplot(3,1,3,'nextplot','add')
+                    h(3) = subplot(3,1,3,'nextplot','add');
                     plot(timeL, data.LeftTorsion, 'color', [ MEDIUM_BLUE ])
                     plot(timeR, data.RightTorsion, 'color', [ MEDIUM_RED])
                     ylabel('Torsion (deg)','fontsize', 16);
                     xlabel('Time (s)');
+                    linkaxes(h,'x');
                 case 'Fove'
                     MEDIUM_BLUE =  [0.1000 0.5000 0.8000];
                     MEDIUM_RED = [0.9000 0.2000 0.2000];
@@ -2757,21 +2758,23 @@ classdef VOGAnalysis < handle
                     timeL = cumsum([data.Time(1);max(diff(data.Time), median(diff(data.Time)))]);
                     timeR = cumsum([data.Time(1);max(diff(data.Time), median(diff(data.Time)))]);
                     
-                    subplot(3,1,1,'nextplot','add')
+                    h(1) = subplot(3,1,1,'nextplot','add');
                     plot(timeL, data.LeftX, 'color', [ MEDIUM_BLUE ])
                     plot(timeR, data.RightX, 'color', [ MEDIUM_RED])
                     ylabel('Horizontal (deg)','fontsize', 16);
                     
-                    subplot(3,1,2,'nextplot','add')
+                    h(2) = subplot(3,1,2,'nextplot','add');
                     plot(timeL, data.LeftY, 'color', [ MEDIUM_BLUE ])
                     plot(timeR, data.RightY, 'color', [ MEDIUM_RED])
                     ylabel('Vertical (deg)','fontsize', 16);
                     
-                    subplot(3,1,3,'nextplot','add')
+                    h(3) = subplot(3,1,3,'nextplot','add');
                     plot(timeL, data.LeftT, 'color', [ MEDIUM_BLUE ])
                     plot(timeR, data.RightT, 'color', [ MEDIUM_RED])
                     ylabel('Torsion (deg)','fontsize', 16);
                     xlabel('Time (s)');
+                    
+                    linkaxes(h,'x');
             end
         end
         

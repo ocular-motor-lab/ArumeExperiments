@@ -333,6 +333,19 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         for i=1:height(trialDataTable)
                             idx = trialDataTable.SampleStartTrial(i):trialDataTable.SampleStopTrial(i);
                             samplesData.TrialNumber(idx) = trialDataTable.TrialNumber(i);
+
+                        end
+
+                        % Add average head position data to the trialtable
+                        trialDataTable.HeadYaw = nan(height(trialDataTable),1);
+                        trialDataTable.HeadPitch = nan(height(trialDataTable),1);
+                        trialDataTable.HeadRoll = nan(height(trialDataTable),1);
+                        for i=1:height(trialDataTable)
+                            idx = trialDataTable.SampleStartTrial(i):trialDataTable.SampleStopTrial(i);
+
+                            trialDataTable.HeadYaw(i) = mean(samplesData.HeadYaw(idx),1,"omitnan");
+                            trialDataTable.HeadPitch(i) = mean(samplesData.HeadPitch(idx),1,"omitnan");
+                            trialDataTable.HeadRoll(i) = mean(samplesData.HeadRoll(idx),1,"omitnan");
                         end
                 end
                 

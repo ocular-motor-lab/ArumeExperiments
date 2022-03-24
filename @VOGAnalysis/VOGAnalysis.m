@@ -706,6 +706,14 @@ classdef VOGAnalysis < handle
             data.RightT = data.EyeTorsion_degrees_Right;
             data.LeftT = data.EyeTorsion_degrees_Left;
             
+
+            %% Head Data
+            quat = quaternion([data.HeadRotationW data.HeadRotationX data.HeadRotationY data.HeadRotationZ]);
+            eulerAnglesDegrees = eulerd(quat,'YXZ','frame');
+            data.HeadYaw = eulerAnglesDegrees(:,1);
+            data.HeadPitch = eulerAnglesDegrees(:,2);
+            data.HeadRoll = eulerAnglesDegrees(:,3);
+
             data.Properties.UserData.sampleRate = framerate;
         end
     end
@@ -2010,6 +2018,18 @@ classdef VOGAnalysis < handle
                 end
             end
             
+
+            % Add head position during the quick-phase
+            quickPhaseTable.HeadYaw = nan(n_qp,1);
+            quickPhaseTable.HeadPitch = nan(n_qp,1);
+            quickPhaseTable.HeadRoll = nan(n_qp,1);
+            for i=1:n_qp
+                qpidx = quickPhaseTable.StartIndex(i):quickPhaseTable.EndIndex(i);
+                quickPhaseTable.HeadYaw(i) = mean(data.HeadYaw(qpidx),1,'omitnan');
+                quickPhaseTable.HeadPitch(i) = mean(data.HeadPitch(qpidx),1,'omitnan');
+                quickPhaseTable.HeadRoll(i) = mean(data.HeadRoll(qpidx),1,'omitnan');
+            end
+
             quickPhaseTable = struct2table(quickPhaseTable);
             
             

@@ -61,7 +61,7 @@ classdef SVVVergence < ArumeExperimentDesigns.EyeTracking
                 trialTable.HeadTilt = categorical(headTilts(i*ones(size(trialTable.TrialNumber))));
                 trialTable.LineAngle = d.Direction;
                 trialTable.VergenceDistance = d.Vergence;
-                trialTable.Vergence = categorical(vergences(d.VergenceDistance == -1.5));
+%                 trialTable.Vergence = categorical(vergences(d.VergenceDistance == -1.5));
                 trialTable.Response(~isnan(d.Response)) = categorical(responses(d.Response(~isnan(d.Response))+1)');
                 
                 newRun.pastTrialTable = vertcat(newRun.pastTrialTable, trialTable);

@@ -378,6 +378,7 @@ classdef ArumeGui < matlab.apps.AppBase
                 end
                 
                 set(app.menuSessionRename, 'Enable', 'on');
+                set(app.menuSessionDelete, 'Enable', 'On');
                 
             elseif ( ~isempty( app.arumeController.currentSession ) && numel(app.arumeController.selectedSessions) >= 1 )
                 set(app.menuSessionDelete, 'Enable', 'on');

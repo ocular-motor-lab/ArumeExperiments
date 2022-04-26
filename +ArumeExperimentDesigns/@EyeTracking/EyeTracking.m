@@ -509,7 +509,13 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             end
             
             if (updateTrialsAndSessionTables)
-                ConditionVarsNames = this.Session.currentRun.pastTrialTable.Properties.VariableNames(6:end); % TODO: ugly! 
+                if ( width(this.TrialTable) > 5 ) % TODO: a bit ugly! 
+                    % experiments that are imported behave a bit different
+                    % than experiments that are run original with arume. 
+                    ConditionVarsNames = this.TrialTable.Properties.VariableNames(6:end);
+                else
+                    ConditionVarsNames = this.Session.currentRun.pastTrialTable.Properties.VariableNames(6:end); 
+                end
                 condition = [];
                 for i=1:length(ConditionVarsNames)
                     conditionVarLevels = categories(categorical(this.Session.currentRun.pastTrialTable{:,ConditionVarsNames{i}}));

@@ -708,7 +708,13 @@ classdef VOGAnalysis < handle
             
 
             %% Head Data
-            quat = quaternion([data.HeadRotationW data.HeadRotationX data.HeadRotationY data.HeadRotationZ]);
+            if ( sum(contains(data.Properties.VariableNames, {'HeadRotationW' 'HeadRotationX' 'HeadRotationY' 'HeadRotationZ'})) > 0 )
+                quat = quaternion([data.HeadRotationW data.HeadRotationX data.HeadRotationY data.HeadRotationZ]);
+            elseif ( sum(contains(data.Properties.VariableNames, {'HeadsetOrientationQuaternionW' 'HeadsetOrientationQuaternionX' 'HeadsetOrientationQuaternionY' 'HeadsetOrientationQuaternionZ'})) > 0 )
+                quat = quaternion([data.HeadsetOrientationQuaternionW data.HeadsetOrientationQuaternionX data.HeadsetOrientationQuaternionY data.HeadsetOrientationQuaternionZ]);
+            else
+                quat = quaternion([nan(size(data.Time)) nan(size(data.Time)) nan(size(data.Time)) nan(size(data.Time))]);
+            end
             eulerAnglesDegrees = eulerd(quat,'YXZ','frame');
             data.HeadYaw = eulerAnglesDegrees(:,1);
             data.HeadPitch = eulerAnglesDegrees(:,2);

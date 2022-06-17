@@ -8,11 +8,22 @@ classdef SaccadeDirectionsHeadTilt < ArumeExperimentDesigns.EyeTracking
     properties(Constant)
         BaselineIdx = cell2table(...
             {...
-            'SaccadeDirectionsHeadTilt__0101__A' , 7888, 8308, 203809, 205100, 364263, 369200;
-            'SaccadeDirectionsHeadTilt__0122__A' , 6251, 8751, 152536, 155051, 293040, 294298;
-            'SaccadeDirectionsHeadTilt__0123__A' , 4404, 5787, 144656, 147172, 284252, 286752;
+            'SaccadeDirectionsHeadTilt__0101__A' , 7888, 10786, 191309,192600, 339263, 343211,'R';  %1 %0 means 0 good eyes, 1 means good red eye, 2 means good blue eye, 3 means good both eyes (for torsion data across head tilt sessions)
+            'SaccadeDirectionsHeadTilt__0122__A' , 6251, 8751, 152430, 153000, 293106, 294215,'L'; %2
+            'SaccadeDirectionsHeadTilt__0123__A' , 4404, 5787, 145200, 146200, 284291, 286656,'L'; %2
+            'SaccadeDirectionsHeadTilt__0124__A' , 6432, 8443, 154536, 155622, 297994, 299446, 'B'; %3
+            'SaccadeDirectionsHeadTilt__0125__A' , 4669, 6557, 166575, 167980, 315852, 322374, 'N'; % ? % neither eye is great but doesn't seem bad enough to throw the whole thing away?? mayyyybe the blue is slightly better?
+            'SaccadeDirectionsHeadTilt__0126__A' , 4415, 5079, 145155, 147008, 288761, 289641, 'N'; % 0
+            'SaccadeDirectionsHeadTilt__0127__A' , 7325, 8221, 155925, 156991, 309665, 312200, 'R'; % 1
+            'SaccadeDirectionsHeadTilt__0128__A' , 6011, 6925, 145218, 145888, 288985, 290878, 'B'; % 3
+            'SaccadeDirectionsHeadTilt__0129__A' , 6372, 7376, 152548, 153282, 298402, 299853, 'B'; %3
+            'SaccadeDirectionsHeadTilt__0166__A' , 4747, 8357, 152043, 153043, 295794, 296700, 'N'; % 0
+            'SaccadeDirectionsHeadTilt__0167__A' , 6370, 7600, 155753, 156396, 304600, 307100, 'B'; %3
+            'SaccadeDirectionsHeadTilt__0169__A' , 3771, 5040, 157217, 158287, 315332, 316380, 'B'; %3
+            'SaccadeDirectionsHeadTilt__0172__A' , 6881, 8194, 153800, 155079, 293920, 297560, 'B'; %3
+            'SaccadeDirectionsHeadTilt__0173__A' , 5869, 6990, 148038, 149200, 290533, 291590, 'B'; %3
             },...
-            'VariableNames', {'SessionName','LeftStart','LeftEnd','UpStart','UpEnd','RightStart','RightEnd'});
+            'VariableNames', {'SessionName','LeftStart','LeftEnd','UpStart','UpEnd','RightStart','RightEnd','WhichEye'});
     end
     
     % ---------------------------------------------------------------------
@@ -102,7 +113,6 @@ classdef SaccadeDirectionsHeadTilt < ArumeExperimentDesigns.EyeTracking
             
             
             [samplesDataTable, cleanedData, calibratedData, rawData] = PrepareSamplesDataTable@ArumeExperimentDesigns.EyeTracking(this, options);
-            return;
             
             % This was added in efforts to normalize some of the torsion
             % data. It was occuring that the mean of head upright for a
@@ -113,136 +123,33 @@ classdef SaccadeDirectionsHeadTilt < ArumeExperimentDesigns.EyeTracking
             % before the act of head tilting. If we get the mean of that
             % interval and then subtract it off we should be normalizing a
             % bit. 
-            baselineIdxU = [];
-            baselineIdxL = [];
-            baselineIdxR = [];
-            switch(this.Session.name)
-                case 'SaccadeDirectionsHeadTilt__0101__A' 
-                    baselineIdxL = 7888:8308;
-                    baselineIdxU = (203809:205100)-12500;
-                    baselineIdxR = (364263:369200)-25000;
-                    
-                    dataIdxL = 7888:201809;
-                    dataIdxU = (203809:362263)-12500;
-                    dataIdxR = (364263:489670)-25000;
-                    
-                case 'SaccadeDirectionsHeadTilt__0122__A'
-                    baselineIdxL = 6251:8751;
-                    baselineIdxU = (152536:155051)-12500;
-                    baselineIdxR = (293040:294298)-25000;
-
-                    dataIdxL = 6251:150536;                    
-                    dataIdxU = (152536:291040)-12500;
-                    dataIdxR = (293040:427070)-25000;
-                
-                case 'SaccadeDirectionsHeadTilt__0123__A' % head tilt right torsion data isn't that good
-                    baselineIdxL = 4404:5787;
-                    baselineIdxU = (144656:147172)-12500;
-                    baselineIdxR = (284252:286752)-25000;
-
-                    dataIdxL = 4404:142656;
-                    dataIdxU = (144656:282252)-12500;
-                    dataIdxR = (284252:421321)-25000;
-                    
-                case 'SaccadeDirectionsHeadTilt__0124__A'
-                    baselineIdxL = 6432:9100;
-                    baselineIdxU = (167036:168122)-12500;
-                    baselineIdxR = (322994:324446)-25000;
-
-                    dataIdxL = 6432:165036;                    
-                    dataIdxU = (167036:320994)-12500;
-                    dataIdxR = (322994:445060)-25000;
-                
-                case 'SaccadeDirectionsHeadTilt__0125__A' %not great torsion for head right but even 2 other head tilts were eh
-                    baselineIdxL = 4669:6557;
-                    baselineIdxU = (179075:180480)-12500;
-                    baselineIdxR = (340852:343480)-25000;
-
-                    dataIdxL = 4669:177075;                    
-                    dataIdxU = (179075:338852)-12500;
-                    dataIdxR = (340852:466613)-25000;
-                
-                case 'SaccadeDirectionsHeadTilt__0126__A' % torsion does NOT look good for any head tilts
-                    baselineIdxL = 4415:5339;
-                    baselineIdxU = (157655:159508)-12500;
-                    baselineIdxR = (313761:314641)-25000;
-
-                    dataIdxL = 4415:155655;                    
-                    dataIdxU = (157655:311761)-12500;
-                    dataIdxR = (313761:426922)-25000;
-                    
-                case 'SaccadeDirectionsHeadTilt__0127__A' 
-                    baselineIdxL = 7325:8221;
-                    baselineIdxU = (168425:169491)-12500;
-                    baselineIdxR = (334665:336417)-25000;
-                    
-                    dataIdxL = 7325:166425;
-                    dataIdxU = (168425:332665)-12500;
-                    dataIdxR = (334665:451495)-25000;
-
-                case 'SaccadeDirectionsHeadTilt__0128__A'
-                    baselineIdxL = 6011:6200;
-                    baselineIdxU = (157718:158388)-12500;
-                    baselineIdxR = (313985:315500)-25000;
-                    
-                    dataIdxL = 6011:155718;
-                    dataIdxU = (157718:311985)-12500;
-                    dataIdxR = (313985:434062)-25000;
-                    
-                case 'SaccadeDirectionsHeadTilt__0129__A'
-                    baselineIdxL = 6372:7376;
-                    baselineIdxU = (165048:165782)-12500;
-                    baselineIdxR = (323402:324853)-25000;
-                    
-                    dataIdxL = 6372:163048;
-                    dataIdxU = (165048:321402)-12500;
-                    dataIdxR = (323402:450745)-25000;
-                
-                case 'SaccadeDirectionsHeadTilt__0166__A' % torsion for head left and head upright look bad
-                    baselineIdxL = 4747:5747;
-                    baselineIdxU = (164543:165543)-12500;
-                    baselineIdxR = (320794:321401)-25000;
-                    
-                    dataIdxL = 4747:162543;
-                    dataIdxU = (164543:318794)-12500;
-                    dataIdxR = (320794:438394)-25000;
-                
-                case 'SaccadeDirectionsHeadTilt__0167__A'
-                    baselineIdxL = 6370:7353;
-                    baselineIdxU = (168253:168896)-12500;
-                    baselineIdxR = (329600:332100)-25000;
-                    
-                    dataIdxL = 6370:166253;
-                    dataIdxU = (168253:327589)-12500;
-                    dataIdxR = (329589:446844)-25000;
-                    
-                case 'SaccadeDirectionsHeadTilt__0169__A'
-                    baselineIdxL = 3771:5040;
-                    baselineIdxU = (169717:170787)-12500;
-                    baselineIdxR = (340332:341150)-25000;
-                    
-                    dataIdxL = 3771:167717;
-                    dataIdxU = (169717:338328)-12500;
-                    dataIdxR = (340328:451456)-25000;
-                    
-                case 'SaccadeDirectionsHeadTilt__0172__A'
-                    baselineIdxL = 6881:8194;
-                    baselineIdxU = (166300:167579)-12500;
-                    baselineIdxR = (318920:320131)-25000;
-                    
-                    dataIdxL = 6881:164300;
-                    dataIdxU = (166300:316920)-12500;
-                    dataIdxR = (318920:429925)-25000;
-                    
-                case 'SaccadeDirectionsHeadTilt__0173__A'
-                    baselineIdxL = 5869:7212;
-                    baselineIdxU = (160538:161700)-12500;
-                    baselineIdxR = (315533:316573)-25000;
-                    
-                    dataIdxL = 5869:158538;
-                    dataIdxU = (160538:313533)-12500;
-                    dataIdxR = (315533:425381)-25000;
+            sessname = this.Session.name;
+            
+            baselines = ArumeExperimentDesigns.SaccadeDirectionsHeadTilt.BaselineIdx;
+            baselines.Properties.RowNames = baselines.SessionName;
+            baselines.WhichEye = categorical(baselines.WhichEye);
+            
+            switch(baselines{sessname,'WhichEye'})
+                case 'L'
+                    samplesDataTable.RightT = nan(size(samplesDataTable.RightT));
+                case 'R'
+                    samplesDataTable.LeftT = nan(size(samplesDataTable.LeftT));
+                case 'N'
+                    samplesDataTable.RightT = nan(size(samplesDataTable.RightT));
+                    samplesDataTable.LeftT = nan(size(samplesDataTable.LeftT));
             end
+            
+            % Adjust baselines
+            baselineIdxL = baselines{sessname,'LeftStart'}:baselines{sessname,'LeftEnd'};
+            baselineIdxU = baselines{sessname,'UpStart'}:baselines{sessname,'UpEnd'};
+            baselineIdxR = baselines{sessname,'RightStart'}:baselines{sessname,'RightEnd'};
+            
+            dataIdxL = baselines{sessname,'LeftStart'}:baselines{sessname,'UpStart'};
+            dataIdxU = baselines{sessname,'UpStart'}:baselines{sessname,'RightStart'};
+            dataIdxR = baselines{sessname,'RightStart'}:height(samplesDataTable);
+            
+            samplesDataTable.UncorrectedLeftT = samplesDataTable.LeftT;
+            samplesDataTable.UncorrectedRightT = samplesDataTable.RightT;
             samplesDataTable.LeftT(dataIdxL) = samplesDataTable.LeftT(dataIdxL) - median(samplesDataTable.LeftT(baselineIdxL),'omitnan');
             samplesDataTable.RightT(dataIdxL) = samplesDataTable.RightT(dataIdxL) - median(samplesDataTable.RightT(baselineIdxL),'omitnan');
             
@@ -251,6 +158,7 @@ classdef SaccadeDirectionsHeadTilt < ArumeExperimentDesigns.EyeTracking
             
             samplesDataTable.LeftT(dataIdxR) = samplesDataTable.LeftT(dataIdxR) - median(samplesDataTable.LeftT(baselineIdxR),'omitnan');
             samplesDataTable.RightT(dataIdxR) = samplesDataTable.RightT(dataIdxR) - median(samplesDataTable.RightT(baselineIdxR),'omitnan');
+            
         end
         
     end

@@ -38,9 +38,9 @@ classdef ExperimentDesign < handle
                 
                 dlg.DisplayOptions.ForegroundColor      = 0;
                 dlg.DisplayOptions.BackgroundColor      = 128;
-                dlg.DisplayOptions.ScreenWidth          = { 40 '* (cm)' [1 3000] };
-                dlg.DisplayOptions.ScreenHeight         = { 30 '* (cm)' [1 3000] };
-                dlg.DisplayOptions.ScreenDistance       = { 135 '* (cm)' [1 3000] };
+                dlg.DisplayOptions.ScreenWidth                 = { 121 '* (cm)' [1 3000] };
+                dlg.DisplayOptions.ScreenHeight                = { 68 '* (cm)' [1 3000] };
+                dlg.DisplayOptions.ScreenDistance              = { 90 '* (cm)' [1 3000] };
                 dlg.DisplayOptions.ShowTrialTable       = { {'0','{1}'} };
                 dlg.DisplayOptions.PlaySound            = { {'0','{1}'} };
                 

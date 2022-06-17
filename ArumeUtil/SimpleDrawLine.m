@@ -31,6 +31,9 @@ try
         toH = mx + lineLength*sin(angle/180*pi);
         toV = my - lineLength*cos(angle/180*pi);
         Screen('DrawLine', window, targetColor, fromH, fromV, toH, toV, 4);
+
+        Screen('DrawLine', window, targetColor, mx, 0, mx, wRect(4), 1);
+        Screen('DrawLine', window, targetColor, 0, my, wRect(3), my, 1);
         
         fixColor = [255 0 0];
         fixRect = [0 0 10 10];

@@ -18,16 +18,15 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult TargetPosition'; % which variables to display every trial in the command line separated by spaces
                 
-            % TODO: double check the measurements
-            dlg.DisplayOptions.ScreenWidth = { 121 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenHeight = { 68 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenWidth = { 144 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenHeight = { 80 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenDistance = { 90 '* (cm)' [1 3000] };
                       
             dlg.TrialDuration =  { 3 '* (s)' [1 100] };
             
             dlg.TargetSize = 0.5;
             dlg.Calibration_Distance_H = { 20 '* (deg)' [1 3000] };
-            dlg.Calibration_Distance_V = { 15 '* (deg)' [1 3000] };
+            dlg.Calibration_Distance_V = { 20 '* (deg)' [1 3000] };
             
             dlg.BackgroundBrightness = 0;
         end
@@ -93,14 +92,14 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
                     % -----------------------------------------------------------------
                     
                     %-- Draw fixation spot
-                    [mx, my] = RectCenter(this.Graph.wRect);
+                    [mx, my] = RectCenter(this.Graph.wRect)
                    % this.Graph.pxWidth
                    % targetHPix
                     targetPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(this.ExperimentOptions.TargetSize);
                     targetHPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(targetPositions{thisTrialData.TargetPosition}(1));
                     targetYPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(targetPositions{thisTrialData.TargetPosition}(2));
                     fixRect = [0 0 targetPix targetPix];
-                    fixRect = CenterRectOnPointd( fixRect, mx+targetHPix, my+targetYPix );
+                    fixRect = CenterRectOnPointd( fixRect, mx+targetHPix/2, my+targetYPix/2 );
                     Screen('FillOval', graph.window, this.fixColor, fixRect);
                     
                     Screen('DrawingFinished', graph.window); % Tell PTB that no further drawing commands will follow before Screen('Flip')

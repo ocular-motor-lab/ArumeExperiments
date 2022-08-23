@@ -1,4 +1,4 @@
-classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
+classdef ImSizeTilt < ArumeExperimentDesigns.EyeTracking
     %Illusory tilt Summary of this class goes here
     %   Detailed explanation goes here
 
@@ -43,11 +43,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             
             i = i+1;
             conditionVars(i).name   = 'Image';
-            %conditionVars(i).values = {'Im01' 'Im02' 'Im03' 'Im04' 'Im05'
-            %'Im06' 'Im07' 'Im08' 'Im09' 'Im10' 'Im11' 'Im12' 'Im13' 'Im14'
-            %'Im15' 'Im16' 'Im17' 'Im18' 'Im19' 'Im20' 'Im21' 'Im22'
-            %'Im23'}; % pilot study
-            conditionVars(i).values = {'01' '02' '03' '04' '05' '06' '07' '08' '09' '10' '11' '12' '13' '14' '15' '16' '17' '18' '19' '20' '21' '22' '23' '24' '25' '26' '27' '28' '29' '30' '31' '32' '33' '34' '35' '36' '37' '38' '39' '40'};
+            conditionVars(i).values = {'Im01' 'Im02' 'Im03' 'Im04' 'Im05' 'Im06' 'Im07' 'Im08' 'Im09' 'Im10' 'Im11' 'Im12' 'Im13' 'Im14' 'Im15' 'Im16' 'Im17' 'Im18' 'Im19' 'Im20' 'Im21' 'Im22' 'Im23'};
             
             i = i+1;
             conditionVars(i).name   = 'ImTilt';
@@ -103,7 +99,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             
 
         function [trialResult, thisTrialData] = runTrial( this, thisTrialData )
-           
+            
             Enum = ArumeCore.ExperimentDesign.getEnum();
             graph = this.Graph;
             
@@ -163,13 +159,6 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             end
             
             trialResult = Enum.trialResult.CORRECT;
-
-
-            % After every 20 trials, quit (in order to do calibration)
-            if mod(thisTrialData.TrialNumber, 5) == 0
-                sca;
-            end
-
         end
           
     end

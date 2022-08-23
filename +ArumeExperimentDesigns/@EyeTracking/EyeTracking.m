@@ -721,8 +721,14 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                 switch( command)
                     case 'get_options'
                         options = VOGAnalysis.PlotMainsequence('get_options');
-                        options.Component = { {'{XY}','X', 'Y','T', 'All', 'X and Y'} };
+                        options.Component = { '{XY}|X|Y|T|All|X and Y' };
+                        filterNames = fieldnames(this.FilterTableByConditionVariable('get_filters'));
+                        options.DataToInclude = {filterNames};
                         options.Select_Trial_Conditions = this.FilterTableByConditionVariable('get_filters');
+                        options.Figures_Axes_Lines_Order = {{...
+                            '{Sessions-Conditions-Components}' 'Sessions-Components-Conditions' ...
+                            'Conditions-Sessions-Components' 'Conditions-Components-Sessions' ...
+                            'Components-Sessions-Conditions'  'Components-Conditions-Sessions'}};
                         return;
                     case 'get_defaults'
                         optionsDlg = VOGAnalysis.PlotMainsequence('get_options');
@@ -730,15 +736,9 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         return
                 end
             end
-            
-%             QPs = table();
-%             for session=sessions
-%                 QPs = vertcat(session.analysisResults.QuickPhases);
-%             end
-%             
-%             [props, ~, filters] = this.FilterTableByConditionVariable(QPs, options.Select_Trial_Conditions);
-            
 
+            % Pick the variables that corresponds with the options for the
+            % components. This can be single or multiple. 
             componentNames = {options.Component};
                 switch(options.Component)
                     case 'XY'
@@ -763,21 +763,21 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         componentNames  = {'Horizotal', 'Vertical'};
                 end
 
-
-            xdata = table();
+            Xallprops = table();
             for i=1:length(sessions)
-                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Select_Trial_Conditions, Xcomponents, componentNames);
+                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Select_Trial_Conditions, Xcomponents, componentNames, options.DataToInclude);
                 sessionProps.Session = categorical(cellstr(repmat(sessions(i).shortName,height(sessionProps),1)));
-                xdata = vertcat(xdata, sessionProps);
+                Xallprops = vertcat(Xallprops, sessionProps);
             end
-
-            ydata = table();
+            
+            Yallprops = table();
             for i=1:length(sessions)
-                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Select_Trial_Conditions, Ycomponents, componentNames);
+                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Select_Trial_Conditions, Ycomponents, componentNames, options.DataToInclude);
                 sessionProps.Session = categorical(cellstr(repmat(sessions(i).shortName,height(sessionProps),1)));
-                ydata = vertcat(ydata, sessionProps);
+                Yallprops = vertcat(Yallprops, sessionProps);
             end
-
+                        
+            
             
 %             out = VOGAnalysis.PlotMainsequence(options, xdata, ydata );
 %             if (~isempty(legendText) )
@@ -791,25 +791,45 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         
             nplot1 = [1 1 1 2 2 2 2 2 3 2 3 3 3 3 4 4 4 4 4 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5];
             nplot2 = [1 2 3 2 3 3 4 4 3 5 4 4 5 5 4 5 5 5 5 5 5 5 5 5 6 6 6 6 6 6 7 7 7 7 7 7];
+            
+            
+            
+            
+            
+            
+            
                         
             COLUMNS = {'Session','Condition', 'Component'};
+            switch(options.Figures_Axes_Lines_Order)
+                case 'Sessions-Conditions-Components'
+                    COLUMNS = {'Session','Condition', 'Component'};
+                case 'Sessions-Components-Conditions'
+                    COLUMNS = {'Session', 'Component','Condition'};
+                case 'Conditions-Sessions-Components'
+                    COLUMNS = {'Condition', 'Session', 'Component'};
+                case 'Conditions-Components-Sessions'
+                    COLUMNS = {'Condition', 'Component', 'Session'};
+                case 'Components-Sessions-Conditions'
+                    COLUMNS = {'Component', 'Session','Condition'};
+                case 'Components-Conditions-Sessions'
+                    COLUMNS = {'Component','Condition', 'Session'};
+            end
+
             ELEMENTS = {};
             for i=1:3
-                ELEMENTS{i} = unique(allprops.(COLUMNS{i}));
+                ELEMENTS{i} = unique(Xallprops.(COLUMNS{i}),'stable');
             end
             for i=1:length(ELEMENTS{1})
-                figure
+                figure('name',string(ELEMENTS{1}(i)))
                 for j=1:length(ELEMENTS{2})
-                    ax = subplot(nplot1(length(ELEMENTS{2})),nplot2(length(ELEMENTS{2})),j);
-                    xdata = allprops(allprops.(COLUMNS{1})==ELEMENTS{1}(i) & allprops.(COLUMNS{2})==ELEMENTS{2}(j),:);
-                    out = VOGAnalysis.PlotHistogram(ax, options, xdata.Data );
+                    ax = subplot(nplot1(length(ELEMENTS{2})),nplot2(length(ELEMENTS{2})),j,'nextplot','add');
+                    xdata = Xallprops(Xallprops.(COLUMNS{1})==ELEMENTS{1}(i) & Xallprops.(COLUMNS{2})==ELEMENTS{2}(j),:);
+                    ydata = Yallprops(Yallprops.(COLUMNS{1})==ELEMENTS{1}(i) & Yallprops.(COLUMNS{2})==ELEMENTS{2}(j),:);                    
+                    title = char(strcat('Main seq. - ', strrep(string(ELEMENTS{2}(j)), '_', ' ')));
+                    out = VOGAnalysis.PlotMainsequence(ax, xdata.Data{1}, ydata.Data{1}, title);
                 end
             end
-            if (~isempty(legendText) )
-                legend(out.forLegend, string(ELEMENTS{3}),'box','off');
-            end
-            filters = cellstr(filters);
-            title([options.Feature ' distribution - ', strrep(filters{1}, '_', ' ')]);
+            legend(out.forLegend, strrep(string(ELEMENTS{3}),'_', ' '),'box','off');
         end
           
 

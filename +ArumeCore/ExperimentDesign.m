@@ -312,7 +312,11 @@ classdef ExperimentDesign < handle
 
             % TODO: not great right now. But get all the columns from the
             % trial table that have condition variables. 
-            ConditionVars = this.Session.currentRun.pastTrialTable.Properties.VariableNames(6:end);
+            if(size(this.Session.experimentDesign.TrialTable,2)>6) % if not imported
+                ConditionVars = this.Session.experimentDesign.TrialTable.Properties.VariableNames(6:end);
+            else % if imported (TODO: not very good)
+                ConditionVars = this.Session.currentRun.pastTrialTable.Properties.VariableNames(6:end);
+            end
 
             % get all the possible values of the condition variables. But
             % only if they have less than 10 possible values. Otherwise it

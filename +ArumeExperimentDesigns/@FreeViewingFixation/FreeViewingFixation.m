@@ -91,9 +91,9 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             %             stimSizePix         = pixelsPerDeg * stimSizeDeg;
 
             % non linear aproximation
-            stimSizeCm  = 2*tand(stimSizeDeg/2)*monitorDistanceCm;
+            stimSizeCm  = 2*tand(stimSizeDeg/2)*monitorDistanceCm
             %stimSizePix = stimSizeCm/monitorWidthCm*monitorWidthPix;
-            stimSizePix = (monitorWidthPix/monitorWidthCm)*stimSizeCm;
+            stimSizePix = (monitorWidthPix/monitorWidthCm)*stimSizeCm
 
             Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:))*this.ExperimentOptions.StimulusContrast0to100/100);
             Isquare = imresize(Isquare, [stimSizePix stimSizePix], 'bilinear');
@@ -165,8 +165,8 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             trialResult = Enum.trialResult.CORRECT;
 
 
-            % After every 20 trials, quit (in order to do calibration)
-            if mod(thisTrialData.TrialNumber, 5) == 0
+            % After every 40 trials, quit (in order to do calibration)
+            if mod(thisTrialData.TrialNumber, 2) == 0
                 sca;
             end
 

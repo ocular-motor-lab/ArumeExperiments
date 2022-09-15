@@ -786,30 +786,42 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
 % %             title(['Main sequence - ', strrep(filters, '_', ' ')]);
 
 
+% figure
+% plot(xdata.Data{1},ydata.Data{1},'o')
 
+figure
+plot(sessions(i).analysisResults.QuickPhases.Amplitude,sessions(i).analysisResults.QuickPhases.PeakSpeed,'o')
+hold
+plot(sessions(i).analysisResults.QuickPhases.Amplitude(sessions(i).analysisResults.QuickPhases.DurationMs<7),sessions(i).analysisResults.QuickPhases.PeakSpeed(sessions(i).analysisResults.QuickPhases.DurationMs<7),'o')
+plot(sessions(i).analysisResults.QuickPhases.Amplitude(sessions(i).analysisResults.QuickPhases.DurationMs<5),sessions(i).analysisResults.QuickPhases.PeakSpeed(sessions(i).analysisResults.QuickPhases.DurationMs<5),'o')
+plot(sessions(i).analysisResults.QuickPhases.Amplitude(sessions(i).analysisResults.QuickPhases.DurationMs<3),sessions(i).analysisResults.QuickPhases.PeakSpeed(sessions(i).analysisResults.QuickPhases.DurationMs<3),'o')
 
-                        
-            nplot1 = [1 1 1 2 2 2 2 2 3 2 3 3 3 3 4 4 4 4 4 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5];
-            nplot2 = [1 2 3 2 3 3 4 4 3 5 4 4 5 5 4 5 5 5 5 5 5 5 5 5 6 6 6 6 6 6 7 7 7 7 7 7];
-                        
-            COLUMNS = {'Session','Condition', 'Component'};
-            ELEMENTS = {};
-            for i=1:3
-                ELEMENTS{i} = unique(allprops.(COLUMNS{i}));
-            end
-            for i=1:length(ELEMENTS{1})
-                figure
-                for j=1:length(ELEMENTS{2})
-                    ax = subplot(nplot1(length(ELEMENTS{2})),nplot2(length(ELEMENTS{2})),j);
-                    xdata = allprops(allprops.(COLUMNS{1})==ELEMENTS{1}(i) & allprops.(COLUMNS{2})==ELEMENTS{2}(j),:);
-                    out = VOGAnalysis.PlotHistogram(ax, options, xdata.Data );
-                end
-            end
-            if (~isempty(legendText) )
-                legend(out.forLegend, string(ELEMENTS{3}),'box','off');
-            end
-            filters = cellstr(filters);
-            title([options.Feature ' distribution - ', strrep(filters{1}, '_', ' ')]);
+% plot3(sessions(i).analysisResults.QuickPhases.Amplitude, sessions(i).analysisResults.QuickPhases.PeakSpeed, sessions(i).analysisResults.QuickPhases.DurationMs,'o')
+
+%                         
+%             nplot1 = [1 1 1 2 2 2 2 2 3 2 3 3 3 3 4 4 4 4 4 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5];
+%             nplot2 = [1 2 3 2 3 3 4 4 3 5 4 4 5 5 4 5 5 5 5 5 5 5 5 5 6 6 6 6 6 6 7 7 7 7 7 7];
+%                         
+%             COLUMNS = {'Session','Condition', 'Component'};
+%             ELEMENTS = {};
+%             for i=1:3
+%                 ELEMENTS{i} = unique(xdata.(COLUMNS{i}));
+%             end
+%             for i=1:length(ELEMENTS{1})
+%                 figure
+%                 for j=1:length(ELEMENTS{2})
+%                     ax = subplot(nplot1(length(ELEMENTS{2})),nplot2(length(ELEMENTS{2})),j);
+%                     xdata1 = xdata(xdata.(COLUMNS{1})==ELEMENTS{1}(i) & xdata.(COLUMNS{2})==ELEMENTS{2}(j),:).Data;
+%                     ydata1 = ydata(ydata.(COLUMNS{1})==ELEMENTS{1}(i) & ydata.(COLUMNS{2})==ELEMENTS{2}(j),:).Data;
+%                     out = VOGAnalysis.PlotMainsequence( ax, xdata1{1}, ydata1{1} )
+% %                     out = PlotMainsequence( ax, options, xdata1, ydata1, [tit], [xlab], [ylab] )
+%                 end
+%             end
+%             if (~isempty(legendText) )
+%                 legend(out.forLegend, string(ELEMENTS{3}),'box','off');
+%             end
+%             filters = cellstr(filters);
+%             title([options.Feature ' distribution - ', strrep(filters{1}, '_', ' ')]);
         end
           
 

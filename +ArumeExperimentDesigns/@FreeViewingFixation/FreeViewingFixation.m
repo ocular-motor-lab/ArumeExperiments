@@ -28,6 +28,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             
             dlg.TrialDuration = {12 '* (s)' [1 100] };
             dlg.HitKeyBeforeTrial = { {'0' '{1}'} };
+            dlg.TrialsBeforeBreak = 40;
 
             % Change the defaults for the screen parameters
             dlg.DisplayOptions.ScreenWidth = { 144 '* (cm)' [1 3000] };

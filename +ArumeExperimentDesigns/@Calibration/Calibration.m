@@ -136,29 +136,26 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
          function [analysisResults, samplesDataTable, trialDataTable, sessionDataTable]  = RunDataAnalyses(this, analysisResults, samplesDataTable, trialDataTable, sessionDataTable, options)
              
              [analysisResults, samplesDataTable, trialDataTable, sessionDataTable]  = RunDataAnalyses@ArumeExperimentDesigns.EyeTracking(this, analysisResults, samplesDataTable, trialDataTable, sessionDataTable, options);
-             x = atand(30/60);
-             y = atand(17/60);
-             calibrationPointsX = [0, -x , x, 0 , 0 ];
-             calibrationPointsY = [0, 0 , 0, y , -y ];
+
+
+            h = this.ExperimentOptions.Calibration_Distance_H;
+            v = this.ExperimentOptions.Calibration_Distance_V;
+            targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v]};
+            targetPositions = cell2mat(targetPositions');
+
+             calibrationPointsX = targetPositions(trialDataTable.TargetPosition,1);
+             calibrationPointsY = targetPositions(trialDataTable.TargetPosition,2);
              
-             f = samplesDataTable.Fixations;
-             fstart = find(diff([f;0])>0);
-             fstops = find(diff([0;f])<0);
+             fstart = round(trialDataTable.SampleStartTrial + 0.500*samplesDataTable.Properties.UserData.sampleRate);
+             fstops = trialDataTable.SampleStopTrial;
              
-             t = nan(size(f,1),2);
+             t = nan(size(samplesDataTable,1),2);
              
              for i=1:length(fstart)
                  t(fstart(i):fstops(i),1) = calibrationPointsX(i);
                  t(fstart(i):fstops(i),2) = calibrationPointsY(i);
              end
-             %
-             %                           rawCalibrationData = table();
-             %                           rawCalibrationData.LeftX = samplesDataTable.LeftRawX;
-             %                           rawCalibrationData.LeftY = samplesDataTable.LeftRawY;
-             %                           rawCalibrationData.RightX = samplesDataTable.RightRawX;
-             %                           rawCalibrationData.RightY = samplesDataTable.RightRawY;
-             %
-             %
+       
              targetPosition = table();
              targetPosition.x = t(:,1);
              targetPosition.y = t(:,2);
@@ -172,6 +169,8 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
              calibratedCalibrationData   = VOGAnalysis.CalibrateData(samplesDataTable, analysisResults.calibrationTable);
              
              PlotCalibration(analysisResults.calibrationTable, samplesDataTable, calibratedCalibrationData, targetPosition)
+
+
          end
     end
     

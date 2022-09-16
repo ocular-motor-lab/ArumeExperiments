@@ -559,15 +559,20 @@ classdef ExperimentDesign < handle
                             end
                             
                         case BREAK
-                            dlgResult = this.Graph.DlgHitKey( 'Break: hit a key to continue',[],[] );
-                            %             this.Graph.DlgTimer( 'Break');
-                            %             dlgResult = this.Graph.DlgYesNo( 'Finish break and continue?');
-                            % problems with breaks i am going to skip the timer
-                            if ( ~dlgResult )
-                                state = IDLE;
-                            else
-                                trialsSinceBreak = 0;
-                                state = RUNNING;
+
+                            result = this.Graph.DlgSelect( ...
+                                'Break: Want to continue?:', ...
+                                { 'c' 'q'}, ...
+                                { 'Continue to next trial'  'Quit'} , [],[]);
+                            
+                            switch( result )
+                                case 'c'
+                                    state = RUNNING;
+                                case {'q' 0}
+                                    dlgResult = this.Graph.DlgYesNo( 'Are you sure you want to exit?',[],[],20,20);
+                                    if( dlgResult )
+                                        state = FINILIZING_EXPERIMENT;
+                                    end
                             end
                             
                         case RUNNING

@@ -785,9 +785,6 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
 %             end
 % %             title(['Main sequence - ', strrep(filters, '_', ' ')]);
 
-
-
-
                         
             nplot1 = [1 1 1 2 2 2 2 2 3 2 3 3 3 3 4 4 4 4 4 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5];
             nplot2 = [1 2 3 2 3 3 4 4 3 5 4 4 5 5 4 5 5 5 5 5 5 5 5 5 6 6 6 6 6 6 7 7 7 7 7 7];
@@ -830,6 +827,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                 end
             end
             legend(out.forLegend, strrep(string(ELEMENTS{3}),'_', ' '),'box','off');
+
         end
           
 

@@ -1867,7 +1867,7 @@ classdef VOGAnalysis < handle
             quickPhaseTable = [];
             quickPhaseTable.StartIndex = find(diff([0;data.QuickPhase])>0);
             quickPhaseTable.EndIndex = find(diff([data.QuickPhase;0])<0);
-            quickPhaseTable.DurationMs = (quickPhaseTable.EndIndex - quickPhaseTable.StartIndex) * 1000 / SAMPLERATE;
+            quickPhaseTable.DurationMs = (quickPhaseTable.EndIndex - quickPhaseTable.StartIndex + 1) * 1000 / SAMPLERATE;
             
             % number of quick-phases
             n_qp = size(quickPhaseTable.StartIndex,1);

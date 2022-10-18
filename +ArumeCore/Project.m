@@ -116,6 +116,23 @@ classdef Project < handle
             session = [];
             i = 0;
         end
+
+        function [sessions, idx] = findSessionBySubjectAndExperiment( this, subjectCode, experiment)
+            sessions = [];
+            idx = [];
+            for i=1:length(this.sessions)
+                if ( strcmpi(this.sessions(i).subjectCode, subjectCode) &&  ...
+                        strcmpi(this.sessions(i).experimentDesign.Name, experiment))
+                    if ( isempty(sessions))
+                        sessions = this.sessions(i);
+                    else
+                        sessions(end+1) = this.sessions(i);
+                    end
+                    idx(end+1) = i;
+                end
+            end
+        end
+        
         
         function sortSessions(this)
             

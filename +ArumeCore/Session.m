@@ -466,8 +466,10 @@ classdef Session < ArumeCore.DataDB
             
             % save the fields of AnalysisResults into separate variables
             if ( isstruct(results))
-                for field=fieldnames(results)
-                    this.WriteVariableIfNotEmpty(results.(field{1}),['AnalysisResults_' field{1}]);
+                fields=fieldnames(results);
+                for i=1:length(fields)
+                    field = fields{i};
+                    this.WriteVariableIfNotEmpty(results.(field),['AnalysisResults_' field]);
                 end
             else
                 this.WriteVariableIfNotEmpty(results,'AnalysisResults');

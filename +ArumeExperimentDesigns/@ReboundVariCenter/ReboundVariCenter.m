@@ -66,10 +66,15 @@ classdef ReboundVariCenter < ArumeExperimentDesigns.EyeTracking
                 conditionVars(i).name   = 'TypeOfTrial';
                 conditionVars(i).values = {'Rebound' 'Calibration'};
             end
-            
+
+            nConditions = 1;
+            for iVar = 1:length(conditionVars)
+                nConditions = nConditions * length(conditionVars(iVar).values);
+            end
 
 
             if (strcmp(this.ExperimentOptions.InterleaveCalibration, 'Yes'))
+                trialTableOptions = this.GetDefaultTrialTableOptions();
                 trialTableOptions.trialSequence = 'Sequential';	% Sequential, Random, Random with repetition, ...
                 trialTableOptions.trialsPerSession = 18*6/2;
                 trialTableOptions.trialsBeforeBreak = 11;
@@ -80,12 +85,13 @@ classdef ReboundVariCenter < ArumeExperimentDesigns.EyeTracking
                     struct( 'fromCondition', 19,    'toCondition', 36, 'trialsToRun', 18 )];
                 trialTableOptions.numberOfTimesRepeatBlockSequence = ceil(trialTableOptions.ExperimentOptions.NumberOfRepetitions/2);
             else
+                trialTableOptions = this.GetDefaultTrialTableOptions();
                 trialTableOptions.trialSequence = 'Random';	% Sequential, Random, Random with repetition, ...
-                trialTableOptions.trialsPerSession = (trialTableOptions.NumberOfConditions+1)*trialTableOptions.ExperimentOptions.NumberOfRepetitions;
-                trialTableOptions.numberOfTimesRepeatBlockSequence = trialTableOptions.ExperimentOptions.NumberOfRepetitions;
+                trialTableOptions.trialsPerSession = (nConditions)*this.ExperimentOptions.NumberOfRepetitions;
+                trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberOfRepetitions;
                 trialTableOptions.blocksToRun = 1;
                 trialTableOptions.blocks = [ ...
-                    struct( 'fromCondition', 1, 'toCondition', trialTableOptions.NumberOfConditions, 'trialsToRun', trialTableOptions.NumberOfConditions  )];
+                    struct( 'fromCondition', 1, 'toCondition', nConditions, 'trialsToRun', nConditions  )];
             end
 
             trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);

@@ -164,16 +164,62 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
              targetPosition.RightX = t(:,1);
              targetPosition.RightY = t(:,2);
              
+             analysisResults.calibrationTableCR = VOGAnalysis.CalculateCalibrationCR(samplesDataTable, targetPosition);
              analysisResults.calibrationTable = VOGAnalysis.CalculateCalibration(samplesDataTable, targetPosition);
-             
-             calibratedCalibrationData   = VOGAnalysis.CalibrateData(samplesDataTable, analysisResults.calibrationTable);
-             
-             PlotCalibration(analysisResults.calibrationTable, samplesDataTable, calibratedCalibrationData, targetPosition)
-
-
          end
     end
-    
+      
+    % ---------------------------------------------------------------------
+    % Plot methods
+    % ---------------------------------------------------------------------
+    methods ( Access = public )
+
+        function [out] = Plot_CalibrationDebug(this)
+
+
+            analysisResults = this.Session.analysisResults;
+            samplesDataTable = this.Session.samplesDataTable;
+            trialDataTable = this.Session.trialDataTable;
+            sessionDataTable = this.Session.sessionDataTable;
+
+
+
+            h = this.ExperimentOptions.Calibration_Distance_H;
+            v = this.ExperimentOptions.Calibration_Distance_V;
+            targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v]};
+            targetPositions = cell2mat(targetPositions');
+
+             calibrationPointsX = targetPositions(trialDataTable.TargetPosition,1);
+             calibrationPointsY = targetPositions(trialDataTable.TargetPosition,2);
+             
+             fstart = round(trialDataTable.SampleStartTrial + 0.500*samplesDataTable.Properties.UserData.sampleRate);
+             fstops = trialDataTable.SampleStopTrial;
+             
+             t = nan(size(samplesDataTable,1),2);
+             
+             for i=1:length(fstart)
+                 t(fstart(i):fstops(i),1) = calibrationPointsX(i);
+                 t(fstart(i):fstops(i),2) = calibrationPointsY(i);
+             end
+       
+             targetPosition = table();
+             targetPosition.x = t(:,1);
+             targetPosition.y = t(:,2);
+             targetPosition.LeftX = t(:,1);
+             targetPosition.LeftY = t(:,2);
+             targetPosition.RightX = t(:,1);
+             targetPosition.RightY = t(:,2);
+             
+
+             calibratedCalibrationData   = VOGAnalysis.CalibrateDataCR(samplesDataTable, analysisResults.calibrationTableCR);
+             PlotCalibrationCR(analysisResults.calibrationTableCR, samplesDataTable, calibratedCalibrationData, targetPosition)
+             title('CR calibration')
+                          
+             calibratedCalibrationData   = VOGAnalysis.CalibrateData(samplesDataTable, analysisResults.calibrationTable);
+             PlotCalibration(analysisResults.calibrationTable, samplesDataTable, calibratedCalibrationData, targetPosition)
+             title('pupil calibration')
+        end
+    end
 end
 
 
@@ -219,6 +265,73 @@ end
             title('Vertical target vs eye pos. (deg)');
             h1 = plot(targetPosition.y+randn(size(t))/5,rawCalibrationData.LeftY,'.');
             h2 = plot(targetPosition.y+randn(size(t))/5,rawCalibrationData.RightY,'.');
+            line(y,calibrationCoefficients.OffsetY('LeftEye')+calibrationCoefficients.GainY('LeftEye')*y,'color',get(h1,'color'));
+            line(y,calibrationCoefficients.OffsetY('RightEye')+calibrationCoefficients.GainY('RightEye')*y,'color',get(h2,'color'));
+            
+            subplot(4,3,6,'nextplot','add')
+            title('Targets and eye positions X/Y (deg)');
+            plot(calibratedCalibrationData.LeftX(~isnan(targetPosition.x)),calibratedCalibrationData.LeftY(~isnan(targetPosition.x)),'.','markersize',1)
+            plot(calibratedCalibrationData.RightX(~isnan(targetPosition.x)),calibratedCalibrationData.RightY(~isnan(targetPosition.x)),'.','markersize',1)
+            plot(targetPosition.x,targetPosition.y,'.','markersize',20,'color','k')
+            set(gca,'xlim',x,'ylim',y);
+            
+            subplot(4,3,[7:9],'nextplot','add')
+            plot(t,calibratedCalibrationData.LeftX);
+            plot(t,calibratedCalibrationData.RightX);
+            plot(t,targetPosition.x,'color','k','linewidth',3)
+            set(gca,'ylim',x);
+            ylabel('Horizontal (deg)');
+            
+            subplot(4,3,[10:12],'nextplot','add')
+            plot(t,calibratedCalibrationData.LeftY);
+            plot(t,calibratedCalibrationData.RightY);
+            plot(t,targetPosition.y,'color','k','linewidth',3)
+            set(gca,'ylim',y);
+            ylabel('Vertical (deg)');
+        end
+
+          function PlotCalibrationCR(calibrationCoefficients, rawCalibrationData, calibratedCalibrationData, targetPosition)
+            
+             lx = rawCalibrationData.LeftX_UNCALIBRATED - rawCalibrationData.LeftCR1X;
+             ly = rawCalibrationData.LeftY_UNCALIBRATED - rawCalibrationData.LeftCR1Y;
+             rx = rawCalibrationData.RightX_UNCALIBRATED - rawCalibrationData.RightCR1X;
+             ry = rawCalibrationData.RightY_UNCALIBRATED - rawCalibrationData.RightCR1Y;
+            
+            
+            figure
+            t = calibratedCalibrationData.Time;
+            
+            subplot(4,3,1,'nextplot','add')
+            title('Targets X/Y (deg)');
+            plot(targetPosition.x,targetPosition.y,'.')
+            
+            subplot(4,3,2,'nextplot','add')
+            title('Eye positions X/Y (pixels)');
+            plot(lx,ly,'.');
+            plot(rx,ry,'.');
+            
+            subplot(4,3,3,'nextplot','add')
+            title('Eye positions in time');
+            plot(t,lx);
+            plot(t,rx);
+            plot(t,ly);
+            plot(t,ry);
+            plot(t,targetPosition.x);
+            plot(t,targetPosition.y);
+            
+            x = [-30 30];
+            y = [-20 20];
+            subplot(4,3,4,'nextplot','add')
+            title('Horizontal target vs eye pos. (deg)');
+            h1 = plot(targetPosition.x+randn(size(t))/5,lx,'.');
+            h2 = plot(targetPosition.x+randn(size(t))/5,rx,'.');
+            line(x,calibrationCoefficients.OffsetX('LeftEye')+calibrationCoefficients.GainX('LeftEye')*x,'color',get(h1,'color'));
+            line(x,calibrationCoefficients.OffsetX('RightEye')+calibrationCoefficients.GainX('RightEye')*x,'color',get(h2,'color'));
+            
+            subplot(4,3,5,'nextplot','add')
+            title('Vertical target vs eye pos. (deg)');
+            h1 = plot(targetPosition.y+randn(size(t))/5,ly,'.');
+            h2 = plot(targetPosition.y+randn(size(t))/5,ry,'.');
             line(y,calibrationCoefficients.OffsetY('LeftEye')+calibrationCoefficients.GainY('LeftEye')*y,'color',get(h1,'color'));
             line(y,calibrationCoefficients.OffsetY('RightEye')+calibrationCoefficients.GainY('RightEye')*y,'color',get(h2,'color'));
             

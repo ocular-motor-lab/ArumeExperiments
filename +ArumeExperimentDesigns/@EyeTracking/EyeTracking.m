@@ -163,7 +163,18 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             
             switch(eyeTrackerType)
                 case 'OpenIris'
-                    
+%                     % TODO: FIND A BETTER WAY TO GET ALL THE RELATED
+%                     % SESSIONS
+%                     arume = Arume('nogui');
+%                     calibrationSessions = arume.currentProject.findSessionBySubjectAndExperiment(this.Session.subjectCode, 'Calibration');
+%                     calibrationTables = [];
+%                     for i=1:calibrationSessions
+%                         calibrationTables(i) = calibrationSessions.analysisResults.calibrationTable;
+%                     end
+% 
+%                     %TODO: get the timestamps of the calibraiton sessions
+
+
                     samplesDataTable = table();
                     cleanedData = table();
                     calibratedData = table();
@@ -190,21 +201,26 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         error('ERROR preparing sample data set: The session should have the same number of calibration files as data files or 1 calibration file');
                     end
                     
-                    [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleData(this.Session.dataPath, dataFiles, calibrationFiles, options);
+%                     if ( isempty(calibrationSessions) )
+
+                        [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleData(this.Session.dataPath, dataFiles, calibrationFiles, options);
+%                     else
+%                         [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleDataArumeMultiCalibration(this.Session.dataPath, dataFiles, calibrationTables, options);
+%                     end
                     
-                    a = Arume;
-                    % TODO: This needs to be improved
-                    cal = a.currentProject.findSession(this.Session.subjectCode,'Cal');
-                    if ( ~isempty(cal))
-                        % RECALIBRATE DATA WITH BEHAVIORAL CALIBRATION FROM ANOTHER
-                        % SESSION
-                        
-                        reCalibratedData   = VOGAnalysis.CalibrateData(samplesDataTable, cal.analysisResults.calibrationTable);
-                        
-                        disp('RECALIBRATING DATA');
-                        cal.analysisResults.calibrationTable
-                        samplesDataTable = reCalibratedData;
-                    end
+%                     a = Arume;
+%                     % TODO: This needs to be improved
+%                     cal = a.currentProject.findSession(this.Session.subjectCode,'Cal');
+%                     if ( ~isempty(cal))
+%                         % RECALIBRATE DATA WITH BEHAVIORAL CALIBRATION FROM ANOTHER
+%                         % SESSION
+%                         
+%                         reCalibratedData   = VOGAnalysis.CalibrateData(samplesDataTable, cal.analysisResults.calibrationTable);
+%                         
+%                         disp('RECALIBRATING DATA');
+%                         cal.analysisResults.calibrationTable
+%                         samplesDataTable = reCalibratedData;
+%                     end
                 case 'Fove'
                     
                     samplesDataTable = table();

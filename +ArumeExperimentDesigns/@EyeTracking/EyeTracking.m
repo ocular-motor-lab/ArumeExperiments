@@ -163,16 +163,68 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             
             switch(eyeTrackerType)
                 case 'OpenIris'
-%                     % TODO: FIND A BETTER WAY TO GET ALL THE RELATED
-%                     % SESSIONS
-%                     arume = Arume('nogui');
-%                     calibrationSessions = arume.currentProject.findSessionBySubjectAndExperiment(this.Session.subjectCode, 'Calibration');
-%                     calibrationTables = [];
-%                     for i=1:calibrationSessions
-%                         calibrationTables(i) = calibrationSessions.analysisResults.calibrationTable;
-%                     end
-% 
-%                     %TODO: get the timestamps of the calibraiton sessions
+                    calibrationsForEachTrial = [];
+                    
+                    % if this session is not a calibration
+                    if ( 1)
+
+                        % TODO: FIND A BETTER WAY TO GET ALL THE RELATED
+                        % SESSIONS
+                        arume = Arume('nogui');
+                        calibrationSessions = arume.currentProject.findSessionBySubjectAndExperiment(this.Session.subjectCode, 'Calibration');
+                        calibrationTables = {};
+                        calibrationTimes = NaT(0);
+                        calibrationNames = {};
+                        for i=1:length(calibrationSessions)
+                            if ( isfield( calibrationSessions(i).analysisResults, 'calibrationTable') )
+                                calibrationTables{i} = calibrationSessions(i).analysisResults.calibrationTable;
+                            else
+                                calibrationTables{i} = table();
+                            end
+                            calibrationTimes(i) = datetime(calibrationSessions(i).currentRun.pastTrialTable.DateTimeTrialStart{end});
+                            calibrationNames{i} =  calibrationSessions(i).name;
+                        end
+
+                        calibrations = table(calibrationNames', calibrationTables', calibrationTimes','VariableNames',{'SessionName','CalibrationTable','DateTime'});
+                        calibrations = sortrows(calibrations,'DateTime');
+
+                        % loop through trials to find the relavant calibration
+                        calibrationsForEachTrial = nan(height(this.Session.currentRun.pastTrialTable),1);
+                        for i=1:height(this.Session.currentRun.pastTrialTable)
+                            trialStartTime = datetime(this.Session.currentRun.pastTrialTable.DateTimeTrialStart(i));
+
+                            pastClosestCalibration = find((trialStartTime - calibrations.DateTime)>0,1, 'last');
+
+                            if (i==1)
+                                if ( (trialStartTime-calibrations.DateTime(pastClosestCalibration)) < minutes(5) )
+                                    calibrationsForEachTrial(i) = pastClosestCalibration;
+                                end
+                            else
+                                previousTrialCalibration = calibrationsForEachTrial(i-1);
+                                % TODO consider the case when you take a
+                                % break and forget to do a calibration
+                                % before restarting. Right now we will keep
+                                % the calibration from the previous trial
+                                
+                                if( previousTrialCalibration == pastClosestCalibration)
+                                    % this is the case for a following trial
+                                    % after a calibration
+                                    calibrationsForEachTrial(i) = previousTrialCalibration;
+                                else
+                                    % this is the case for trial following a
+                                    % break when one or more calibrations where
+                                    % performed
+                                    calibrationsForEachTrial(i) = pastClosestCalibration;
+                                end
+                            end
+                        end
+
+                        % if we did not find any calibration for the trials
+                        % we behave as if there were no calibrations
+                        if ( all(isnan(calibrationsForEachTrial)))
+                            calibrationsForEachTrial = [];
+                        end
+                    end
 
 
                     samplesDataTable = table();
@@ -201,26 +253,16 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         error('ERROR preparing sample data set: The session should have the same number of calibration files as data files or 1 calibration file');
                     end
                     
-%                     if ( isempty(calibrationSessions) )
 
-                        [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleData(this.Session.dataPath, dataFiles, calibrationFiles, options);
-%                     else
-%                         [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleDataArumeMultiCalibration(this.Session.dataPath, dataFiles, calibrationTables, options);
-%                     end
+
+
                     
-%                     a = Arume;
-%                     % TODO: This needs to be improved
-%                     cal = a.currentProject.findSession(this.Session.subjectCode,'Cal');
-%                     if ( ~isempty(cal))
-%                         % RECALIBRATE DATA WITH BEHAVIORAL CALIBRATION FROM ANOTHER
-%                         % SESSION
-%                         
-%                         reCalibratedData   = VOGAnalysis.CalibrateData(samplesDataTable, cal.analysisResults.calibrationTable);
-%                         
-%                         disp('RECALIBRATING DATA');
-%                         cal.analysisResults.calibrationTable
-%                         samplesDataTable = reCalibratedData;
-%                     end
+                     if ( isempty(calibrationsForEachTrial) )
+                        [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleData(this.Session.dataPath, dataFiles, calibrationFiles, options);
+                     else
+                         [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleDataArumeMultiCalibration(this.Session.dataPath, dataFiles, calibrationFiles, calibrations(calibrationsForEachTrial,:), options);
+                     end
+
                 case 'Fove'
                     
                     samplesDataTable = table();

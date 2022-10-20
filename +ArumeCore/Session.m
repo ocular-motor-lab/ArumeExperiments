@@ -449,7 +449,7 @@ classdef Session < ArumeCore.DataDB
         
         function runAnalysis(this, options)
             
-            cprintf('blue', '++ ARUME::Preparing for Analysis.\n');
+            cprintf('blue', '++ ARUME::Preparing %s for Analysis.\n', this.name);
             
             this.prepareForAnalysis(options);
             

@@ -492,8 +492,12 @@ classdef Arume < handle
             end
         end
                 
-        function options = getAnalysisOptionsDefault(this)
-            options = StructDlg(this.getAnalysisOptions(this.selectedSessions),'',[],[],'off');
+        function options = getAnalysisOptionsDefault(this, sessions)
+            
+            if ( ~exist('sessions','var') )
+                sessions = this.selectedSessions;
+            end
+            options = StructDlg(this.getAnalysisOptions(sessions),'',[],[],'off');
         end
         
         %

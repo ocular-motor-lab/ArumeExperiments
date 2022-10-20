@@ -25,6 +25,7 @@ classdef VOGAnalysis < handle
             
             optionsDlg.Detect_Quik_and_Slow_Phases =  { {'{0}','1'} };
             
+            
             optionsDlg.CleanUp.smoothRloessSpan = 5;
             optionsDlg.CleanUp.BadDataPadding = 200; % ms
             optionsDlg.CleanUp.pupilSizeTh = 10; % in percent of smooth pupil size
@@ -43,6 +44,8 @@ classdef VOGAnalysis < handle
             optionsDlg.CleanUp.Interpolate_Pupil_Spikes_of_Bad_Data = { {'0','{1}'} };
             optionsDlg.CleanUp.windw = 0.2; % 200 ms of window for impulse noise removal for use in remove_CRnoise
             
+            optionsDlg.Calibration.Calibration_Type = {'Pupil-CR|{Pupil}'};
+
             optionsDlg.Detection.Detection_Method = {'Manual|New|{Engbert}|cluster|Sai'};
             
             optionsDlg.Detection.New.VFAC = 4; % saccade detection threshold factor
@@ -159,7 +162,7 @@ classdef VOGAnalysis < handle
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods (Static)
         
-        function [samplesDataTable, cleanedData, calibratedData, rawData] = LoadCleanAndResampleDataArumeMultiCalibration(dataFolder, dataFiles, calibrationTables, params)
+        function [samplesDataTable, cleanedData, calibratedData, rawData] = LoadCleanAndResampleDataArumeMultiCalibration(dataFolder, dataFiles, calibrationFiles, calibrationTables, params)
             
             if ( nargin == 1 )
                 [~,file] = fileparts(dataFolder);
@@ -184,28 +187,28 @@ classdef VOGAnalysis < handle
                 % load and preprocess data
                 
                 [dataFile, rawDataFile] = VOGAnalysis.LoadVOGdata(dataFilePath);
+                
+                switch( params.Calibration.Calibration_Type)
+                    case 'Pupil-CR'
+                        calibrationTable = calibrationTables.CalibrationCRTable{calibrationTables.FileNumber==i};
+                    case 'Pupil'
+                        calibrationTable = calibrationTables.CalibrationTable{calibrationTables.FileNumber==i};
+                end
+                
+                if ( ~isempty(calibrationTable) )
+                    switch( params.Calibration.Calibration_Type)
+                        case 'Pupil-CR'
+                            calibratedDataFile      = VOGAnalysis.CalibrateDataCR(dataFile, calibrationTable);
+                        case 'Pupil'
+                            calibratedDataFile      = VOGAnalysis.CalibrateData(dataFile, calibrationTable);
+                    end
+                else
+                    disp(sprintf('WARNING THIS FILE (%s) HAS AN EMPTY CALIBRATION going to default open iris calibration', dataFiles{i}));
 
-                calibratedDataFile = table();
-                % for each calibration Table
-                for iCal = 1:height(calibrationTables)
-                    % get the chank fo data that corresponds to that table
-                    
-                    calibrationTable = calibrationTables{iCal};
-% 
-%                     calibrationIndexStart = 
-%                     calibrationIndexEnd = 
-
-                    dataChunk = dataFile(calibrationIndexStart:calibrationIndexEnd,:);
-
-                    % calibrate it
-                    calibratedDataChunk     = VOGAnalysis.CalibrateData(dataChunk, calibrationTable);
-
-                    % paste it together with the other chunks
-                    calibratedDataFile = vertcat(calibratedDataFile, calibratedDataChunk);
+                    calibrationTable       = VOGAnalysis.ReadCalibration(calibrationFilePath);
+                    calibratedDataFile      = VOGAnalysis.CalibrateData(dataFile, calibrationTable);
                 end
 
-
-                    
                 cleanedDataFile         = VOGAnalysis.CleanData(calibratedDataFile, params);
                 fileSamplesDataSet      = VOGAnalysis.ResampleData(cleanedDataFile, params);
                 
@@ -825,6 +828,9 @@ classdef VOGAnalysis < handle
             bRightX = robustfit(targetPosition.RightX(~isnan(targetPosition.RightX)),rawCalibrationData.RightX(~isnan(targetPosition.RightX)));
             bRightY = robustfit(targetPosition.RightY(~isnan(targetPosition.RightY)),rawCalibrationData.RightY(~isnan(targetPosition.RightY)));
             
+            warning('off','MATLAB:table:RowsAddedExistingVars')
+            warning('off','MATLAB:table:RowsAddedNewVars')
+
             calibrationTable{'LeftEye', 'GlobeX'} = bLeftX(1);
             calibrationTable{'LeftEye', 'GlobeY'} = bLeftY(1);
             calibrationTable{'LeftEye', 'GlobeRadiusX'} = abs(60*bLeftX(2));
@@ -851,6 +857,9 @@ classdef VOGAnalysis < handle
             calibrationTable{'RightEye', 'GainX'}    = bRightX(2);
             calibrationTable{'RightEye', 'OffsetY'}  = bRightY(1);
             calibrationTable{'RightEye', 'GainY'}    = bRightY(2);
+
+            warning('on','MATLAB:table:RowsAddedExistingVars')
+            warning('on','MATLAB:table:RowsAddedNewVars')
             
         end
         
@@ -873,6 +882,9 @@ classdef VOGAnalysis < handle
             bRightX = robustfit(targetPosition.RightX(~isnan(targetPosition.RightX)),rx(~isnan(targetPosition.RightX)));
             bRightY = robustfit(targetPosition.RightY(~isnan(targetPosition.RightY)),ry(~isnan(targetPosition.RightY)));
             
+            warning('off','MATLAB:table:RowsAddedExistingVars')
+            warning('off','MATLAB:table:RowsAddedNewVars')
+            
             calibrationTable{'LeftEye', 'GlobeX'} = bLeftX(1);
             calibrationTable{'LeftEye', 'GlobeY'} = bLeftY(1);
             calibrationTable{'LeftEye', 'GlobeRadiusX'} = abs(60*bLeftX(2));
@@ -899,6 +911,9 @@ classdef VOGAnalysis < handle
             calibrationTable{'RightEye', 'GainX'}    = bRightX(2);
             calibrationTable{'RightEye', 'OffsetY'}  = bRightY(1);
             calibrationTable{'RightEye', 'GainY'}    = bRightY(2);
+
+            warning('on','MATLAB:table:RowsAddedExistingVars')
+            warning('on','MATLAB:table:RowsAddedNewVars')
             
         end
         

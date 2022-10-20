@@ -166,26 +166,35 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                     calibrationsForEachTrial = [];
                     
                     % if this session is not a calibration
-                    if ( 1)
+                    if ( ~strcmp(this.Session.experimentDesign.Name, 'Calibration') )
 
                         % TODO: FIND A BETTER WAY TO GET ALL THE RELATED
                         % SESSIONS
                         arume = Arume('nogui');
                         calibrationSessions = arume.currentProject.findSessionBySubjectAndExperiment(this.Session.subjectCode, 'Calibration');
                         calibrationTables = {};
+                        calibrationCRTables = {};
                         calibrationTimes = NaT(0);
                         calibrationNames = {};
                         for i=1:length(calibrationSessions)
+               
+                            % analyze the calibration sessions just in case
+                            % they have not before
+                            analysisOptions = arume.getAnalysisOptionsDefault( calibrationSessions(i) );
+                            calibrationSessions(i).runAnalysis(analysisOptions);
+
                             if ( isfield( calibrationSessions(i).analysisResults, 'calibrationTable') )
                                 calibrationTables{i} = calibrationSessions(i).analysisResults.calibrationTable;
+                                calibrationCRTables{i} = calibrationSessions(i).analysisResults.calibrationTableCR;
                             else
                                 calibrationTables{i} = table();
+                                calibrationCRTables{i} = table();
                             end
                             calibrationTimes(i) = datetime(calibrationSessions(i).currentRun.pastTrialTable.DateTimeTrialStart{end});
                             calibrationNames{i} =  calibrationSessions(i).name;
                         end
 
-                        calibrations = table(calibrationNames', calibrationTables', calibrationTimes','VariableNames',{'SessionName','CalibrationTable','DateTime'});
+                        calibrations = table(calibrationNames', calibrationTables', calibrationCRTables', calibrationTimes','VariableNames',{'SessionName','CalibrationTable','CalibrationCRTable','DateTime'});
                         calibrations = sortrows(calibrations,'DateTime');
 
                         % loop through trials to find the relavant calibration
@@ -256,12 +265,15 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
 
 
 
-                    
-                     if ( isempty(calibrationsForEachTrial) )
+
+                    if ( isempty(calibrationsForEachTrial) )
                         [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleData(this.Session.dataPath, dataFiles, calibrationFiles, options);
-                     else
-                         [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleDataArumeMultiCalibration(this.Session.dataPath, dataFiles, calibrationFiles, calibrations(calibrationsForEachTrial,:), options);
-                     end
+                    else
+                        calibrationTables = [calibrations(calibrationsForEachTrial,:) this.Session.currentRun.pastTrialTable(:,'FileNumber')];
+                        [~,idx] = unique(calibrationTables.SessionName);
+                        calibrfationTablesPerFile = calibrationTables(idx,:);
+                        [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleDataArumeMultiCalibration(this.Session.dataPath, dataFiles, calibrationFiles, calibrfationTablesPerFile , options);
+                    end
 
                 case 'Fove'
                     

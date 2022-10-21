@@ -25,6 +25,7 @@ classdef VOGAnalysis < handle
             
             optionsDlg.Detect_Quik_and_Slow_Phases =  { {'{0}','1'} };
             
+            
             optionsDlg.CleanUp.smoothRloessSpan = 5;
             optionsDlg.CleanUp.BadDataPadding = 200; % ms
             optionsDlg.CleanUp.pupilSizeTh = 10; % in percent of smooth pupil size
@@ -43,6 +44,8 @@ classdef VOGAnalysis < handle
             optionsDlg.CleanUp.Interpolate_Pupil_Spikes_of_Bad_Data = { {'0','{1}'} };
             optionsDlg.CleanUp.windw = 0.2; % 200 ms of window for impulse noise removal for use in remove_CRnoise
             
+            optionsDlg.Calibration.Calibration_Type = {'Pupil-CR|{Pupil}'};
+
             optionsDlg.Detection.Detection_Method = {'Manual|New|{Engbert}|cluster|Sai'};
             
             optionsDlg.Detection.New.VFAC = 4; % saccade detection threshold factor
@@ -84,6 +87,22 @@ classdef VOGAnalysis < handle
             if ( sum(strcmp('LeftL',calibratedData.Properties.VariableNames))>0 || sum(strcmp('RightL',calibratedData.Properties.VariableNames))>0 )
                 eyeSignals{end+1} = 'L';
             end
+            
+            if ( sum(strcmp('LeftCR1X',calibratedData.Properties.VariableNames))>0 || sum(strcmp('RightCR1X',calibratedData.Properties.VariableNames))>0 )
+                eyeSignals{end+1} = 'CR1X';
+            end
+            if ( sum(strcmp('LeftCR1Y',calibratedData.Properties.VariableNames))>0 || sum(strcmp('RightCR1Y',calibratedData.Properties.VariableNames))>0 )
+                eyeSignals{end+1} = 'CR1Y';
+            end
+
+            
+            if ( sum(strcmp('LeftX_UNCALIBRATED',calibratedData.Properties.VariableNames))>0 || sum(strcmp('RightX_UNCALIBRATED',calibratedData.Properties.VariableNames))>0 )
+                eyeSignals{end+1} = 'X_UNCALIBRATED';
+            end
+            if ( sum(strcmp('LeftY_UNCALIBRATED',calibratedData.Properties.VariableNames))>0 || sum(strcmp('RightY_UNCALIBRATED',calibratedData.Properties.VariableNames))>0 )
+                eyeSignals{end+1} = 'Y_UNCALIBRATED';
+            end
+
             
             headSignals = {};
             if ( sum(strcmp('Q1',calibratedData.Properties.VariableNames))>0 || sum(strcmp('HeadQ1',calibratedData.Properties.VariableNames))>0 )
@@ -143,6 +162,76 @@ classdef VOGAnalysis < handle
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods (Static)
         
+        function [samplesDataTable, cleanedData, calibratedData, rawData] = LoadCleanAndResampleDataArumeMultiCalibration(dataFolder, dataFiles, calibrationFiles, calibrationTables, params)
+            
+            if ( nargin == 1 )
+                [~,file] = fileparts(dataFolder);
+                dataFiles = {[file '.txt']};
+                calibrationFiles = {[file '.cal']};
+                params = VOGAnalysis.GetParameters();
+            end
+            
+            samplesDataTable = table();
+            rawData = table();
+            cleanedData = table();
+            calibratedData = table();
+            
+            for i=1:length(dataFiles)
+                dataFile = dataFiles{i};
+                cprintf('blue','++ VOGAnalysis :: Reading data File %d of %d = %s ...\n', i, length(dataFiles), dataFile);
+                calibrationFile = calibrationFiles{i};
+                
+                dataFilePath = fullfile(dataFolder, dataFile);
+                calibrationFilePath = fullfile(dataFolder, calibrationFile);
+                
+                % load and preprocess data
+                
+                [dataFile, rawDataFile] = VOGAnalysis.LoadVOGdata(dataFilePath);
+                
+                switch( params.Calibration.Calibration_Type)
+                    case 'Pupil-CR'
+                        calibrationTable = calibrationTables.CalibrationCRTable{calibrationTables.FileNumber==i};
+                    case 'Pupil'
+                        calibrationTable = calibrationTables.CalibrationTable{calibrationTables.FileNumber==i};
+                end
+                
+                if ( ~isempty(calibrationTable) )
+                    switch( params.Calibration.Calibration_Type)
+                        case 'Pupil-CR'
+                            calibratedDataFile      = VOGAnalysis.CalibrateDataCR(dataFile, calibrationTable);
+                        case 'Pupil'
+                            calibratedDataFile      = VOGAnalysis.CalibrateData(dataFile, calibrationTable);
+                    end
+                else
+                    disp(sprintf('WARNING THIS FILE (%s) HAS AN EMPTY CALIBRATION going to default open iris calibration', dataFiles{i}));
+
+                    calibrationTable       = VOGAnalysis.ReadCalibration(calibrationFilePath);
+                    calibratedDataFile      = VOGAnalysis.CalibrateData(dataFile, calibrationTable);
+                end
+
+                cleanedDataFile         = VOGAnalysis.CleanData(calibratedDataFile, params);
+                fileSamplesDataSet      = VOGAnalysis.ResampleData(cleanedDataFile, params);
+                
+                % add a column to indicate which file the samples came from
+                fileSamplesDataSet  = [table(repmat(i,height(fileSamplesDataSet),1),'variablenames',{'FileNumber'}), fileSamplesDataSet];
+                rawDataFile         = [table(repmat(i,height(rawDataFile),1),       'variablenames',{'FileNumber'}), rawDataFile];
+                cleanedDataFile     = [table(repmat(i,height(cleanedDataFile),1),   'variablenames',{'FileNumber'}), cleanedDataFile];
+                calibratedDataFile  = [table(repmat(i,height(calibratedDataFile),1),'variablenames',{'FileNumber'}), calibratedDataFile];
+                
+                if( i>1)
+                    % fix timestamps while concatenating so they
+                    gapSeconds = 100; % gap to add in beteen files
+                    fileSamplesDataSet.Time = fileSamplesDataSet.Time - fileSamplesDataSet.Time(1) + samplesDataTable.Time(end) + gapSeconds;
+                    fileSamplesDataSet.FrameNumber = fileSamplesDataSet.FrameNumber - fileSamplesDataSet.FrameNumber(1) + samplesDataTable.FrameNumber(end) + gapSeconds*fileSamplesDataSet.Properties.UserData.sampleRate;
+                end
+                
+                samplesDataTable = cat(1,samplesDataTable,fileSamplesDataSet);
+                rawData = cat(1,rawData,rawDataFile);
+                cleanedData = cat(1,cleanedData,cleanedDataFile);
+                calibratedData = cat(1,calibratedData,calibratedDataFile);
+            end
+        end
+
         function [samplesDataTable, cleanedData, calibratedData, rawData] = LoadCleanAndResampleData(dataFolder, dataFiles, calibrationFiles, params)
             
             if ( nargin == 1 )
@@ -168,8 +257,8 @@ classdef VOGAnalysis < handle
                 % load and preprocess data
                 
                 [dataFile, rawDataFile] = VOGAnalysis.LoadVOGdata(dataFilePath);
-                calibrationTableFile    = VOGAnalysis.ReadCalibration(calibrationFilePath);
-                calibratedDataFile      = VOGAnalysis.CalibrateData(dataFile, calibrationTableFile);
+                calibrationTables       = VOGAnalysis.ReadCalibration(calibrationFilePath);
+                calibratedDataFile      = VOGAnalysis.CalibrateData(dataFile, calibrationTables);
                 cleanedDataFile         = VOGAnalysis.CleanData(calibratedDataFile, params);
                 fileSamplesDataSet      = VOGAnalysis.ResampleData(cleanedDataFile, params);
                 
@@ -739,6 +828,9 @@ classdef VOGAnalysis < handle
             bRightX = robustfit(targetPosition.RightX(~isnan(targetPosition.RightX)),rawCalibrationData.RightX(~isnan(targetPosition.RightX)));
             bRightY = robustfit(targetPosition.RightY(~isnan(targetPosition.RightY)),rawCalibrationData.RightY(~isnan(targetPosition.RightY)));
             
+            warning('off','MATLAB:table:RowsAddedExistingVars')
+            warning('off','MATLAB:table:RowsAddedNewVars')
+
             calibrationTable{'LeftEye', 'GlobeX'} = bLeftX(1);
             calibrationTable{'LeftEye', 'GlobeY'} = bLeftY(1);
             calibrationTable{'LeftEye', 'GlobeRadiusX'} = abs(60*bLeftX(2));
@@ -765,6 +857,9 @@ classdef VOGAnalysis < handle
             calibrationTable{'RightEye', 'GainX'}    = bRightX(2);
             calibrationTable{'RightEye', 'OffsetY'}  = bRightY(1);
             calibrationTable{'RightEye', 'GainY'}    = bRightY(2);
+
+            warning('on','MATLAB:table:RowsAddedExistingVars')
+            warning('on','MATLAB:table:RowsAddedNewVars')
             
         end
         
@@ -778,14 +873,17 @@ classdef VOGAnalysis < handle
             rawCalibrationData.RightCR1X(rawCalibrationData.RightCR1X==0) = nan;
             rawCalibrationData.RightCR1Y(rawCalibrationData.RightCR1Y==0) = nan;
             
-            lx = rawCalibrationData.LeftX - rawCalibrationData .LeftCR1X;
-            ly = rawCalibrationData.LeftY - rawCalibrationData.LeftCR1Y;
-            rx = rawCalibrationData.RightX - rawCalibrationData.RightCR1X;
-            ry = rawCalibrationData.RightY - rawCalibrationData.RightCR1Y;
+            lx = rawCalibrationData.LeftX_UNCALIBRATED - rawCalibrationData.LeftCR1X;
+            ly = rawCalibrationData.LeftY_UNCALIBRATED - rawCalibrationData.LeftCR1Y;
+            rx = rawCalibrationData.RightX_UNCALIBRATED - rawCalibrationData.RightCR1X;
+            ry = rawCalibrationData.RightY_UNCALIBRATED - rawCalibrationData.RightCR1Y;
             bLeftX = robustfit(targetPosition.LeftX(~isnan(targetPosition.LeftX)),lx(~isnan(targetPosition.LeftX)));
             bLeftY = robustfit(targetPosition.LeftY(~isnan(targetPosition.LeftY)),ly(~isnan(targetPosition.LeftY)));
             bRightX = robustfit(targetPosition.RightX(~isnan(targetPosition.RightX)),rx(~isnan(targetPosition.RightX)));
             bRightY = robustfit(targetPosition.RightY(~isnan(targetPosition.RightY)),ry(~isnan(targetPosition.RightY)));
+            
+            warning('off','MATLAB:table:RowsAddedExistingVars')
+            warning('off','MATLAB:table:RowsAddedNewVars')
             
             calibrationTable{'LeftEye', 'GlobeX'} = bLeftX(1);
             calibrationTable{'LeftEye', 'GlobeY'} = bLeftY(1);
@@ -813,6 +911,9 @@ classdef VOGAnalysis < handle
             calibrationTable{'RightEye', 'GainX'}    = bRightX(2);
             calibrationTable{'RightEye', 'OffsetY'}  = bRightY(1);
             calibrationTable{'RightEye', 'GainY'}    = bRightY(2);
+
+            warning('on','MATLAB:table:RowsAddedExistingVars')
+            warning('on','MATLAB:table:RowsAddedNewVars')
             
         end
         
@@ -855,10 +956,10 @@ classdef VOGAnalysis < handle
             calibratedData.RightX_UNCALIBRATED = rawData.RightX;
             calibratedData.RightY_UNCALIBRATED = rawData.RightY;
             
-            lx = rawData.LeftX - rawData.LeftCR1X;
-            ly = rawData.LeftY - rawData.LeftCR1Y;
-            rx = rawData.RightX - rawData.RightCR1X;
-            ry = rawData.RightY - rawData.RightCR1Y;
+            lx = rawData.LeftX_UNCALIBRATED - rawData.LeftCR1X;
+            ly = rawData.LeftY_UNCALIBRATED - rawData.LeftCR1Y;
+            rx = rawData.RightX_UNCALIBRATED - rawData.RightCR1X;
+            ry = rawData.RightY_UNCALIBRATED - rawData.RightCR1Y;
             
             calibratedData.LeftX = calibrationTable{'LeftEye', 'SignX'}*(lx- calibrationTable{'LeftEye', 'RefX'})/calibrationTable{'LeftEye', 'GlobeRadiusX'}*60;
             calibratedData.LeftY = calibrationTable{'LeftEye', 'SignY'}*(ly - calibrationTable{'LeftEye', 'RefY'})/calibrationTable{'LeftEye', 'GlobeRadiusY'}*60;

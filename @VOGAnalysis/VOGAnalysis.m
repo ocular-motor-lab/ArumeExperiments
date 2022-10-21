@@ -44,7 +44,7 @@ classdef VOGAnalysis < handle
             optionsDlg.CleanUp.Interpolate_Pupil_Spikes_of_Bad_Data = { {'0','{1}'} };
             optionsDlg.CleanUp.windw = 0.2; % 200 ms of window for impulse noise removal for use in remove_CRnoise
             
-            optionsDlg.Calibration.Calibration_Type = {'Pupil-CR|{Pupil}'};
+            optionsDlg.Calibration.Calibration_Type = {'Pupil-CR|{Pupil}|None'};
 
             optionsDlg.Detection.Detection_Method = {'Manual|New|{Engbert}|cluster|Sai'};
             
@@ -193,6 +193,8 @@ classdef VOGAnalysis < handle
                         calibrationTable = calibrationTables.CalibrationCRTable{calibrationTables.FileNumber==i};
                     case 'Pupil'
                         calibrationTable = calibrationTables.CalibrationTable{calibrationTables.FileNumber==i};
+                    case 'None'
+                        calibrationTable = table();
                 end
                 
                 if ( ~isempty(calibrationTable) )
@@ -823,10 +825,10 @@ classdef VOGAnalysis < handle
             
             calibrationTable = table();
             
-            bLeftX = robustfit(targetPosition.LeftX(~isnan(targetPosition.LeftX)),rawCalibrationData.LeftX(~isnan(targetPosition.LeftX)));
-            bLeftY = robustfit(targetPosition.LeftY(~isnan(targetPosition.LeftY)),rawCalibrationData.LeftY(~isnan(targetPosition.LeftY)));
-            bRightX = robustfit(targetPosition.RightX(~isnan(targetPosition.RightX)),rawCalibrationData.RightX(~isnan(targetPosition.RightX)));
-            bRightY = robustfit(targetPosition.RightY(~isnan(targetPosition.RightY)),rawCalibrationData.RightY(~isnan(targetPosition.RightY)));
+            bLeftX = robustfit(targetPosition.LeftX(~isnan(targetPosition.LeftX)),rawCalibrationData.LeftX_UNCALIBRATED(~isnan(targetPosition.LeftX)));
+            bLeftY = robustfit(targetPosition.LeftY(~isnan(targetPosition.LeftY)),rawCalibrationData.LeftY_UNCALIBRATED(~isnan(targetPosition.LeftY)));
+            bRightX = robustfit(targetPosition.RightX(~isnan(targetPosition.RightX)),rawCalibrationData.RightX_UNCALIBRATED(~isnan(targetPosition.RightX)));
+            bRightY = robustfit(targetPosition.RightY(~isnan(targetPosition.RightY)),rawCalibrationData.RightY_UNCALIBRATED(~isnan(targetPosition.RightY)));
             
             warning('off','MATLAB:table:RowsAddedExistingVars')
             warning('off','MATLAB:table:RowsAddedNewVars')

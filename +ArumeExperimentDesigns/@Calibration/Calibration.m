@@ -166,6 +166,7 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
              
              analysisResults.calibrationTableCR = VOGAnalysis.CalculateCalibrationCR(samplesDataTable, targetPosition);
              analysisResults.calibrationTable = VOGAnalysis.CalculateCalibration(samplesDataTable, targetPosition);
+             
          end
     end
       
@@ -211,6 +212,12 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
              targetPosition.RightY = t(:,2);
              
 
+            samplesDataTable.LeftX = samplesDataTable.LeftX_UNCALIBRATED;
+            samplesDataTable.LeftY = samplesDataTable.LeftY_UNCALIBRATED;
+            samplesDataTable.RightX = samplesDataTable.RightX_UNCALIBRATED;
+            samplesDataTable.RightY = samplesDataTable.RightY_UNCALIBRATED;
+            
+
              calibratedCalibrationData   = VOGAnalysis.CalibrateDataCR(samplesDataTable, analysisResults.calibrationTableCR);
              PlotCalibrationCR(analysisResults.calibrationTableCR, samplesDataTable, calibratedCalibrationData, targetPosition)
              title('CR calibration')
@@ -240,31 +247,31 @@ end
             
             subplot(4,3,2,'nextplot','add')
             title('Eye positions X/Y (pixels)');
-            plot(rawCalibrationData.LeftX,rawCalibrationData.LeftY,'.');
-            plot(rawCalibrationData.RightX,rawCalibrationData.RightY,'.');
+            plot(rawCalibrationData.LeftX_UNCALIBRATED,rawCalibrationData.LeftY_UNCALIBRATED,'.');
+            plot(rawCalibrationData.RightX_UNCALIBRATED,rawCalibrationData.RightY_UNCALIBRATED,'.');
             
             subplot(4,3,3,'nextplot','add')
             title('Eye positions in time');
-            plot(t,rawCalibrationData.LeftX);
-            plot(t,rawCalibrationData.RightX);
-            plot(t,rawCalibrationData.LeftY);
-            plot(t,rawCalibrationData.RightY);
+            plot(t,rawCalibrationData.LeftX_UNCALIBRATED);
+            plot(t,rawCalibrationData.RightX_UNCALIBRATED);
+            plot(t,rawCalibrationData.LeftY_UNCALIBRATED);
+            plot(t,rawCalibrationData.RightY_UNCALIBRATED);
             plot(t,targetPosition.x);
             plot(t,targetPosition.y);
             
             x = [-30 30];
-            y = [-17 17];
+            y = [-22 22];
             subplot(4,3,4,'nextplot','add')
             title('Horizontal target vs eye pos. (deg)');
-            h1 = plot(targetPosition.x+randn(size(t))/5,rawCalibrationData.LeftX,'.');
-            h2 = plot(targetPosition.x+randn(size(t))/5,rawCalibrationData.RightX,'.');
+            h1 = plot(targetPosition.x+randn(size(t))/5,rawCalibrationData.LeftX_UNCALIBRATED,'.');
+            h2 = plot(targetPosition.x+randn(size(t))/5,rawCalibrationData.RightX_UNCALIBRATED,'.');
             line(x,calibrationCoefficients.OffsetX('LeftEye')+calibrationCoefficients.GainX('LeftEye')*x,'color',get(h1,'color'));
             line(x,calibrationCoefficients.OffsetX('RightEye')+calibrationCoefficients.GainX('RightEye')*x,'color',get(h2,'color'));
             
             subplot(4,3,5,'nextplot','add')
             title('Vertical target vs eye pos. (deg)');
-            h1 = plot(targetPosition.y+randn(size(t))/5,rawCalibrationData.LeftY,'.');
-            h2 = plot(targetPosition.y+randn(size(t))/5,rawCalibrationData.RightY,'.');
+            h1 = plot(targetPosition.y+randn(size(t))/5,rawCalibrationData.LeftY_UNCALIBRATED,'.');
+            h2 = plot(targetPosition.y+randn(size(t))/5,rawCalibrationData.RightY_UNCALIBRATED,'.');
             line(y,calibrationCoefficients.OffsetY('LeftEye')+calibrationCoefficients.GainY('LeftEye')*y,'color',get(h1,'color'));
             line(y,calibrationCoefficients.OffsetY('RightEye')+calibrationCoefficients.GainY('RightEye')*y,'color',get(h2,'color'));
             
@@ -320,7 +327,7 @@ end
             plot(t,targetPosition.y);
             
             x = [-30 30];
-            y = [-20 20];
+            y = [-22 22];
             subplot(4,3,4,'nextplot','add')
             title('Horizontal target vs eye pos. (deg)');
             h1 = plot(targetPosition.x+randn(size(t))/5,lx,'.');

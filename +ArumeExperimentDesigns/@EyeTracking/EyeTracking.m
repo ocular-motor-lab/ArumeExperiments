@@ -178,10 +178,12 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         calibrationNames = {};
                         for i=1:length(calibrationSessions)
                
-                            % analyze the calibration sessions just in case
-                            % they have not before
-                            analysisOptions = arume.getAnalysisOptionsDefault( calibrationSessions(i) );
-                            calibrationSessions(i).runAnalysis(analysisOptions);
+                            if ( ~isfield( calibrationSessions(i).analysisResults, 'calibrationTable') || isempty(calibrationSessions(i).analysisResults.calibrationTable))
+                                % analyze the calibration sessions just in case
+                                % they have not before
+                                analysisOptions = arume.getAnalysisOptionsDefault( calibrationSessions(i) );
+                                calibrationSessions(i).runAnalysis(analysisOptions);
+                            end
 
                             if ( isfield( calibrationSessions(i).analysisResults, 'calibrationTable') )
                                 calibrationTables{i} = calibrationSessions(i).analysisResults.calibrationTable;

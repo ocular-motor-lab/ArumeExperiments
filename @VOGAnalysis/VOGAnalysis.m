@@ -1972,6 +1972,15 @@ classdef VOGAnalysis < handle
             quickPhaseTable.EndIndex = find(diff([data.QuickPhase;0])<0);
             quickPhaseTable.DurationMs = (quickPhaseTable.EndIndex - quickPhaseTable.StartIndex + 1) * 1000 / SAMPLERATE;
             
+            % Get a new column with the time from the begining of a trial
+            % when the saccade occurs
+            timeFromTrialBegining = nan(size(data.Time));
+            for i=1:max(data.TrialNumber)
+                trialIdx = find(data.TrialNumber==i);
+                timeFromTrialBegining(trialIdx) = data.Time(trialIdx) - data.Time(trialIdx(1));
+            end
+            quickPhaseTable.TimeFromTrialBegining = timeFromTrialBegining(quickPhaseTable.StartIndex);
+            
             % number of quick-phases
             n_qp = size(quickPhaseTable.StartIndex,1);
             

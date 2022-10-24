@@ -196,7 +196,7 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                             calibrationNames{i} =  calibrationSessions(i).name;
                         end
 
-                        calibrations = table(calibrationNames', calibrationTables', calibrationCRTables', calibrationTimes','VariableNames',{'SessionName','CalibrationTable','CalibrationCRTable','DateTime'});
+                        calibrations = table(string(calibrationNames'), calibrationTables', calibrationCRTables', calibrationTimes','VariableNames',{'SessionName','CalibrationTable','CalibrationCRTable','DateTime'});
                         calibrations = sortrows(calibrations,'DateTime');
 
                         % loop through trials to find the relavant calibration
@@ -271,6 +271,12 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                     if ( isempty(calibrationsForEachTrial) )
                         [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleData(this.Session.dataPath, dataFiles, calibrationFiles, options);
                     else
+                        % Dealing with trials without a calibration. Add an
+                        % empty calibration to the table and change the NaN
+                        % indices for the index of the empty table
+                        calibrations.CalibrationTable{end+1} = table();
+                        calibrationsForEachTrial(isnan(calibrationsForEachTrial)) = height(calibrations);
+                        
                         calibrationTables = [calibrations(calibrationsForEachTrial,:) this.Session.currentRun.pastTrialTable(:,'FileNumber')];
                         [~,idx] = unique(calibrationTables.SessionName);
                         calibrfationTablesPerFile = calibrationTables(idx,:);

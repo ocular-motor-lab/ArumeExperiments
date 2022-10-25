@@ -261,7 +261,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
                 end
 
 
-                plot(h(row,col), ssTrial.RightX-median(ssTrial.RightX(1:500)), ssTrial.RightY-median(ssTrial.RightY(1:500)),'.');
+                plot(h(row,col), ssTrial.RightX-nanmedian(ssTrial.RightX(1:500)), ssTrial.RightY-nanmedian(ssTrial.RightY(1:500)),'.');
             end
         end
     end

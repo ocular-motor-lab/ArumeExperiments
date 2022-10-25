@@ -138,8 +138,8 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
              [analysisResults, samplesDataTable, trialDataTable, sessionDataTable]  = RunDataAnalyses@ArumeExperimentDesigns.EyeTracking(this, analysisResults, samplesDataTable, trialDataTable, sessionDataTable, options);
 
 
-            h = this.ExperimentOptions.Calibration_Distance_H;
-            v = this.ExperimentOptions.Calibration_Distance_V;
+            h = this.ExperimentOptions.Calibration_Distance_H/2;
+            v = -this.ExperimentOptions.Calibration_Distance_V/2;
             targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v]};
             targetPositions = cell2mat(targetPositions');
 
@@ -185,8 +185,8 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
 
 
 
-            h = this.ExperimentOptions.Calibration_Distance_H;
-            v = this.ExperimentOptions.Calibration_Distance_V;
+            h = this.ExperimentOptions.Calibration_Distance_H/2;
+            v = -this.ExperimentOptions.Calibration_Distance_V/2;
             targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v]};
             targetPositions = cell2mat(targetPositions');
 

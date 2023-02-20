@@ -114,7 +114,7 @@ classdef Demo < ArumeExperimentDesigns.EyeTracking
 
                     fixRect = [0 0 10 10];
                     fixRect = CenterRectOnPointd( fixRect, mx, my );
-                    Screen('FillOval', graph.window,  this.targetColor, fixRect);
+                    Screen('FillOval', graph.window,  this.fixColor, fixRect);
 
 
                     % -----------------------------------------------------------------

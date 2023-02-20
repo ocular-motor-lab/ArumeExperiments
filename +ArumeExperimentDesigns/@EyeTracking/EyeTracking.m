@@ -163,7 +163,81 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
             
             switch(eyeTrackerType)
                 case 'OpenIris'
+                    calibrationsForEachTrial = [];
                     
+                    % if this session is not a calibration
+                    if ( ~strcmp(this.Session.experimentDesign.Name, 'Calibration') )
+
+                        % TODO: FIND A BETTER WAY TO GET ALL THE RELATED
+                        % SESSIONS
+                        arume = Arume('nogui');
+                        calibrationSessions = arume.currentProject.findSessionBySubjectAndExperiment(this.Session.subjectCode, 'Calibration');
+                        calibrationTables = {};
+                        calibrationCRTables = {};
+                        calibrationTimes = NaT(0);
+                        calibrationNames = {};
+                        for i=1:length(calibrationSessions)
+               
+                            if ( ~isfield( calibrationSessions(i).analysisResults, 'calibrationTable') || isempty(calibrationSessions(i).analysisResults.calibrationTable))
+                                % analyze the calibration sessions just in case
+                                % they have not before
+                                analysisOptions = arume.getAnalysisOptionsDefault( calibrationSessions(i) );
+                                calibrationSessions(i).runAnalysis(analysisOptions);
+                            end
+
+                            if ( isfield( calibrationSessions(i).analysisResults, 'calibrationTable') )
+                                calibrationTables{i} = calibrationSessions(i).analysisResults.calibrationTable;
+                                calibrationCRTables{i} = calibrationSessions(i).analysisResults.calibrationTableCR;
+                            else
+                                calibrationTables{i} = table();
+                                calibrationCRTables{i} = table();
+                            end
+                            calibrationTimes(i) = datetime(calibrationSessions(i).currentRun.pastTrialTable.DateTimeTrialStart{end});
+                            calibrationNames{i} =  calibrationSessions(i).name;
+                        end
+
+                        calibrations = table(string(calibrationNames'), calibrationTables', calibrationCRTables', calibrationTimes','VariableNames',{'SessionName','CalibrationTable','CalibrationCRTable','DateTime'});
+                        calibrations = sortrows(calibrations,'DateTime');
+
+                        % loop through trials to find the relavant calibration
+                        calibrationsForEachTrial = nan(height(this.Session.currentRun.pastTrialTable),1);
+                        for i=1:height(this.Session.currentRun.pastTrialTable)
+                            trialStartTime = datetime(this.Session.currentRun.pastTrialTable.DateTimeTrialStart(i));
+
+                            pastClosestCalibration = find((trialStartTime - calibrations.DateTime)>0,1, 'last');
+
+                            if (i==1)
+                                if ( (trialStartTime-calibrations.DateTime(pastClosestCalibration)) < minutes(5) )
+                                    calibrationsForEachTrial(i) = pastClosestCalibration;
+                                end
+                            else
+                                previousTrialCalibration = calibrationsForEachTrial(i-1);
+                                % TODO consider the case when you take a
+                                % break and forget to do a calibration
+                                % before restarting. Right now we will keep
+                                % the calibration from the previous trial
+                                
+                                if( previousTrialCalibration == pastClosestCalibration)
+                                    % this is the case for a following trial
+                                    % after a calibration
+                                    calibrationsForEachTrial(i) = previousTrialCalibration;
+                                else
+                                    % this is the case for trial following a
+                                    % break when one or more calibrations where
+                                    % performed
+                                    calibrationsForEachTrial(i) = pastClosestCalibration;
+                                end
+                            end
+                        end
+
+                        % if we did not find any calibration for the trials
+                        % we behave as if there were no calibrations
+                        if ( all(isnan(calibrationsForEachTrial)))
+                            calibrationsForEachTrial = [];
+                        end
+                    end
+
+
                     samplesDataTable = table();
                     cleanedData = table();
                     calibratedData = table();
@@ -190,21 +264,25 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         error('ERROR preparing sample data set: The session should have the same number of calibration files as data files or 1 calibration file');
                     end
                     
-                    [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleData(this.Session.dataPath, dataFiles, calibrationFiles, options);
-                    
-                    a = Arume;
-                    % TODO: This needs to be improved
-                    cal = a.currentProject.findSession(this.Session.subjectCode,'Cal');
-                    if ( ~isempty(cal))
-                        % RECALIBRATE DATA WITH BEHAVIORAL CALIBRATION FROM ANOTHER
-                        % SESSION
+
+
+
+
+                    if ( isempty(calibrationsForEachTrial) )
+                        [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleData(this.Session.dataPath, dataFiles, calibrationFiles, options);
+                    else
+                        % Dealing with trials without a calibration. Add an
+                        % empty calibration to the table and change the NaN
+                        % indices for the index of the empty table
+                        calibrations.CalibrationTable{end+1} = table();
+                        calibrationsForEachTrial(isnan(calibrationsForEachTrial)) = height(calibrations);
                         
-                        reCalibratedData   = VOGAnalysis.CalibrateData(samplesDataTable, cal.analysisResults.calibrationTable);
-                        
-                        disp('RECALIBRATING DATA');
-                        cal.analysisResults.calibrationTable
-                        samplesDataTable = reCalibratedData;
+                        calibrationTables = [calibrations(calibrationsForEachTrial,:) this.Session.currentRun.pastTrialTable(:,'FileNumber')];
+                        [~,idx] = unique(calibrationTables.SessionName);
+                        calibrfationTablesPerFile = calibrationTables(idx,:);
+                        [samplesDataTable, cleanedData, calibratedData, rawData] = VOGAnalysis.LoadCleanAndResampleDataArumeMultiCalibration(this.Session.dataPath, dataFiles, calibrationFiles, calibrfationTablesPerFile , options);
                     end
+
                 case 'Fove'
                     
                     samplesDataTable = table();
@@ -721,8 +799,14 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                 switch( command)
                     case 'get_options'
                         options = VOGAnalysis.PlotMainsequence('get_options');
-                        options.Component = { {'{XY}','X', 'Y','T', 'All', 'X and Y'} };
+                        options.Component = { '{XY}|X|Y|T|All|X and Y' };
+                        filterNames = fieldnames(this.FilterTableByConditionVariable('get_filters'));
+                        options.DataToInclude = {filterNames};
                         options.Select_Trial_Conditions = this.FilterTableByConditionVariable('get_filters');
+                        options.Figures_Axes_Lines_Order = {{...
+                            '{Sessions-Conditions-Components}' 'Sessions-Components-Conditions' ...
+                            'Conditions-Sessions-Components' 'Conditions-Components-Sessions' ...
+                            'Components-Sessions-Conditions'  'Components-Conditions-Sessions'}};
                         return;
                     case 'get_defaults'
                         optionsDlg = VOGAnalysis.PlotMainsequence('get_options');
@@ -730,15 +814,9 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         return
                 end
             end
-            
-%             QPs = table();
-%             for session=sessions
-%                 QPs = vertcat(session.analysisResults.QuickPhases);
-%             end
-%             
-%             [props, ~, filters] = this.FilterTableByConditionVariable(QPs, options.Select_Trial_Conditions);
-            
 
+            % Pick the variables that corresponds with the options for the
+            % components. This can be single or multiple. 
             componentNames = {options.Component};
                 switch(options.Component)
                     case 'XY'
@@ -763,21 +841,21 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         componentNames  = {'Horizotal', 'Vertical'};
                 end
 
-
-            xdata = table();
+            Xallprops = table();
             for i=1:length(sessions)
-                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Select_Trial_Conditions, Xcomponents, componentNames);
+                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Select_Trial_Conditions, Xcomponents, componentNames, options.DataToInclude);
                 sessionProps.Session = categorical(cellstr(repmat(sessions(i).shortName,height(sessionProps),1)));
-                xdata = vertcat(xdata, sessionProps);
+                Xallprops = vertcat(Xallprops, sessionProps);
             end
-
-            ydata = table();
+            
+            Yallprops = table();
             for i=1:length(sessions)
-                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Select_Trial_Conditions, Ycomponents, componentNames);
+                [sessionProps, ~] = this.FilterTableByConditionVariable(sessions(i).analysisResults.QuickPhases, options.Select_Trial_Conditions, Ycomponents, componentNames, options.DataToInclude);
                 sessionProps.Session = categorical(cellstr(repmat(sessions(i).shortName,height(sessionProps),1)));
-                ydata = vertcat(ydata, sessionProps);
+                Yallprops = vertcat(Yallprops, sessionProps);
             end
-
+                        
+            
             
 %             out = VOGAnalysis.PlotMainsequence(options, xdata, ydata );
 %             if (~isempty(legendText) )
@@ -785,31 +863,49 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
 %             end
 % %             title(['Main sequence - ', strrep(filters, '_', ' ')]);
 
-
-
-
                         
             nplot1 = [1 1 1 2 2 2 2 2 3 2 3 3 3 3 4 4 4 4 4 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5];
             nplot2 = [1 2 3 2 3 3 4 4 3 5 4 4 5 5 4 5 5 5 5 5 5 5 5 5 6 6 6 6 6 6 7 7 7 7 7 7];
+            
+            
+            
+            
+            
+            
+            
                         
             COLUMNS = {'Session','Condition', 'Component'};
+            switch(options.Figures_Axes_Lines_Order)
+                case 'Sessions-Conditions-Components'
+                    COLUMNS = {'Session','Condition', 'Component'};
+                case 'Sessions-Components-Conditions'
+                    COLUMNS = {'Session', 'Component','Condition'};
+                case 'Conditions-Sessions-Components'
+                    COLUMNS = {'Condition', 'Session', 'Component'};
+                case 'Conditions-Components-Sessions'
+                    COLUMNS = {'Condition', 'Component', 'Session'};
+                case 'Components-Sessions-Conditions'
+                    COLUMNS = {'Component', 'Session','Condition'};
+                case 'Components-Conditions-Sessions'
+                    COLUMNS = {'Component','Condition', 'Session'};
+            end
+
             ELEMENTS = {};
             for i=1:3
-                ELEMENTS{i} = unique(allprops.(COLUMNS{i}));
+                ELEMENTS{i} = unique(Xallprops.(COLUMNS{i}),'stable');
             end
             for i=1:length(ELEMENTS{1})
-                figure
+                figure('name',string(ELEMENTS{1}(i)))
                 for j=1:length(ELEMENTS{2})
-                    ax = subplot(nplot1(length(ELEMENTS{2})),nplot2(length(ELEMENTS{2})),j);
-                    xdata = allprops(allprops.(COLUMNS{1})==ELEMENTS{1}(i) & allprops.(COLUMNS{2})==ELEMENTS{2}(j),:);
-                    out = VOGAnalysis.PlotHistogram(ax, options, xdata.Data );
+                    ax = subplot(nplot1(length(ELEMENTS{2})),nplot2(length(ELEMENTS{2})),j,'nextplot','add');
+                    xdata = Xallprops(Xallprops.(COLUMNS{1})==ELEMENTS{1}(i) & Xallprops.(COLUMNS{2})==ELEMENTS{2}(j),:);
+                    ydata = Yallprops(Yallprops.(COLUMNS{1})==ELEMENTS{1}(i) & Yallprops.(COLUMNS{2})==ELEMENTS{2}(j),:);                    
+                    title = char(strcat('Main seq. - ', strrep(string(ELEMENTS{2}(j)), '_', ' ')));
+                    out = VOGAnalysis.PlotMainsequence(ax, xdata.Data{1}, ydata.Data{1}, title);
                 end
             end
-            if (~isempty(legendText) )
-                legend(out.forLegend, string(ELEMENTS{3}),'box','off');
-            end
-            filters = cellstr(filters);
-            title([options.Feature ' distribution - ', strrep(filters{1}, '_', ' ')]);
+            legend(out.forLegend, strrep(string(ELEMENTS{3}),'_', ' '),'box','off');
+
         end
           
 

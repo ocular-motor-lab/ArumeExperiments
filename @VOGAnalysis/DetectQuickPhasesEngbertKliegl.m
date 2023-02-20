@@ -163,16 +163,16 @@ textprogressbar(4/Nprogsteps);
 if ( LEFT && RIGHT  && length(lrsac.Left) == length(lrsac.Right) )
     sac = [min([lrsac.Left(:,1) lrsac.Right(:,1)],[],2) max([lrsac.Left(:,2) lrsac.Right(:,2)],[],2)];
 elseif ( LEFT && RIGHT)
-    lu = zeros(size(data.Time));
-    ru = zeros(size(data.Time));
+    lu = zeros(size(data.Time,1)+1,1);
+    ru = zeros(size(data.Time,1)+1,1);
     lu(lrsac.Left(:,1)) = 1;
-    lu(lrsac.Left(:,2)) = -1;
+    lu(lrsac.Left(:,2)+1) = -1;
     lu = cumsum(lu);
     ru(lrsac.Right(:,1)) = 1;
-    ru(lrsac.Right(:,2)) = -1;
+    ru(lrsac.Right(:,2)+1) = -1;
     ru = cumsum(ru);
     sac = [];
-    u = double(lu | ru);
+    u = double(lu(1:end-1) | ru(1:end-1));
     sac(:,1) = find(diff([0;u])>0);
     sac(:,2) = find(diff([0;u])<0);
 elseif (LEFT)

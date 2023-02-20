@@ -312,7 +312,11 @@ classdef ExperimentDesign < handle
 
             % TODO: not great right now. But get all the columns from the
             % trial table that have condition variables. 
-            ConditionVars = this.Session.currentRun.pastTrialTable.Properties.VariableNames(6:end);
+            if(size(this.Session.experimentDesign.TrialTable,2)>6) % if not imported
+                ConditionVars = this.Session.experimentDesign.TrialTable.Properties.VariableNames(6:end);
+            else % if imported (TODO: not very good)
+                ConditionVars = this.Session.currentRun.pastTrialTable.Properties.VariableNames(6:end);
+            end
 
             % get all the possible values of the condition variables. But
             % only if they have less than 10 possible values. Otherwise it
@@ -555,15 +559,20 @@ classdef ExperimentDesign < handle
                             end
                             
                         case BREAK
-                            dlgResult = this.Graph.DlgHitKey( 'Break: hit a key to continue',[],[] );
-                            %             this.Graph.DlgTimer( 'Break');
-                            %             dlgResult = this.Graph.DlgYesNo( 'Finish break and continue?');
-                            % problems with breaks i am going to skip the timer
-                            if ( ~dlgResult )
-                                state = IDLE;
-                            else
-                                trialsSinceBreak = 0;
-                                state = RUNNING;
+
+                            result = this.Graph.DlgSelect( ...
+                                'Break: Want to continue?:', ...
+                                { 'c' 'q'}, ...
+                                { 'Continue to next trial'  'Quit'} , [],[]);
+                            
+                            switch( result )
+                                case 'c'
+                                    state = RUNNING;
+                                case {'q' 0}
+                                    dlgResult = this.Graph.DlgYesNo( 'Are you sure you want to exit?',[],[],20,20);
+                                    if( dlgResult )
+                                        state = FINILIZING_EXPERIMENT;
+                                    end
                             end
                             
                         case RUNNING

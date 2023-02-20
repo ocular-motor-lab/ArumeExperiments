@@ -28,6 +28,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             
             dlg.TrialDuration = {12 '* (s)' [1 100] };
             dlg.HitKeyBeforeTrial = { {'0' '{1}'} };
+            dlg.TrialsBeforeBreak = 40;
 
             % Change the defaults for the screen parameters
             dlg.DisplayOptions.ScreenWidth = { 144 '* (cm)' [1 3000] };
@@ -222,6 +223,46 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
             polarplot(binedges,[test5 test5(1)],'LineWidth',2, 'Color', 'black')
             subplot(2,3,6)
             polarplot(binedges,[test6 test6(1)],'LineWidth',2, 'Color', 'black')
+        end
+
+        function [out] = Plot_XY(this)
+            tt = this.Session.trialDataTable;
+            ss = this.Session.samplesDataTable;
+            rr = this.Session.analysisResults;
+
+            figure
+
+            h = [];
+            for i=1:2
+                for j=1:3
+                    h(i,j) = subplot(2,3,j+(i-1)*3,'nextplot','add');
+                    set(gca,'xlim',[-30 30])
+                    set(gca,'ylim',[-25 25])
+                end
+            end
+
+            for i=1:height(tt)
+                idx = tt.SampleStartTrial(i):tt.SampleStopTrial(i);
+                ssTrial = ss(idx,:);
+
+                switch(tt.Task(i))
+                    case 'Fixation'
+                        row = 1;
+                    case 'FreeView'
+                        row = 2;
+                end
+                switch(tt.ImTilt(i))
+                    case -30
+                        col = 1;
+                    case 0
+                        col = 2;
+                    case 30
+                        col = 3;
+                end
+
+
+                plot(h(row,col), ssTrial.RightX-nanmedian(ssTrial.RightX(1:500)), ssTrial.RightY-nanmedian(ssTrial.RightY(1:500)),'.');
+            end
         end
     end
 end

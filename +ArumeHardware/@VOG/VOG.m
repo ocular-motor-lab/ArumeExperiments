@@ -4,7 +4,7 @@ classdef VOG  < handle
     
     properties
         eyeTracker
-        openirispath = 
+        openirispath
     end
     
     methods
@@ -16,8 +16,10 @@ classdef VOG  < handle
             end
 
             if ( ~exist('openirispath','var') || isempty(openirispath) )
-                port = 9000;
-                endif ( exist(fullfile(openirispath) )
+                openirispath = 'M:\TEMP\Arume_openiris_test\Debug';
+            end
+            
+            if ( exist(openirispath) )
                 asm = NET.addAssembly(fullfile(openirispath,'EyeTrackerRemoteClient.dll'));
                 if ( ~exist('ip','var') )
                     ip = fileread(fullfile(openirispath,'IP.txt'));

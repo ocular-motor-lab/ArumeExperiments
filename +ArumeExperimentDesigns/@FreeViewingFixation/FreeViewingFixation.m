@@ -166,7 +166,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
 
 
             % After every 40 trials, quit (in order to do calibration)
-            if mod(thisTrialData.TrialNumber, 2) == 0
+            if mod(thisTrialData.TrialNumber, 40) == 0
                 sca;
             end
 

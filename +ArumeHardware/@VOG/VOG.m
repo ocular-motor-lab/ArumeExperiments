@@ -4,17 +4,32 @@ classdef VOG  < handle
     
     properties
         eyeTracker
+        openirispath
     end
     
     methods
-        function result = Connect(this, ip, port)
+        function result = Connect(this, ip, port, openirispath)
            result = 0;
            
-            if ( ~exist('port','var') )
+            if ( ~exist('port','var') || isempty(port) )
                 port = 9000;
             end
-                        
-            if ( exist('C:\secure\Code\EyeTracker\bin\x64\Debug','file') )
+
+            if ( ~exist('openirispath','var') || isempty(openirispath) )
+                openirispath = 'M:\TEMP\Arume_openiris_test\Debug';
+            end
+            
+            if ( exist(openirispath) )
+                asm = NET.addAssembly(fullfile(openirispath,'EyeTrackerRemoteClient.dll'));
+                if ( ~exist('ip','var') )
+                    ip = fileread(fullfile(openirispath,'IP.txt'));
+                end
+            elseif ( exist('D:\OneDrive\UC Berkeley\OMlab - JOM\Code\OpenIris\source\bin\x64\Debug') )
+                asm = NET.addAssembly('D:\OneDrive\UC Berkeley\OMlab - JOM\Code\OpenIris\source\bin\x64\Debug\EyeTrackerRemoteClient.dll');
+                if ( ~exist('ip','var') )
+                    ip = fileread('D:\OneDrive\UC Berkeley\OMlab - JOM\Code\OpenIris\source\bin\x64\Debug\IP.txt');
+                end
+            elseif ( exist('C:\secure\Code\EyeTracker\bin\x64\Debug','file') )
                 asm = NET.addAssembly('C:\secure\Code\EyeTracker\bin\x64\Debug\EyeTrackerRemoteClient.dll');
                 if ( ~exist('ip','var') )
                     ip = fileread('C:\secure\Code\EyeTracker\bin\x64\Debug\IP.txt');
@@ -83,6 +98,14 @@ classdef VOG  < handle
                 frameNumber = double(frameNumber);
             end
         end
+        
+        function data = GetCurrentData(this, message)
+            data =[];
+            if ( ~isempty( this.eyeTracker) )
+                data = this.eyeTracker.GetCurrentData();
+            end
+        end
+        
         
         function [files]= DownloadFile(this, path)
             files = [];

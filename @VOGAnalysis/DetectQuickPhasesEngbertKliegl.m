@@ -135,7 +135,7 @@ textprogressbar(3/Nprogsteps);
 %% - Remove overshoots
 if ( params.Detection.Engbert.Remove_Overshoots )
     if ( LEFT && RIGHT )
-        if ( params.Detection.Engbert.Remove_Monoculars && length(lrsac.Left) == length(lrsac.Right) )
+        if ( params.Detection.Engbert.Remove_Monoculars && (length(lrsac.Left) == length(lrsac.Right) && ~params.Detection.Engbert.Recover_Monoculars) )
             % if monoculars have been removed we can find overshoots
             % binocularly
             [overshoots_idx] = FindOvershoots( xy{1}, lrsac.Left, xy{2}, lrsac.Right, samplerate,  params.Detection.Engbert.Overshoot_Interval );
@@ -160,19 +160,32 @@ end
 
 textprogressbar(4/Nprogsteps);
 
-if ( LEFT && RIGHT  && length(lrsac.Left) == length(lrsac.Right) )
+% up to this point because we may have tried to recover monoculars, it is
+% possible that the left and right eyes don't have the same number of
+% saccades
+%
+% here we will condense them into a single binocular sac variable that has
+% the begining and ends according to the single eye begining and end
+if ( LEFT && RIGHT  && (length(lrsac.Left) == length(lrsac.Right) && ~params.Detection.Engbert.Recover_Monoculars) )
+    % if we truly have matching binocular saccades in the left and right
+    % eye we consider the begining the first begining between the two eyes
+    % and the end the last ending between the two eyes
     sac = [min([lrsac.Left(:,1) lrsac.Right(:,1)],[],2) max([lrsac.Left(:,2) lrsac.Right(:,2)],[],2)];
 elseif ( LEFT && RIGHT)
+    % if we are not the same, we can build a yes/no vector for all the
+    % samples for each eye to see if they belong to a saccade or not and
+    % then do the logical OR between the two eyes and then get the begining
+    % and end of whatever periods with "yes" we get
     lu = zeros(size(data.Time,1)+1,1);
     ru = zeros(size(data.Time,1)+1,1);
     lu(lrsac.Left(:,1)) = 1;
     lu(lrsac.Left(:,2)+1) = -1;
-    lu = cumsum(lu);
+    lu = cumsum(lu); % yes/no saccade in the left eye
     ru(lrsac.Right(:,1)) = 1;
     ru(lrsac.Right(:,2)+1) = -1;
-    ru = cumsum(ru);
+    ru = cumsum(ru); % yes/no saccade in the right eye
     sac = [];
-    u = double(lu(1:end-1) | ru(1:end-1));
+    u = double(lu(1:end-1) | ru(1:end-1)); % yes/no left OR right eye
     sac(:,1) = find(diff([0;u])>0);
     sac(:,2) = find(diff([0;u])<0);
 elseif (LEFT)

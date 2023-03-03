@@ -64,15 +64,19 @@ classdef Display < handle
             %-- screens
             
             graph.screens = Screen('Screens');
-            graph.selectedScreen=max(graph.screens);
-            graph.selectedScreen=1;
+            if exper.ExperimentOptions.DisplayOptions.SelectedScreen > max(graph.screens) % if the defaul screen is 2 but you don't have screen number 2
+                graph.selectedScreen=max(graph.screens);
+            else
+                graph.selectedScreen= exper.ExperimentOptions.DisplayOptions.SelectedScreen; %max(graph.screens);
+            end
+            %graph.selectedScreen=1;
             
             %-- window
             Screen('Preference', 'ConserveVRAM', 64);
             if (~exper.ExperimentOptions.Debug.DebugMode)
-                [graph.window, graph.wRect] = Screen('OpenWindow', graph.selectedScreen, 0, [], [], [], 0, 10);
+                [graph.window, graph.wRect] = Screen('OpenWindow', graph.selectedScreen, 0, [], [], [], exper.ExperimentOptions.DisplayOptions.StereoMode, 10);%SR changed stereomode to 4 from 0
             else
-                [graph.window, graph.wRect] = Screen('OpenWindow', graph.selectedScreen, 0, [10 10 900 600], [], [], 0, 10);
+                [graph.window, graph.wRect] = Screen('OpenWindow', graph.selectedScreen, 0, [10 10 900 600], [], [], exper.ExperimentOptions.DisplayOptions.StereoMode, 10); %SR changed stereomode to 4 from 0
             end
             
             %-- color

@@ -43,6 +43,8 @@ classdef ExperimentDesign < handle
                 dlg.DisplayOptions.ScreenDistance              = { 90 '* (cm)' [1 3000] };
                 dlg.DisplayOptions.ShowTrialTable       = { {'0','{1}'} };
                 dlg.DisplayOptions.PlaySound            = { {'0','{1}'} };
+                dlg.DisplayOptions.StereoMode           = { 0 '* (mode)' [0 9] }; % SR added, 0 should be the default
+                dlg.DisplayOptions.SelectedScreen       = { 2 '* (screen)' [0 5] }; % SR added, screen 2 should perhaps be the default
                 
                 dlg.HitKeyBeforeTrial = 0;
                 dlg.TrialDuration = 10;

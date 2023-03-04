@@ -40,8 +40,8 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
             
             dlg.HitKeyBeforeTrial = 1;
-            dlg.TrialDuration = 5;
-            dlg.TrialsBeforeBreak = 15;
+            dlg.TrialDuration = 10;
+            dlg.TrialsBeforeBreak = 20;
             dlg.TrialAbortAction = 'Repeat';
         end
         
@@ -56,11 +56,11 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
              
             i = i+1;
             conditionVars(i).name   = 'SignDisparity';
-            conditionVars(i).values = [-1 1] %* this.ExperimentOptions.Disparity;
+            conditionVars(i).values = [-1 1]; %* this.ExperimentOptions.Disparity;
             
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
-            trialTableOptions.trialAbortAction = 'Delay';
+            trialTableOptions.trialAbortAction = 'Repeat'; % Repeat, Delay, Drop
             trialTableOptions.trialsPerSession = 1000;
             trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberOfRepetitions;
             trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
@@ -135,7 +135,6 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 disparity_deg = disparity_arcmin/60;
                 shiftNeeded_deg = viewingDist * tand(disparity_deg);
                 shiftNeeded_pix = pixPerDeg * shiftNeeded_deg;
-                
                 dots(1, :) = 2*(xmax)*rand(1, numDots) - xmax; % SR x coords
                 dots(2, :) = 2*(ymax)*rand(1, numDots) - ymax; % SR y coords
                 dots(3, :) = (ones(size(dots,2),1)')*shiftNeeded_pix; % how much the dots will shift by in pixels
@@ -149,7 +148,14 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 idx = find(vec==0);
                 dots(3,idx) = 0;
                 
-                successfulResponse = 0; %initialize this
+                % What the response should be
+                if disparity_arcmin > 0
+                    thisTrialData.CorrectResponse = 'F';
+                elseif disparity_arcmin < 0
+                    thisTrialData.CorrectResponse = 'B';
+                end
+                
+                response = []; %initialize this
                 
                 while secondsRemaining > 0
                     
@@ -202,52 +208,22 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                             switch(KbName(keys(i)))
                                 case 'RightArrow'
                                     response = 'F';
-                                    thisTrialData.Response = response;
-                                    thisTrialData.ResponseTime = GetSecs;
-                                    successfulResponse = 1;
                                 case 'LeftArrow'
                                     response = 'B';
-                                    thisTrialData.Response = response;
-                                    thisTrialData.ResponseTime = GetSecs;
-                                    successfulResponse = 1;
                             end
                         end
-                    end
-                     
-                end
-                
-                % What the response should be
-                if disparity_arcmin > 0
-                    thisTrialData.CorrectResponse = 'F';
-                elseif disparity_arcmin < 0
-                    thisTrialData.CorrectResponse = 'B';
-                end
-                
-                
-                % If they did not response during the trial, wait for a
-                % response
-                % TODO probably should make the screen go black here. Maybe
-                % all this should go in the posttrial thing?
-                while successfulResponse == 0
-                    [keyIsDown, secs, keyCode, deltaSecs] = KbCheck();
-                    if ( keyIsDown )
-                        keys = find(keyCode);
-                        for i=1:length(keys)
-                            KbName(keys(i));
-                            switch(KbName(keys(i)))
-                                case 'RightArrow'
-                                    response = 'F';
-                                    thisTrialData.Response = response;
-                                    thisTrialData.ResponseTime = GetSecs;
-                                    successfulResponse = 1;
-                                case 'LeftArrow'
-                                    response = 'B';
-                                    thisTrialData.Response = response;
-                                    thisTrialData.ResponseTime = GetSecs;
-                                    successfulResponse = 1;
-                            end
+                        if ( ~isempty(response) ) % if there is a response, break this trial and start the next
+                            thisTrialData.Response = response;
+                            thisTrialData.ResponseTime = GetSecs;
+                            break;
                         end
                     end
+                end
+                
+                if ( isempty(response) )
+                    trialResult = Enum.trialResult.ABORT;
+                else
+                    trialResult = Enum.trialResult.CORRECT;
                 end
                 
                 

@@ -40,7 +40,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
             
             dlg.HitKeyBeforeTrial = 1;
-            dlg.TrialDuration = 10;
+            dlg.TrialDuration = 20;
             dlg.TrialsBeforeBreak = 100;
             dlg.TrialAbortAction = 'Repeat';
         end
@@ -145,13 +145,16 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 
                 % Stim Prep for shifting only the center dots of the stimulus (not the
                 % whole thing)
-                vec = dots(1, :);
-                vec(vec < -xmax/2) = 0;
-                vec(vec > xmax/2) = 0;
-                vec(vec < -ymax/2) = 0;
-                vec(vec > ymax/2) = 0;
-                idx = find(vec==0);
-                dots(3,idx) = 0;
+                vec_x = dots(1, :);
+                vec_y = dots(2, :);
+                vec_x(vec_x < -xmax/2) = 0;
+                vec_x(vec_x > xmax/2) = 0;
+                vec_y(vec_y < -ymax/2) = 0;
+                vec_y(vec_y > ymax/2) = 0;
+                idx_x = find(vec_x==0);
+                idx_y = find(vec_y==0);
+                dots(3,idx_x) = 0;
+                dots(3,idx_y) = 0;
                 
                 % What the response should be
                 if disparity_arcmin > 0

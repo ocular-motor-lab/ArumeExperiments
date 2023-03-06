@@ -49,10 +49,6 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             
             %-- condition variables ---------------------------------------
             i= 0;
-            
-%             i = i+1;
-%             conditionVars(i).name   = 'Disparity';
-%             conditionVars(i).values = [0:1:this.ExperimentOptions.InitDisparity];
              
             i = i+1;
             conditionVars(i).name   = 'SignDisparity';
@@ -72,15 +68,23 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             trialResult = Enum.trialResult.CORRECT;
             
             if thisTrialData.TrialNumber > 1
-                lastTrialCorrResp = this.Session.currentRun.pastTrialTable.CorrectResponse(end);
-                lastTrialResponse = this.Session.currentRun.pastTrialTable.Response(end);
-                lastTrialDisparity = this.Session.currentRun.pastTrialTable.DisparityArcMin(end);
+%                 lastTrialCorrResp = this.Session.currentRun.pastTrialTable.CorrectResponse(end);
+%                 lastTrialResponse = this.Session.currentRun.pastTrialTable.Response(end);
+                lastAbsoluteTrialDisparity = abs(this.Session.currentRun.pastTrialTable.DisparityArcMin(end));
+                lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(end);
+                numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal);
                 
-                if lastTrialCorrResp == lastTrialResponse % if they guessed correctly
-                    thisTrialData.DisparityArcMin = (this.ExperimentOptions.InitStepSize*(1 - 0.75) / thisTrialData.TrialNumber) *  thisTrialData.SignDisparity; %lastTrialDisparity / 2;
-                elseif lastTrialCorrResp ~= lastTrialResponse
-                    thisTrialData.DisparityArcMin = ((this.ExperimentOptions.InitStepSize*0.75) / thisTrialData.TrialNumber) *  thisTrialData.SignDisparity;
-                end
+                absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (this.ExperimentOptions.InitStepSize / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.75);
+                thisTrialData.DisparityArcMin = absoluteDisparityArcMin *  thisTrialData.SignDisparity;
+                
+                
+                
+%                 if lastTrialCorrResp == lastTrialResponse % if they guessed correctly
+%                     thisTrialData.DisparityArcMin = (this.ExperimentOptions.InitStepSize*(1 - 0.75) / thisTrialData.TrialNumber) *  thisTrialData.SignDisparity; %lastTrialDisparity / 2;
+%                 elseif lastTrialCorrResp ~= lastTrialResponse
+%                     thisTrialData.DisparityArcMin = (this.ExperimentOptions.InitStepSize*(0 - 0.75) / thisTrialData.TrialNumber) *  thisTrialData.SignDisparity;
+%                 end
+
             end
             
         end
@@ -232,6 +236,33 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             end
             
         end
+        
+       function [trialResult, thisTrialData] = runPostTrial( this, thisTrialData )
+           % Record if the subject guessed correctly or not 
+           if thisTrialData.Response == thisTrialData.CorrectResponse
+               thisTrialData.GuessedCorrectly = 1;
+           elseif thisTrialData.Response ~= thisTrialData.CorrectResponse
+               thisTrialData.GuessedCorrectly = 0;
+           end
+           
+           if thisTrialData.TrialNumber > 1
+               if thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(end)
+                   thisTrialData.IsReversal = 0;
+               elseif thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(end)
+                   thisTrialData.IsReversal = 1;
+               end
+           elseif thisTrialData.TrialNumber == 1
+               thisTrialData.IsReversal = 0;
+           end
+           
+           trialResult = thisTrialData.TrialResult;
+           
+       end
+            
+       
+
+                    
+        
     end
     
 end

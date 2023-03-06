@@ -20,9 +20,9 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            dlg.InitDisparity = { 10 '* (arcmins)' [0 100] };
-            dlg.InitStepSize = { 0.1 '* (arcmins)' [0 100] };
-            dlg.Number_of_Dots = { 2000 '* (deg/s)' [10 10000] };
+            dlg.InitDisparity = { 6 '* (arcmins)' [0 100] };
+            dlg.InitStepSize = { 0.5 '* (arcmins)' [0 100] };
+            dlg.Number_of_Dots = { 3000 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             dlg.visibleWindow_cm = {12 '* (cm)' [1 100] };
             
@@ -41,7 +41,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             
             dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 10;
-            dlg.TrialsBeforeBreak = 20;
+            dlg.TrialsBeforeBreak = 100;
             dlg.TrialAbortAction = 'Repeat';
         end
         
@@ -148,7 +148,8 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 vec = dots(1, :);
                 vec(vec < -xmax/2) = 0;
                 vec(vec > xmax/2) = 0;
-                % do the same for ymax
+                vec(vec < -ymax/2) = 0;
+                vec(vec > ymax/2) = 0;
                 idx = find(vec==0);
                 dots(3,idx) = 0;
                 

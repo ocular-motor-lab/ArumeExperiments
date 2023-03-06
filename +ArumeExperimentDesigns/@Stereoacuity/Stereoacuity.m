@@ -245,6 +245,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                thisTrialData.GuessedCorrectly = 0;
            end
            
+           % Record if the trial was a reversal
            if thisTrialData.TrialNumber > 1
                if thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(end)
                    thisTrialData.IsReversal = 0;
@@ -255,6 +256,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                thisTrialData.IsReversal = 0;
            end
            
+           % Move this forward
            trialResult = thisTrialData.TrialResult;
            
        end

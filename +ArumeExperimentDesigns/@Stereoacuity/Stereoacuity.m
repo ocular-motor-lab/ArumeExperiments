@@ -21,7 +21,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             
             %% ADD new options
             dlg.InitDisparity = { 10 '* (arcmins)' [0 100] };
-            dlg.InitStepSize = { 0.5 '* (arcmins)' [0 100] };
+            dlg.InitStepSize = { 0.1 '* (arcmins)' [0 100] };
             dlg.Number_of_Dots = { 2000 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             dlg.visibleWindow_cm = {12 '* (cm)' [1 100] };

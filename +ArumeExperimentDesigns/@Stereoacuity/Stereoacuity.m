@@ -176,8 +176,10 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                     % -----------------------------------------------------------------
                     
                     % Right and left shifted dots
-                    leftStimDots = dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)];
-                    rightStimDots = dots(1:2, :) - [dots(3, :)/2; zeros(1, numDots)];
+                    leftStimDots = dots(1:2, :) + [dots(3, :)/2; repmat(0.005,[1,numDots])]; 
+                    rightStimDots = dots(1:2, :) - [dots(3, :)/2; repmat(-0.005,[1,numDots])];
+%                     leftStimDots = dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; % zeros here bc no shift in vertical dots 
+%                     rightStimDots = dots(1:2, :) - [dots(3, :)/2; zeros(1, numDots)];
                     
                     % Select left-eye image buffer for drawing:
                     Screen('SelectStereoDrawBuffer', this.Graph.window, 0);

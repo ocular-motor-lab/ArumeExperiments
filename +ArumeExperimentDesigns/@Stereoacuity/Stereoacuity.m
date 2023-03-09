@@ -25,6 +25,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.Number_of_Dots = { 3000 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             dlg.visibleWindow_cm = {12 '* (cm)' [1 100] };
+            dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
             
             dlg.NumberOfRepetitions = {50 '* (N)' [1 100] }; % 50 bc 50 * 2 (sign disparities) = 100 total trials
             dlg.BackgroundBrightness = 0;
@@ -68,23 +69,15 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             trialResult = Enum.trialResult.CORRECT;
             
             if thisTrialData.TrialNumber > 1
-%                 lastTrialCorrResp = this.Session.currentRun.pastTrialTable.CorrectResponse(end);
-%                 lastTrialResponse = this.Session.currentRun.pastTrialTable.Response(end);
+                % Get the last trial's disparity (in abs) and calculate how
+                % many reversals have occured in the session
                 lastAbsoluteTrialDisparity = abs(this.Session.currentRun.pastTrialTable.DisparityArcMin(end));
                 lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(end);
                 numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal);
                 
+                % What the disparity will be on this trial
                 absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (this.ExperimentOptions.InitStepSize / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.75);
                 thisTrialData.DisparityArcMin = absoluteDisparityArcMin *  thisTrialData.SignDisparity;
-                
-                
-                
-%                 if lastTrialCorrResp == lastTrialResponse % if they guessed correctly
-%                     thisTrialData.DisparityArcMin = (this.ExperimentOptions.InitStepSize*(1 - 0.75) / thisTrialData.TrialNumber) *  thisTrialData.SignDisparity; %lastTrialDisparity / 2;
-%                 elseif lastTrialCorrResp ~= lastTrialResponse
-%                     thisTrialData.DisparityArcMin = (this.ExperimentOptions.InitStepSize*(0 - 0.75) / thisTrialData.TrialNumber) *  thisTrialData.SignDisparity;
-%                 end
-
             end
             
         end
@@ -156,6 +149,26 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 dots(3,idx_x) = 0;
                 dots(3,idx_y) = 0;
                 
+                % Right and left shifted dots
+                leftStimDots = dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; % zeros here bc no shift in vertical dots 
+                rightStimDots = dots(1:2, :) - [dots(3, :)/2; zeros(1, numDots)];
+                    
+                % Get fixation spot size in pix
+                fixSizePix = pixPerDeg * this.ExperimentOptions.FixationSpotSize;
+                
+                % Rotating the dots
+                leftDistFromCenter = sqrt((leftStimDots(1,:)).^2 + (leftStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
+                leftThetaDeg = atan2d(leftStimDots(2,:),leftStimDots(1,:));
+                leftPolarPtX = cosd(leftThetaDeg + 45) .* leftDistFromCenter;
+                leftPolarPtY = sind(leftThetaDeg + 45) .* leftDistFromCenter;
+                rightDistFromCenter = sqrt((rightStimDots(1,:)).^2 + (rightStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
+                rightThetaDeg = atan2d(rightStimDots(2,:),rightStimDots(1,:));
+                rightPolarPtX = cosd(rightThetaDeg + 30) .* rightDistFromCenter;
+                rightPolarPtY = sind(rightThetaDeg + 30) .* rightDistFromCenter;
+                % rotated dots
+                leftStimDots = [leftPolarPtX;leftPolarPtY];
+                rightStimDots = [rightPolarPtX;rightPolarPtY];
+                
                 % What the response should be
                 if disparity_arcmin > 0
                     thisTrialData.CorrectResponse = 'F';
@@ -175,17 +188,12 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                     % --- Drawing of stimulus -----------------------------------------
                     % -----------------------------------------------------------------
                     
-                    % Right and left shifted dots
-                    leftStimDots = dots(1:2, :) + [dots(3, :)/2; repmat(0.005,[1,numDots])]; 
-                    rightStimDots = dots(1:2, :) - [dots(3, :)/2; repmat(-0.005,[1,numDots])];
-%                     leftStimDots = dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; % zeros here bc no shift in vertical dots 
-%                     rightStimDots = dots(1:2, :) - [dots(3, :)/2; zeros(1, numDots)];
-                    
                     % Select left-eye image buffer for drawing:
                     Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                     
                     % Draw left stim:
                     Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1);
+                    Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                     Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
                     
                     % Select right-eye image buffer for drawing:
@@ -193,7 +201,10 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                     
                     % Draw right stim:
                     Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1);
+                    Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                     Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
+                    
+                    
                     
                     % -----------------------------------------------------------------
                     % --- END Drawing of stimulus -------------------------------------

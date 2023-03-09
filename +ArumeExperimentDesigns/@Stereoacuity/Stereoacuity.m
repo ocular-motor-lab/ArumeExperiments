@@ -26,6 +26,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             dlg.visibleWindow_cm = {12 '* (cm)' [1 100] };
             dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
+            dlg.RotateDots = { 0 '* (yes/no)' [0 1] }; % where 1 means to tilt the stim, and 0 means no tilt
             
             dlg.NumberOfRepetitions = {50 '* (N)' [1 100] }; % 50 bc 50 * 2 (sign disparities) = 100 total trials
             dlg.BackgroundBrightness = 0;
@@ -37,7 +38,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             
             dlg.DisplayOptions.ScreenWidth = { 59.5 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenHeight = { 34 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenDistance = { 37 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenDistance = { 40 '* (cm)' [1 3000] };
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
             
             dlg.HitKeyBeforeTrial = 1;
@@ -156,18 +157,20 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 % Get fixation spot size in pix
                 fixSizePix = pixPerDeg * this.ExperimentOptions.FixationSpotSize;
                 
-                % Rotating the dots
-                leftDistFromCenter = sqrt((leftStimDots(1,:)).^2 + (leftStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
-                leftThetaDeg = atan2d(leftStimDots(2,:),leftStimDots(1,:));
-                leftPolarPtX = cosd(leftThetaDeg + 45) .* leftDistFromCenter;
-                leftPolarPtY = sind(leftThetaDeg + 45) .* leftDistFromCenter;
-                rightDistFromCenter = sqrt((rightStimDots(1,:)).^2 + (rightStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
-                rightThetaDeg = atan2d(rightStimDots(2,:),rightStimDots(1,:));
-                rightPolarPtX = cosd(rightThetaDeg + 30) .* rightDistFromCenter;
-                rightPolarPtY = sind(rightThetaDeg + 30) .* rightDistFromCenter;
-                % rotated dots
-                leftStimDots = [leftPolarPtX;leftPolarPtY];
-                rightStimDots = [rightPolarPtX;rightPolarPtY];
+                % Rotating the dots if needed
+                if this.ExperimentOptions.RotateDots == 1
+                    leftDistFromCenter = sqrt((leftStimDots(1,:)).^2 + (leftStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
+                    leftThetaDeg = atan2d(leftStimDots(2,:),leftStimDots(1,:));
+                    leftPolarPtX = cosd(leftThetaDeg + 45) .* leftDistFromCenter;
+                    leftPolarPtY = sind(leftThetaDeg + 45) .* leftDistFromCenter;
+                    rightDistFromCenter = sqrt((rightStimDots(1,:)).^2 + (rightStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
+                    rightThetaDeg = atan2d(rightStimDots(2,:),rightStimDots(1,:));
+                    rightPolarPtX = cosd(rightThetaDeg + 45) .* rightDistFromCenter;
+                    rightPolarPtY = sind(rightThetaDeg + 45) .* rightDistFromCenter;
+                    % rotated dots
+                    leftStimDots = [leftPolarPtX;leftPolarPtY];
+                    rightStimDots = [rightPolarPtX;rightPolarPtY];
+                end
                 
                 % What the response should be
                 if disparity_arcmin > 0

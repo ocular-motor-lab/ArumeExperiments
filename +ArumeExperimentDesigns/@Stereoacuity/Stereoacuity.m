@@ -117,7 +117,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 numDots = this.ExperimentOptions.Number_of_Dots;
                 dots = zeros(3, numDots);
                 
-                % How big should the window be in pix?
+                % How big should the window (entire dots stimulus) be in pix?
                 visibleWindow_cm = this.ExperimentOptions.visibleWindow_cm; % in cm, this is how much of the screen you can see w one eye at a viewingDist of 20 (from haploscope calcs!)
                 visibleWindow_pix = ((screenWidth*2) / moniterWidth_cm) * visibleWindow_cm;
                 xmax = visibleWindow_pix / 2;
@@ -135,10 +135,20 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 shiftNeeded_pix = pixPerDeg * shiftNeeded_deg;
                 dots(1, :) = 2*(xmax)*rand(1, numDots) - xmax; % SR x coords
                 dots(2, :) = 2*(ymax)*rand(1, numDots) - ymax; % SR y coords
+                
+                % Make the window (entire dot stimulus) circular :D 
+                distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
+                while isempty(distFromCenter(distFromCenter>ymax | distFromCenter<this.ExperimentOptions.FixationSpotSize)) == 0 % while there are dots that are outside of the desired circle
+                    idxs=find(distFromCenter>ymax);
+                    dots(1, idxs) = 2*(xmax)*rand(1, length(idxs)) - xmax; % resample those dots
+                    dots(2, idxs) = 2*(ymax)*rand(1, length(idxs)) - ymax; 
+                    distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
+                end
                 dots(3, :) = (ones(size(dots,2),1)')*shiftNeeded_pix; % how much the dots will shift by in pixels
                 
                 % Stim Prep for shifting only the center dots of the stimulus (not the
-                % whole thing)
+                % whole thing). The inside center dots shifting is a
+                % square, not circle. 
                 vec_x = dots(1, :);
                 vec_y = dots(2, :);
                 vec_x(vec_x < -xmax/2) = 0;

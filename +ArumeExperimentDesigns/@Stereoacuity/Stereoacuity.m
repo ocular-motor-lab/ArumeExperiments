@@ -183,12 +183,12 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 if this.ExperimentOptions.RotateDots == 1
                     leftDistFromCenter = sqrt((leftStimDots(1,:)).^2 + (leftStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
                     leftThetaDeg = atan2d(leftStimDots(2,:),leftStimDots(1,:));
-                    leftPolarPtX = cosd(leftThetaDeg + 45) .* leftDistFromCenter;
-                    leftPolarPtY = sind(leftThetaDeg + 45) .* leftDistFromCenter;
+                    leftPolarPtX = cosd(leftThetaDeg + 10) .* leftDistFromCenter;
+                    leftPolarPtY = sind(leftThetaDeg + 10) .* leftDistFromCenter;
                     rightDistFromCenter = sqrt((rightStimDots(1,:)).^2 + (rightStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
                     rightThetaDeg = atan2d(rightStimDots(2,:),rightStimDots(1,:));
-                    rightPolarPtX = cosd(rightThetaDeg + 45) .* rightDistFromCenter;
-                    rightPolarPtY = sind(rightThetaDeg + 45) .* rightDistFromCenter;
+                    rightPolarPtX = cosd(rightThetaDeg + 10) .* rightDistFromCenter;
+                    rightPolarPtY = sind(rightThetaDeg + 10) .* rightDistFromCenter;
                     % rotated dots
                     leftStimDots = [leftPolarPtX;leftPolarPtY];
                     rightStimDots = [rightPolarPtX;rightPolarPtY];

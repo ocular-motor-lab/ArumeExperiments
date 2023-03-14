@@ -42,7 +42,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
             
             dlg.HitKeyBeforeTrial = 1;
-            dlg.TrialDuration = 20;
+            dlg.TrialDuration = 60;
             dlg.TrialsBeforeBreak = 200;
             dlg.TrialAbortAction = 'Repeat';
         end
@@ -89,21 +89,19 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                         % Get the last trial's disparity (in abs) ~for a staircase~ and calculate how
                         % many reversals have occured ~for that staircase~
                         thisidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == 1,1,'last');
-                        lastAbsoluteTrialDisparity = abs(this.Session.currentRun.pastTrialTable.DisparityArcMin(thisidx));
-                        lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisidx);
                         numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal((this.Session.currentRun.pastTrialTable.SignDisparity == 1)));
                         thisStaircaseExists = 1;
                         
                     case thisTrialData.SignDisparity == -1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == -1)) == 1 % if the disparity is neg and neg disparities HAVE happened before
                         thisidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == -1,1,'last');
-                        lastAbsoluteTrialDisparity = abs(this.Session.currentRun.pastTrialTable.DisparityArcMin(thisidx));
-                        lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisidx);
                         numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal((this.Session.currentRun.pastTrialTable.SignDisparity == -1)));
                         thisStaircaseExists = 1;
                 end
                 
                 if (thisStaircaseExists)
                     % What the disparity will be on this trial
+                    lastAbsoluteTrialDisparity = abs(this.Session.currentRun.pastTrialTable.DisparityArcMin(thisidx));
+                    lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisidx);
                     absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (this.ExperimentOptions.InitStepSize / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.75);
                     thisTrialData.DisparityArcMin = absoluteDisparityArcMin *  thisTrialData.SignDisparity;
                 end
@@ -121,16 +119,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 graph = this.Graph;
                 trialResult = Enum.trialResult.CORRECT;
                 
-                trialDuration = this.ExperimentOptions.TrialDuration;
-                lastFlipTime                        = Screen('Flip', graph.window);
-                secondsRemaining                    = trialDuration;
-                thisTrialData.TimeStartLoop         = lastFlipTime;
-                
                 Screen('FillRect', graph.window, 0); % not sure if needed
-                
-                % Define response key mappings:
-                space = KbName('space');
-                escape = KbName('ESCAPE');
                 
                 % Screen width and height of one of the two eye displays in pixels
                 screenWidth = this.Graph.wRect(3);
@@ -162,7 +151,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 % Make the window (entire dot stimulus) circular :D 
                 distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
                 while isempty(distFromCenter(distFromCenter>ymax | distFromCenter<this.ExperimentOptions.FixationSpotSize)) == 0 % while there are dots that are outside of the desired circle
-                    idxs=find(distFromCenter>ymax);
+                    idxs=find(distFromCenter>ymax | distFromCenter<this.ExperimentOptions.FixationSpotSize);
                     dots(1, idxs) = 2*(xmax)*rand(1, length(idxs)) - xmax; % resample those dots
                     dots(2, idxs) = 2*(ymax)*rand(1, length(idxs)) - ymax; 
                     distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
@@ -211,6 +200,12 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 elseif thisTrialData.DisparityArcMin < 0
                     thisTrialData.CorrectResponse = 'B';
                 end
+                
+                % For the while loop trial start
+                trialDuration = this.ExperimentOptions.TrialDuration;
+                lastFlipTime                        = Screen('Flip', graph.window);
+                secondsRemaining                    = trialDuration;
+                thisTrialData.TimeStartLoop         = lastFlipTime;
                 
                 response = []; %initialize this
                 
@@ -278,6 +273,8 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 end
                 
                 if ( isempty(response) )
+                    thisTrialData.Response = 'NoResponse';
+                    thisTrialData.ResponseTime = GetSecs;
                     trialResult = Enum.trialResult.ABORT;
                 else
                     trialResult = Enum.trialResult.CORRECT;

@@ -79,9 +79,11 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                     
                     case thisTrialData.SignDisparity == 1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == 1)) == 0 % if the disparity is positive and positive disparities have NOT happened before
                         thisTrialData.DisparityArcMin = this.ExperimentOptions.InitDisparity * thisTrialData.SignDisparity; % first disparity of this staircase will be the initial disparity
+                        thisStaircaseExists = 0;
                         
                     case thisTrialData.SignDisparity == -1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == -1)) == 0 % if the disparity is neg and neg disparities have NOT happened before
                         thisTrialData.DisparityArcMin = this.ExperimentOptions.InitDisparity * thisTrialData.SignDisparity;
+                        thisStaircaseExists = 0;
                         
                     case thisTrialData.SignDisparity == 1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == 1)) == 1 % if the disparity is pos and pos disparities HAVE happened before
                         % Get the last trial's disparity (in abs) ~for a staircase~ and calculate how

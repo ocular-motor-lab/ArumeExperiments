@@ -24,8 +24,8 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.InitStepSize = { 0.5 '* (arcmins)' [0 100] };
             dlg.Number_of_Dots = { 3000 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
-            dlg.visibleWindow_cm = {12 '* (cm)' [1 100] };
-            dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
+            dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
+            dlg.FixationSpotSize = { 0.5 '* (diameter_in_deg)' [0 5] };
             dlg.RotateDots = { 0 '* (yes/no)' [0 1] }; % where 1 means to tilt the stim, and 0 means no tilt
             
             dlg.NumberOfRepetitions = {100 '* (N)' [1 100] }; % 100 bc 100 * 2 (sign disparities) = 200 total trials (100 for front, 100 for back)
@@ -38,7 +38,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             
             dlg.DisplayOptions.ScreenWidth = { 59.5 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenHeight = { 34 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenDistance = { 40 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenDistance = { 57 '* (cm)' [1 3000] };
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
             
             dlg.HitKeyBeforeTrial = 1;
@@ -148,36 +148,36 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 dots(1, :) = 2*(xmax)*rand(1, numDots) - xmax; % SR x coords
                 dots(2, :) = 2*(ymax)*rand(1, numDots) - ymax; % SR y coords
                 
+                % Get fixation spot size in pix
+                fixSizePix = pixPerDeg * this.ExperimentOptions.FixationSpotSize;
+                
                 % Make the window (entire dot stimulus) circular :D 
                 distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
-                while isempty(distFromCenter(distFromCenter>ymax | distFromCenter<this.ExperimentOptions.FixationSpotSize)) == 0 % while there are dots that are outside of the desired circle
-                    idxs=find(distFromCenter>ymax | distFromCenter<this.ExperimentOptions.FixationSpotSize);
+                while isempty(distFromCenter(distFromCenter>ymax | distFromCenter<fixSizePix)) == 0 % while there are dots that are outside of the desired circle
+                    idxs=find(distFromCenter>ymax | distFromCenter<fixSizePix);
                     dots(1, idxs) = 2*(xmax)*rand(1, length(idxs)) - xmax; % resample those dots
                     dots(2, idxs) = 2*(ymax)*rand(1, length(idxs)) - ymax; 
                     distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
                 end
                 dots(3, :) = (ones(size(dots,2),1)')*shiftNeeded_pix; % how much the dots will shift by in pixels
                 
-                % Stim Prep for shifting only the center dots of the stimulus (not the
-                % whole thing). The inside center dots shifting is a
-                % square, not circle. 
-                vec_x = dots(1, :);
-                vec_y = dots(2, :);
-                vec_x(vec_x < -xmax/2) = 0;
-                vec_x(vec_x > xmax/2) = 0;
-                vec_y(vec_y < -ymax/2) = 0;
-                vec_y(vec_y > ymax/2) = 0;
-                idx_x = find(vec_x==0);
-                idx_y = find(vec_y==0);
-                dots(3,idx_x) = 0;
-                dots(3,idx_y) = 0;
-                
+%                 % Stim Prep for shifting only the center dots of the stimulus (not the
+%                 % whole thing). The inside center dots shifting is a
+%                 % square, not circle. 
+%                 vec_x = dots(1, :);
+%                 vec_y = dots(2, :);
+%                 vec_x(vec_x < -xmax/2) = 0;
+%                 vec_x(vec_x > xmax/2) = 0;
+%                 vec_y(vec_y < -ymax/2) = 0;
+%                 vec_y(vec_y > ymax/2) = 0;
+%                 idx_x = find(vec_x==0);
+%                 idx_y = find(vec_y==0);
+%                 dots(3,idx_x) = 0;
+%                 dots(3,idx_y) = 0;
+%                 
                 % Right and left shifted dots
                 leftStimDots = dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; % zeros here bc no shift in vertical dots 
                 rightStimDots = dots(1:2, :) - [dots(3, :)/2; zeros(1, numDots)];
-                    
-                % Get fixation spot size in pix
-                fixSizePix = pixPerDeg * this.ExperimentOptions.FixationSpotSize;
                 
                 % Rotating the dots if needed
                 if this.ExperimentOptions.RotateDots == 1

@@ -25,7 +25,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.Number_of_Dots = { 3000 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
-            dlg.FixationSpotSize = { 0.5 '* (diameter_in_deg)' [0 5] };
+            dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
             dlg.RotateDots = { 0 '* (yes/no)' [0 1] }; % where 1 means to tilt the stim, and 0 means no tilt
             
             dlg.NumberOfRepetitions = {100 '* (N)' [1 100] }; % 100 bc 100 * 2 (sign disparities) = 200 total trials (100 for front, 100 for back)
@@ -40,6 +40,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.DisplayOptions.ScreenHeight = { 34 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenDistance = { 57 '* (cm)' [1 3000] };
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
+            dlg.DisplayOptions.SelectedScreen = { 1 '* (screen)' [0 5] };
             
             dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 60;
@@ -223,7 +224,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                     Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                     
                     % Draw left stim:
-                    Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1);
+                    Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1); % the 1 at the end means dot type where 1 2 or 3 is circular
                     Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                     Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
                     

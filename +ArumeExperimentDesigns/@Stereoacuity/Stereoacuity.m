@@ -27,6 +27,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
             dlg.RotateDots = { 0 '* (yes/no)' [0 1] }; % where 1 means to tilt the stim, and 0 means no tilt
+            dlg.RotateDotsByThisMuch = { 10 '* (deg)' [0 90] }; 
             
             dlg.NumberOfRepetitions = {100 '* (N)' [1 100] }; % 100 bc 100 * 2 (sign disparities) = 200 total trials (100 for front, 100 for back)
             dlg.BackgroundBrightness = 0;
@@ -98,15 +99,26 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                         numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal((this.Session.currentRun.pastTrialTable.SignDisparity == -1)));
                         thisStaircaseExists = 1;
                 end
-                
-                if (thisStaircaseExists)
-                    % What the disparity will be on this trial
-                    lastAbsoluteTrialDisparity = abs(this.Session.currentRun.pastTrialTable.DisparityArcMin(thisidx));
-                    lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisidx);
-                    absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (this.ExperimentOptions.InitStepSize / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.75);
-                    thisTrialData.DisparityArcMin = absoluteDisparityArcMin *  thisTrialData.SignDisparity;
+
+                if (~isempty(this.Session.currentRun.pastTrialTable.IsReversal))
+                    if (thisStaircaseExists)
+                        numReversals = max(numReversals-2,0); % ignore the first two reversals since it may be likely that they hit a wrong key early on
+                        % What the disparity will be on this trial, given the response on the last trial
+                        lastAbsoluteTrialDisparity = abs(this.Session.currentRun.pastTrialTable.DisparityArcMin(thisidx));
+                        lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisidx);
+                        absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (this.ExperimentOptions.InitStepSize / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.75); % from Faes 2007, https://link.springer.com/article/10.3758/BF03193747
+                        thisTrialData.DisparityArcMin = absoluteDisparityArcMin *  thisTrialData.SignDisparity;
+
+                        if thisTrialData.DisparityArcMin == 0
+                            lastAbsoluteTrialDisparity
+                            disp('Calculated zero disparity here')
+                            thisTrialData.DisparityArcMin
+                            thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
+                        end
+                    end
+                else
+                    disp('past trial table doesnt exist:(')
                 end
-                
             end
             
         end
@@ -184,12 +196,12 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 if this.ExperimentOptions.RotateDots == 1
                     leftDistFromCenter = sqrt((leftStimDots(1,:)).^2 + (leftStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
                     leftThetaDeg = atan2d(leftStimDots(2,:),leftStimDots(1,:));
-                    leftPolarPtX = cosd(leftThetaDeg + 10) .* leftDistFromCenter;
-                    leftPolarPtY = sind(leftThetaDeg + 10) .* leftDistFromCenter;
+                    leftPolarPtX = cosd(leftThetaDeg + this.ExperimentOptions.RotateDotsByThisMuch) .* leftDistFromCenter;
+                    leftPolarPtY = sind(leftThetaDeg + this.ExperimentOptions.RotateDotsByThisMuch) .* leftDistFromCenter;
                     rightDistFromCenter = sqrt((rightStimDots(1,:)).^2 + (rightStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
                     rightThetaDeg = atan2d(rightStimDots(2,:),rightStimDots(1,:));
-                    rightPolarPtX = cosd(rightThetaDeg + 10) .* rightDistFromCenter;
-                    rightPolarPtY = sind(rightThetaDeg + 10) .* rightDistFromCenter;
+                    rightPolarPtX = cosd(rightThetaDeg + this.ExperimentOptions.RotateDotsByThisMuch) .* rightDistFromCenter;
+                    rightPolarPtY = sind(rightThetaDeg + this.ExperimentOptions.RotateDotsByThisMuch) .* rightDistFromCenter;
                     % rotated dots
                     leftStimDots = [leftPolarPtX;leftPolarPtY];
                     rightStimDots = [rightPolarPtX;rightPolarPtY];
@@ -200,6 +212,10 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                     thisTrialData.CorrectResponse = 'F';
                 elseif thisTrialData.DisparityArcMin < 0
                     thisTrialData.CorrectResponse = 'B';
+                elseif thisTrialData.DisparityArcMin == 0
+                    thisTrialData.DisparityArcMin
+                    disp('Crashed here')
+                    thisTrialData.DisparityArcMin
                 end
                 
                 % For the while loop trial start

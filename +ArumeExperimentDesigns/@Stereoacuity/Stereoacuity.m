@@ -21,7 +21,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             
             %% ADD new options
             dlg.InitDisparity = { 6 '* (arcmins)' [0 100] };
-            dlg.InitStepSize = { 0.5 '* (arcmins)' [0 100] };
+            dlg.InitStepSize = { 6 '* (arcmins)' [0 100] };
             dlg.Number_of_Dots = { 3000 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
@@ -102,7 +102,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
 
                 if (~isempty(this.Session.currentRun.pastTrialTable.IsReversal))
                     if (thisStaircaseExists)
-                        numReversals = max(numReversals-2,0); % ignore the first two reversals since it may be likely that they hit a wrong key early on
+                        %numReversals = max(numReversals-2,0); % ignore the first two reversals since it may be likely that they hit a wrong key early on
                         % What the disparity will be on this trial, given the response on the last trial
                         lastAbsoluteTrialDisparity = abs(this.Session.currentRun.pastTrialTable.DisparityArcMin(thisidx));
                         lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisidx);
@@ -110,9 +110,10 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                         thisTrialData.DisparityArcMin = absoluteDisparityArcMin *  thisTrialData.SignDisparity;
 
                         if thisTrialData.DisparityArcMin == 0
-                            lastAbsoluteTrialDisparity
-                            disp('Calculated zero disparity here')
-                            thisTrialData.DisparityArcMin
+                            thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
+                        elseif thisTrialData.Disparity > 0 & thisTrialData.SignDisparity == -1; % if you went below/above zero when you weren't supposed to
+                            thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
+                        elseif thisTrialData.Disparity < 0 & thisTrialData.SignDisparity == 1; % if you went below/above zero when you weren't supposed to
                             thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
                         end
                     end

@@ -111,9 +111,9 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
 
                         if thisTrialData.DisparityArcMin == 0
                             thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
-                        elseif thisTrialData.Disparity > 0 & thisTrialData.SignDisparity == -1; % if you went below/above zero when you weren't supposed to
+                        elseif thisTrialData.Disparity > 0 & thisTrialData.SignDisparity == -1 % if you went below/above zero when you weren't supposed to
                             thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
-                        elseif thisTrialData.Disparity < 0 & thisTrialData.SignDisparity == 1; % if you went below/above zero when you weren't supposed to
+                        elseif thisTrialData.Disparity < 0 & thisTrialData.SignDisparity == 1 % if you went below/above zero when you weren't supposed to
                             thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
                         end
                     end

@@ -56,7 +56,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
              
             i = i+1;
             conditionVars(i).name   = 'SignDisparity';
-            conditionVars(i).values = [-1 1]; %* this.ExperimentOptions.Disparity;
+            conditionVars(i).values = [1]; %[-1 1]; 
             
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
@@ -111,11 +111,14 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
 
                         if thisTrialData.DisparityArcMin == 0
                             thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
-                        elseif thisTrialData.DisparityArcMin > 0 & thisTrialData.SignDisparity == -1 % if you went below/above zero when you weren't supposed to
-                            thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
-                        elseif thisTrialData.DisparityArcMin < 0 & thisTrialData.SignDisparity == 1 % if you went below/above zero when you weren't supposed to
-                            thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
                         end
+                        
+                        if thisTrialData.DisparityArcMin > 0 & thisTrialData.SignDisparity == -1 % if you went below/above zero when you weren't supposed to
+                                thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
+                        elseif thisTrialData.DisparityArcMin < 0 & thisTrialData.SignDisparity == 1 % if you went below/above zero when you weren't supposed to
+                                thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
+                        end
+                        
                     end
                 else
                     disp('past trial table doesnt exist:(')
@@ -313,11 +316,17 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                thisTrialData.GuessedCorrectly = 0;
            end
            
-           % Record if the trial was a reversal
-           if thisTrialData.TrialNumber > 1
-               if thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(end)
+           % Record if the trial was a reversal, may need to fix this????
+           if thisTrialData.TrialNumber > 1 
+               posidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == 1,1,'last');
+               negidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == -1,1,'last');
+               if thisTrialDate.SignDisparity == 1 & thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(posidx)
                    thisTrialData.IsReversal = 0;
-               elseif thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(end)
+               elseif thisTrialDate.SignDisparity == 1 & thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(posidx)
+                   thisTrialData.IsReversal = 1;
+               elseif thisTrialDate.SignDisparity == -1 & thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(negidx)
+                   thisTrialData.IsReversal = 0;
+               elseif thisTrialDate.SignDisparity == -1 & thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(negidx)
                    thisTrialData.IsReversal = 1;
                end
            elseif thisTrialData.TrialNumber == 1

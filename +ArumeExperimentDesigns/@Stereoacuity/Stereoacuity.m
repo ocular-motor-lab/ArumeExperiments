@@ -317,7 +317,14 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
            end
            
            % Record if the trial was a reversal, may need to fix this????
-           if thisTrialData.TrialNumber > 1 
+          
+           if thisTrialData.TrialNumber == 1
+               thisTrialData.IsReversal = 0;
+           elseif thisTrialData.SignDisparity == 1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == 1)) == 0 % if the disparity is positive and positive disparities have NOT happened before
+               thisTrialData.IsReversal = 0;
+           elseif thisTrialData.SignDisparity == -1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == -1)) == 0 % if the disparity is negative and negative disparities have NOT happened before
+               thisTrialData.IsReversal = 0;
+           elseif thisTrialData.TrialNumber > 1 
                posidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == 1,1,'last');
                negidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == -1,1,'last');
                if thisTrialData.SignDisparity == 1 & thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(posidx)
@@ -329,8 +336,6 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                elseif thisTrialData.SignDisparity == -1 & thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(negidx)
                    thisTrialData.IsReversal = 1;
                end
-           elseif thisTrialData.TrialNumber == 1
-               thisTrialData.IsReversal = 0;
            end
            
            % Move this forward

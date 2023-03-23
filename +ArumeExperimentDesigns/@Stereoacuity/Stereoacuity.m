@@ -39,7 +39,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             
             dlg.DisplayOptions.ScreenWidth = { 59.5 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenHeight = { 34 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenDistance = { 57 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenDistance = { 54 '* (cm)' [1 3000] };
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
             dlg.DisplayOptions.SelectedScreen = { 1 '* (screen)' [0 5] };
             
@@ -56,7 +56,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
              
             i = i+1;
             conditionVars(i).name   = 'SignDisparity';
-            conditionVars(i).values = [1]; %[-1 1]; 
+            conditionVars(i).values = [-1 1]; 
             
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
@@ -320,13 +320,13 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
            if thisTrialData.TrialNumber > 1 
                posidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == 1,1,'last');
                negidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == -1,1,'last');
-               if thisTrialDate.SignDisparity == 1 & thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(posidx)
+               if thisTrialData.SignDisparity == 1 & thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(posidx)
                    thisTrialData.IsReversal = 0;
-               elseif thisTrialDate.SignDisparity == 1 & thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(posidx)
+               elseif thisTrialData.SignDisparity == 1 & thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(posidx)
                    thisTrialData.IsReversal = 1;
-               elseif thisTrialDate.SignDisparity == -1 & thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(negidx)
+               elseif thisTrialData.SignDisparity == -1 & thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(negidx)
                    thisTrialData.IsReversal = 0;
-               elseif thisTrialDate.SignDisparity == -1 & thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(negidx)
+               elseif thisTrialData.SignDisparity == -1 & thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(negidx)
                    thisTrialData.IsReversal = 1;
                end
            elseif thisTrialData.TrialNumber == 1

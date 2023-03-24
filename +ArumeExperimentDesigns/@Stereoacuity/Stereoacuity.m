@@ -28,6 +28,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
             dlg.RotateDots = { 0 '* (yes/no)' [0 1] }; % where 1 means to tilt the stim, and 0 means no tilt
             dlg.RotateDotsByThisMuch = { 10 '* (deg)' [0 90] }; 
+            dlg.TimeStimOn = { 1 '* (sec)' [0 10] }; 
             
             dlg.NumberOfRepetitions = {100 '* (N)' [1 100] }; % 100 bc 100 * 2 (sign disparities) = 200 total trials (100 for front, 100 for back)
             dlg.BackgroundBrightness = 0;
@@ -44,7 +45,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.DisplayOptions.SelectedScreen = { 1 '* (screen)' [0 5] };
             
             dlg.HitKeyBeforeTrial = 1;
-            dlg.TrialDuration = 60;
+            dlg.TrialDuration = 90;
             dlg.TrialsBeforeBreak = 200;
             dlg.TrialAbortAction = 'Repeat';
         end
@@ -240,23 +241,44 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                     % --- Drawing of stimulus -----------------------------------------
                     % -----------------------------------------------------------------
                     
-                    % Select left-eye image buffer for drawing:
-                    Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                     
-                    % Draw left stim:
-                    Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1); % the 1 at the end means dot type where 1 2 or 3 is circular
-                    Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
-                    Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
+                    if ( secondsElapsed <= this.ExperimentOptions.TimeStimOn ) % then show dots + fixation dot
+                        % Select left-eye image buffer for drawing:
+                        Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
+                        
+                        % Draw left stim:
+                        Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1); % the 1 at the end means dot type where 1 2 or 3 is circular
+                        Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
+                        Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
+                        
+                        % Select right-eye image buffer for drawing:
+                        Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
+                        
+                        % Draw right stim:
+                        Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1);
+                        Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
+                        Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
+                        
+                    end
                     
-                    % Select right-eye image buffer for drawing:
-                    Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
-                    
-                    % Draw right stim:
-                    Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1);
-                    Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
-                    Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
-                    
-                    
+                    if ( secondsElapsed > this.ExperimentOptions.TimeStimOn ) % then show only fixation dot
+                        % Select left-eye image buffer for drawing:
+                        Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
+                        
+                        % Draw left stim:
+                        Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
+                        Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
+                        
+                        % Select right-eye image buffer for drawing:
+                        Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
+                        
+                        % Draw right stim:
+                        Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
+                        Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
+                        
+                        
+                    end
+                                        
                     
                     % -----------------------------------------------------------------
                     % --- END Drawing of stimulus -------------------------------------

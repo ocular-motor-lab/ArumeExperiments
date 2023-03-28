@@ -28,7 +28,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
             dlg.RotateDots = { 0 '* (yes/no)' [0 1] }; % where 1 means to tilt the stim, and 0 means no tilt
             dlg.RotateDotsByThisMuch = { 10 '* (deg)' [0 90] }; 
-            dlg.TimeStimOn = { 2 '* (sec)' [0 60] }; 
+            dlg.TimeStimOn = { 1 '* (sec)' [0 60] }; 
             
             dlg.NumberOfRepetitions = {100 '* (N)' [1 100] }; % 100 bc 100 * 2 (sign disparities) = 200 total trials (100 for front, 100 for back)
             dlg.BackgroundBrightness = 0;

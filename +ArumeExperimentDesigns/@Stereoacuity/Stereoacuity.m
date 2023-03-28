@@ -370,5 +370,17 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                     
         
     end
-    
+
+    methods
+
+        function [out] = Plot_Staircase(this)
+            %%
+            t = this.Session.trialDataTable;
+
+            figure
+            plot(t.DisparityArcMin(t.SignDisparity == 1))
+            hold
+            plot(t.DisparityArcMin(t.SignDisparity == -1))
+        end
+    end
 end

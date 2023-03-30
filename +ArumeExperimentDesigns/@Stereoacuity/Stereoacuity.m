@@ -72,59 +72,94 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             Enum = ArumeCore.ExperimentDesign.getEnum();
             trialResult = Enum.trialResult.CORRECT;
             
-            if thisTrialData.TrialNumber == 1
-                  thisTrialData.DisparityArcMin = this.ExperimentOptions.InitDisparity *  thisTrialData.SignDisparity; % first trial's disparity will be the initial disparity
-                            
-                
-            elseif thisTrialData.TrialNumber > 1
-                
-                switch (true)
-                    
-                    case thisTrialData.SignDisparity == 1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == 1)) == 0 % if the disparity is positive and positive disparities have NOT happened before
-                        thisTrialData.DisparityArcMin = this.ExperimentOptions.InitDisparity * thisTrialData.SignDisparity; % first disparity of this staircase will be the initial disparity
-                        thisStaircaseExists = 0;
-                        
-                    case thisTrialData.SignDisparity == -1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == -1)) == 0 % if the disparity is neg and neg disparities have NOT happened before
-                        thisTrialData.DisparityArcMin = this.ExperimentOptions.InitDisparity * thisTrialData.SignDisparity;
-                        thisStaircaseExists = 0;
-                        
-                    case thisTrialData.SignDisparity == 1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == 1)) == 1 % if the disparity is pos and pos disparities HAVE happened before
-                        % Get the last trial's disparity (in abs) ~for a staircase~ and calculate how
-                        % many reversals have occured ~for that staircase~
-                        thisidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == 1,1,'last');
-                        numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal((this.Session.currentRun.pastTrialTable.SignDisparity == 1)));
-                        thisStaircaseExists = 1;
-                        
-                    case thisTrialData.SignDisparity == -1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == -1)) == 1 % if the disparity is neg and neg disparities HAVE happened before
-                        thisidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == -1,1,'last');
-                        numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal((this.Session.currentRun.pastTrialTable.SignDisparity == -1)));
-                        thisStaircaseExists = 1;
-                end
-
-                if (~isempty(this.Session.currentRun.pastTrialTable.IsReversal))
-                    if (thisStaircaseExists)
-                        %numReversals = max(numReversals-2,0); % ignore the first two reversals since it may be likely that they hit a wrong key early on
-                        % What the disparity will be on this trial, given the response on the last trial
-                        lastAbsoluteTrialDisparity = abs(this.Session.currentRun.pastTrialTable.DisparityArcMin(thisidx));
-                        lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisidx);
-                        absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (this.ExperimentOptions.InitStepSize / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.75); % from Faes 2007, https://link.springer.com/article/10.3758/BF03193747
-                        thisTrialData.DisparityArcMin = absoluteDisparityArcMin *  thisTrialData.SignDisparity;
-
-                        if thisTrialData.DisparityArcMin == 0
-                            thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
-                        end
-                        
-                        if thisTrialData.DisparityArcMin > 0 & thisTrialData.SignDisparity == -1 % if you went below/above zero when you weren't supposed to
-                                thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
-                        elseif thisTrialData.DisparityArcMin < 0 & thisTrialData.SignDisparity == 1 % if you went below/above zero when you weren't supposed to
-                                thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
-                        end
-                        
-                    end
-                else
-                    disp('past trial table doesnt exist:(')
-                end
+            % Determine if this trial's staircase exists or not
+            if isempty(this.Session.currentRun.pastTrialTable) % if this is the first trial of the whole experiment
+                thisStaircaseExists = 0;
+            elseif isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity)) % if this sign's disparity has never occured before
+                thisStaircaseExists = 0;
+            else
+                thisStaircaseExists = 1;
             end
+            
+            % Calculate the disparity, depending on whether or not the staircase exists
+            if (~thisStaircaseExists)
+                thisTrialData.DisparityArcMin = this.ExperimentOptions.InitDisparity * thisTrialData.SignDisparity; % first disparity of this staircase will be the initial disparity
+            elseif (thisStaircaseExists)
+                thisidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity,1,'last');
+                numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal((this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity)));
+                % What the disparity will be on this trial, given the response on the last trial
+                lastAbsoluteTrialDisparity = abs(this.Session.currentRun.pastTrialTable.DisparityArcMin(thisidx));
+                lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisidx);
+                absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (this.ExperimentOptions.InitStepSize / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.75); % from Faes 2007, https://link.springer.com/article/10.3758/BF03193747
+                thisTrialData.DisparityArcMin = absoluteDisparityArcMin *  thisTrialData.SignDisparity;
+                
+                if thisTrialData.DisparityArcMin == 0
+                    thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
+                end
+                
+                if thisTrialData.DisparityArcMin > 0 & thisTrialData.SignDisparity == -1 % if you went below/above zero when you weren't supposed to
+                    thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
+                elseif thisTrialData.DisparityArcMin < 0 & thisTrialData.SignDisparity == 1 % if you went below/above zero when you weren't supposed to
+                    thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
+                end
+                
+            end
+            
+            
+            
+%             if thisTrialData.TrialNumber == 1
+%                   thisTrialData.DisparityArcMin = this.ExperimentOptions.InitDisparity *  thisTrialData.SignDisparity; % first trial's disparity will be the initial disparity
+%                             
+%                 
+%             elseif thisTrialData.TrialNumber > 1
+%                 
+%                 switch (true)
+%                     
+%                     case thisTrialData.SignDisparity == 1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == 1)) == 0 % if the disparity is positive and positive disparities have NOT happened before
+%                         thisTrialData.DisparityArcMin = this.ExperimentOptions.InitDisparity * thisTrialData.SignDisparity; % first disparity of this staircase will be the initial disparity
+%                         thisStaircaseExists = 0;
+%                         
+%                     case thisTrialData.SignDisparity == -1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == -1)) == 0 % if the disparity is neg and neg disparities have NOT happened before
+%                         thisTrialData.DisparityArcMin = this.ExperimentOptions.InitDisparity * thisTrialData.SignDisparity;
+%                         thisStaircaseExists = 0;
+%                         
+%                     case thisTrialData.SignDisparity == 1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == 1)) == 1 % if the disparity is pos and pos disparities HAVE happened before
+%                         % Get the last trial's disparity (in abs) ~for a staircase~ and calculate how
+%                         % many reversals have occured ~for that staircase~
+%                         thisidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == 1,1,'last');
+%                         numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal((this.Session.currentRun.pastTrialTable.SignDisparity == 1)));
+%                         thisStaircaseExists = 1;
+%                         
+%                     case thisTrialData.SignDisparity == -1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == -1)) == 1 % if the disparity is neg and neg disparities HAVE happened before
+%                         thisidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == -1,1,'last');
+%                         numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal((this.Session.currentRun.pastTrialTable.SignDisparity == -1)));
+%                         thisStaircaseExists = 1;
+%                 end
+% 
+%                 if (~isempty(this.Session.currentRun.pastTrialTable.IsReversal))
+%                     if (thisStaircaseExists)
+%                         %numReversals = max(numReversals-2,0); % ignore the first two reversals since it may be likely that they hit a wrong key early on
+%                         % What the disparity will be on this trial, given the response on the last trial
+%                         lastAbsoluteTrialDisparity = abs(this.Session.currentRun.pastTrialTable.DisparityArcMin(thisidx));
+%                         lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisidx);
+%                         absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (this.ExperimentOptions.InitStepSize / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.75); % from Faes 2007, https://link.springer.com/article/10.3758/BF03193747
+%                         thisTrialData.DisparityArcMin = absoluteDisparityArcMin *  thisTrialData.SignDisparity;
+% 
+%                         if thisTrialData.DisparityArcMin == 0
+%                             thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
+%                         end
+%                         
+%                         if thisTrialData.DisparityArcMin > 0 & thisTrialData.SignDisparity == -1 % if you went below/above zero when you weren't supposed to
+%                                 thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
+%                         elseif thisTrialData.DisparityArcMin < 0 & thisTrialData.SignDisparity == 1 % if you went below/above zero when you weren't supposed to
+%                                 thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
+%                         end
+%                         
+%                     end
+%                 else
+%                     disp('past trial table doesnt exist:(')
+%                 end
+%             end
             
         end
         

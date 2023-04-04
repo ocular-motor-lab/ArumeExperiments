@@ -26,7 +26,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
-            dlg.TimeStimOn = { 1 '* (sec)' [0 60] }; 
+            dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] }; 
             
             dlg.NumberOfRepetitions = {100 '* (N)' [1 100] }; % 100 bc 100 * 2 (sign disparities) = 200 total trials (100 for front, 100 for back)
             dlg.BackgroundBrightness = 0;
@@ -34,7 +34,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             %% CHANGE DEFAULTS values for existing options
             
             dlg.UseEyeTracker = 0;
-            dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult SignDisparity RotateDots'; % which variables to display every trial in the command line separated by spaces
+            dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult RotateDots DisparityArcMin GuessedCorrectly'; % which variables to display every trial in the command line separated by spaces
             
             dlg.DisplayOptions.ScreenWidth = { 59.5 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenHeight = { 34 '* (cm)' [1 3000] };
@@ -44,7 +44,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             
             dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 90;
-            dlg.TrialsBeforeBreak = 200;
+            dlg.TrialsBeforeBreak = 600;
             dlg.TrialAbortAction = 'Repeat';
         end
         
@@ -134,7 +134,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 ymax = xmax;
                 
                 % Disparity settings:
-                disparity_deg = exp(thisTrialData.DisparityArcMinLogAbs)/60;
+                disparity_deg = thisTrialData.DisparityArcMin/60;
                 shiftNeeded_deg = viewingDist * tand(disparity_deg);
                 shiftNeeded_pix = pixPerDeg * shiftNeeded_deg;
                 dots(1, :) = 2*(xmax)*rand(1, numDots) - xmax; % SR x coords
@@ -336,14 +336,15 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             t = this.Session.trialDataTable;
 
             figure
-            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0),'Color','k'); hold on
-            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0),'Color','k')
-            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5),'Color','b')
-            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5),'Color','b')
-            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10),'Color','r')
-            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10),'Color','r')            
-            
-            
+            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0),'-o','Color','k'); hold on
+            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0),'-o','Color','k')
+            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5),'-o','Color','b')
+            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5),'-o','Color','b')
+            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10),'-o','Color','r')
+            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10),'-o','Color','r')            
+            legend('0','0','5','5','10','10')
+            xlabel('Trials')
+            ylabel('Disparity Arcmins')
             
         end
     end

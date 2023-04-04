@@ -77,27 +77,28 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             % Calculate the disparity, depending on whether or not the staircase exists
             
             if isempty(this.Session.currentRun.pastTrialTable) || isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots)) % if this is the first trial of the whole experiment or if this staircase has never occured before
-                thisTrialData.DisparityArcMinLog = log(this.ExperimentOptions.InitDisparity) * thisTrialData.SignDisparity; % first disparity of this staircase will be the initial disparity
+                 thisTrialData.DisparityArcMinLogAbs = log(this.ExperimentOptions.InitDisparity); % first disparity of this staircase will be the initial disparity
 
             else
                 thisTrialsStaircaseTrials = find(this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots);
                 numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal(thisTrialsStaircaseTrials));
                 
                 % What the disparity will be on this trial, given the response on the last trial
-                lastAbsoluteTrialDisparity = abs(this.Session.currentRun.pastTrialTable.DisparityArcMin(thisTrialsStaircaseTrials(end))); % this should already be in log units, so don't need to change anything here
+                lastAbsoluteTrialDisparity = this.Session.currentRun.pastTrialTable.DisparityArcMinLogAbs(thisTrialsStaircaseTrials(end)); % this should already be in log units, so don't need to change anything here
                 lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisTrialsStaircaseTrials(end));
                 absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (log(this.ExperimentOptions.InitStepSize) / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.75); % from Faes 2007, https://link.springer.com/article/10.3758/BF03193747
-                thisTrialData.DisparityArcMinLog = absoluteDisparityArcMin *  thisTrialData.SignDisparity;
+                thisTrialData.DisparityArcMinLogAbs = absoluteDisparityArcMin;
                 
-                % probably don't need this now that we're doing log?
-                if exp(thisTrialData.DisparityArcMinLog) > 0 & thisTrialData.SignDisparity == -1 % if you went below/above zero when you weren't supposed to
-                    thisTrialData.DisparityArcMinLog = 0.001 *  thisTrialData.SignDisparity;
-                elseif exp(thisTrialData.DisparityArcMinLog) < 0 & thisTrialData.SignDisparity == 1 % if you went below/above zero when you weren't supposed to
-                    thisTrialData.DisparityArcMinLog = 0.001 *  thisTrialData.SignDisparity;
-                end
+%                 % probably don't need this now that we're doing log?
+%                 if exp(thisTrialData.DisparityArcMinLog) > 0 & thisTrialData.SignDisparity == -1 % if you went below/above zero when you weren't supposed to
+%                     thisTrialData.DisparityArcMinLog = 0.001 *  thisTrialData.SignDisparity;
+%                 elseif exp(thisTrialData.DisparityArcMinLog) < 0 & thisTrialData.SignDisparity == 1 % if you went below/above zero when you weren't supposed to
+%                     thisTrialData.DisparityArcMinLog = 0.001 *  thisTrialData.SignDisparity;
+%                 end
             end
             
-            thisTrialData.DisparityArcMin = exp(thisTrialData.DisparityArcMinLog);
+            thisTrialData.DisparityArcMinLog =  thisTrialData.DisparityArcMinLogAbs * thisTrialData.SignDisparity;
+            thisTrialData.DisparityArcMin = exp(thisTrialData.DisparityArcMinLogAbs) * thisTrialData.SignDisparity;
             
         end
         
@@ -133,7 +134,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 ymax = xmax;
                 
                 % Disparity settings:
-                disparity_deg = thisTrialData.DisparityArcMin/60;
+                disparity_deg = exp(thisTrialData.DisparityArcMinLogAbs)/60;
                 shiftNeeded_deg = viewingDist * tand(disparity_deg);
                 shiftNeeded_pix = pixPerDeg * shiftNeeded_deg;
                 dots(1, :) = 2*(xmax)*rand(1, numDots) - xmax; % SR x coords

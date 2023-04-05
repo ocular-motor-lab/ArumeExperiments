@@ -635,6 +635,12 @@ classdef Arume < handle
             end
         end
         
+        function options = getConfigurationDlg(this)
+            
+            options = [];
+            options.Open_Iris_Folder =   uigetdir(this.configuration.defaultDataFolder, 'Pick the open iris folder');
+        end
+        
     end
     
     methods( Access = private )

@@ -26,9 +26,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
-            dlg.RotateDots = { 0 '* (yes/no)' [0 1] }; % where 1 means to tilt the stim, and 0 means no tilt
-            dlg.RotateDotsByThisMuch = { 10 '* (deg)' [0 90] }; 
-            dlg.TimeStimOn = { 1 '* (sec)' [0 60] }; 
+            dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] }; 
             
             dlg.NumberOfRepetitions = {100 '* (N)' [1 100] }; % 100 bc 100 * 2 (sign disparities) = 200 total trials (100 for front, 100 for back)
             dlg.BackgroundBrightness = 0;
@@ -36,7 +34,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             %% CHANGE DEFAULTS values for existing options
             
             dlg.UseEyeTracker = 0;
-            dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult Speed Stimulus'; % which variables to display every trial in the command line separated by spaces
+            dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult RotateDots DisparityArcMin GuessedCorrectly'; % which variables to display every trial in the command line separated by spaces
             
             dlg.DisplayOptions.ScreenWidth = { 59.5 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenHeight = { 34 '* (cm)' [1 3000] };
@@ -46,7 +44,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             
             dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 90;
-            dlg.TrialsBeforeBreak = 200;
+            dlg.TrialsBeforeBreak = 600;
             dlg.TrialAbortAction = 'Repeat';
         end
         
@@ -58,6 +56,10 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             i = i+1;
             conditionVars(i).name   = 'SignDisparity';
             conditionVars(i).values = [-1 1]; 
+            
+            i = i+1;
+            conditionVars(i).name   = 'RotateDots';
+            conditionVars(i).values = [0 5 10];
             
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
@@ -72,94 +74,31 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             Enum = ArumeCore.ExperimentDesign.getEnum();
             trialResult = Enum.trialResult.CORRECT;
             
-            % Determine if this trial's staircase exists or not
-            if isempty(this.Session.currentRun.pastTrialTable) % if this is the first trial of the whole experiment
-                thisStaircaseExists = 0;
-            elseif isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity)) % if this sign's disparity has never occured before
-                thisStaircaseExists = 0;
-            else
-                thisStaircaseExists = 1;
-            end
-            
             % Calculate the disparity, depending on whether or not the staircase exists
-            if (~thisStaircaseExists)
-                thisTrialData.DisparityArcMin = this.ExperimentOptions.InitDisparity * thisTrialData.SignDisparity; % first disparity of this staircase will be the initial disparity
-            elseif (thisStaircaseExists)
-                thisidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity,1,'last');
-                numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal((this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity)));
+            
+            if isempty(this.Session.currentRun.pastTrialTable) || isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots)) % if this is the first trial of the whole experiment or if this staircase has never occured before
+                 thisTrialData.DisparityArcMinLogAbs = log(this.ExperimentOptions.InitDisparity); % first disparity of this staircase will be the initial disparity
+
+            else
+                thisTrialsStaircaseTrials = find(this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots);
+                numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal(thisTrialsStaircaseTrials));
+                
                 % What the disparity will be on this trial, given the response on the last trial
-                lastAbsoluteTrialDisparity = abs(this.Session.currentRun.pastTrialTable.DisparityArcMin(thisidx));
-                lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisidx);
-                absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (this.ExperimentOptions.InitStepSize / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.75); % from Faes 2007, https://link.springer.com/article/10.3758/BF03193747
-                thisTrialData.DisparityArcMin = absoluteDisparityArcMin *  thisTrialData.SignDisparity;
+                lastAbsoluteTrialDisparity = this.Session.currentRun.pastTrialTable.DisparityArcMinLogAbs(thisTrialsStaircaseTrials(end)); % this should already be in log units, so don't need to change anything here
+                lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisTrialsStaircaseTrials(end));
+                absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (log(this.ExperimentOptions.InitStepSize) / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.75); % from Faes 2007, https://link.springer.com/article/10.3758/BF03193747
+                thisTrialData.DisparityArcMinLogAbs = absoluteDisparityArcMin;
                 
-                if thisTrialData.DisparityArcMin == 0
-                    thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
-                end
-                
-                if thisTrialData.DisparityArcMin > 0 & thisTrialData.SignDisparity == -1 % if you went below/above zero when you weren't supposed to
-                    thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
-                elseif thisTrialData.DisparityArcMin < 0 & thisTrialData.SignDisparity == 1 % if you went below/above zero when you weren't supposed to
-                    thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
-                end
-                
+%                 % probably don't need this now that we're doing log?
+%                 if exp(thisTrialData.DisparityArcMinLog) > 0 & thisTrialData.SignDisparity == -1 % if you went below/above zero when you weren't supposed to
+%                     thisTrialData.DisparityArcMinLog = 0.001 *  thisTrialData.SignDisparity;
+%                 elseif exp(thisTrialData.DisparityArcMinLog) < 0 & thisTrialData.SignDisparity == 1 % if you went below/above zero when you weren't supposed to
+%                     thisTrialData.DisparityArcMinLog = 0.001 *  thisTrialData.SignDisparity;
+%                 end
             end
             
-            
-            
-%             if thisTrialData.TrialNumber == 1
-%                   thisTrialData.DisparityArcMin = this.ExperimentOptions.InitDisparity *  thisTrialData.SignDisparity; % first trial's disparity will be the initial disparity
-%                             
-%                 
-%             elseif thisTrialData.TrialNumber > 1
-%                 
-%                 switch (true)
-%                     
-%                     case thisTrialData.SignDisparity == 1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == 1)) == 0 % if the disparity is positive and positive disparities have NOT happened before
-%                         thisTrialData.DisparityArcMin = this.ExperimentOptions.InitDisparity * thisTrialData.SignDisparity; % first disparity of this staircase will be the initial disparity
-%                         thisStaircaseExists = 0;
-%                         
-%                     case thisTrialData.SignDisparity == -1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == -1)) == 0 % if the disparity is neg and neg disparities have NOT happened before
-%                         thisTrialData.DisparityArcMin = this.ExperimentOptions.InitDisparity * thisTrialData.SignDisparity;
-%                         thisStaircaseExists = 0;
-%                         
-%                     case thisTrialData.SignDisparity == 1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == 1)) == 1 % if the disparity is pos and pos disparities HAVE happened before
-%                         % Get the last trial's disparity (in abs) ~for a staircase~ and calculate how
-%                         % many reversals have occured ~for that staircase~
-%                         thisidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == 1,1,'last');
-%                         numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal((this.Session.currentRun.pastTrialTable.SignDisparity == 1)));
-%                         thisStaircaseExists = 1;
-%                         
-%                     case thisTrialData.SignDisparity == -1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == -1)) == 1 % if the disparity is neg and neg disparities HAVE happened before
-%                         thisidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == -1,1,'last');
-%                         numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal((this.Session.currentRun.pastTrialTable.SignDisparity == -1)));
-%                         thisStaircaseExists = 1;
-%                 end
-% 
-%                 if (~isempty(this.Session.currentRun.pastTrialTable.IsReversal))
-%                     if (thisStaircaseExists)
-%                         %numReversals = max(numReversals-2,0); % ignore the first two reversals since it may be likely that they hit a wrong key early on
-%                         % What the disparity will be on this trial, given the response on the last trial
-%                         lastAbsoluteTrialDisparity = abs(this.Session.currentRun.pastTrialTable.DisparityArcMin(thisidx));
-%                         lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisidx);
-%                         absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (this.ExperimentOptions.InitStepSize / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.75); % from Faes 2007, https://link.springer.com/article/10.3758/BF03193747
-%                         thisTrialData.DisparityArcMin = absoluteDisparityArcMin *  thisTrialData.SignDisparity;
-% 
-%                         if thisTrialData.DisparityArcMin == 0
-%                             thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
-%                         end
-%                         
-%                         if thisTrialData.DisparityArcMin > 0 & thisTrialData.SignDisparity == -1 % if you went below/above zero when you weren't supposed to
-%                                 thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
-%                         elseif thisTrialData.DisparityArcMin < 0 & thisTrialData.SignDisparity == 1 % if you went below/above zero when you weren't supposed to
-%                                 thisTrialData.DisparityArcMin = 0.001 *  thisTrialData.SignDisparity;
-%                         end
-%                         
-%                     end
-%                 else
-%                     disp('past trial table doesnt exist:(')
-%                 end
-%             end
+            thisTrialData.DisparityArcMinLog =  thisTrialData.DisparityArcMinLogAbs * thisTrialData.SignDisparity;
+            thisTrialData.DisparityArcMin = exp(thisTrialData.DisparityArcMinLogAbs) * thisTrialData.SignDisparity;
             
         end
         
@@ -215,8 +154,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 dots(3, :) = (ones(size(dots,2),1)')*shiftNeeded_pix; % how much the dots will shift by in pixels
                 
 %                 % Stim Prep for shifting only the center dots of the stimulus (not the
-%                 % whole thing). The inside center dots shifting is a
-%                 % square, not circle. 
+%                 % whole thing). The inside center dots shifting is a square, not circle. 
 %                 vec_x = dots(1, :);
 %                 vec_y = dots(2, :);
 %                 vec_x(vec_x < -xmax/2) = 0;
@@ -233,29 +171,27 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 rightStimDots = dots(1:2, :) - [dots(3, :)/2; zeros(1, numDots)];
                 
                 % Rotating the dots if needed
-                if this.ExperimentOptions.RotateDots == 1
-                    leftDistFromCenter = sqrt((leftStimDots(1,:)).^2 + (leftStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
-                    leftThetaDeg = atan2d(leftStimDots(2,:),leftStimDots(1,:));
-                    leftPolarPtX = cosd(leftThetaDeg + this.ExperimentOptions.RotateDotsByThisMuch) .* leftDistFromCenter;
-                    leftPolarPtY = sind(leftThetaDeg + this.ExperimentOptions.RotateDotsByThisMuch) .* leftDistFromCenter;
-                    rightDistFromCenter = sqrt((rightStimDots(1,:)).^2 + (rightStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
-                    rightThetaDeg = atan2d(rightStimDots(2,:),rightStimDots(1,:));
-                    rightPolarPtX = cosd(rightThetaDeg + this.ExperimentOptions.RotateDotsByThisMuch) .* rightDistFromCenter;
-                    rightPolarPtY = sind(rightThetaDeg + this.ExperimentOptions.RotateDotsByThisMuch) .* rightDistFromCenter;
-                    % rotated dots
-                    leftStimDots = [leftPolarPtX;leftPolarPtY];
-                    rightStimDots = [rightPolarPtX;rightPolarPtY];
-                end
+                leftDistFromCenter = sqrt((leftStimDots(1,:)).^2 + (leftStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
+                leftThetaDeg = atan2d(leftStimDots(2,:),leftStimDots(1,:));
+                leftPolarPtX = cosd(leftThetaDeg + thisTrialData.RotateDots) .* leftDistFromCenter;
+                leftPolarPtY = sind(leftThetaDeg + thisTrialData.RotateDots) .* leftDistFromCenter;
+                rightDistFromCenter = sqrt((rightStimDots(1,:)).^2 + (rightStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
+                rightThetaDeg = atan2d(rightStimDots(2,:),rightStimDots(1,:));
+                rightPolarPtX = cosd(rightThetaDeg + thisTrialData.RotateDots) .* rightDistFromCenter;
+                rightPolarPtY = sind(rightThetaDeg + thisTrialData.RotateDots) .* rightDistFromCenter;
+                % rotated dots
+                leftStimDots = [leftPolarPtX;leftPolarPtY];
+                rightStimDots = [rightPolarPtX;rightPolarPtY];
                 
                 % What the response should be
                 if thisTrialData.DisparityArcMin > 0
                     thisTrialData.CorrectResponse = 'F';
                 elseif thisTrialData.DisparityArcMin < 0
                     thisTrialData.CorrectResponse = 'B';
-                elseif thisTrialData.DisparityArcMin == 0
-                    thisTrialData.DisparityArcMin
-                    disp('Crashed here')
-                    thisTrialData.DisparityArcMin
+%                 elseif thisTrialData.DisparityArcMin == 0
+%                     thisTrialData.DisparityArcMin
+%                     disp('Crashed here')
+%                     thisTrialData.DisparityArcMin
                 end
                 
                 % For the while loop trial start
@@ -373,26 +309,13 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                thisTrialData.GuessedCorrectly = 0;
            end
            
-           % Record if the trial was a reversal, may need to fix this????
-          
-           if thisTrialData.TrialNumber == 1
+           % Record if the trial was a reversal
+           if isempty(this.Session.currentRun.pastTrialTable) | isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots)) % if this is the first trial of the whole experiment or if this staircase has never occured before
                thisTrialData.IsReversal = 0;
-           elseif thisTrialData.SignDisparity == 1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == 1)) == 0 % if the disparity is positive and positive disparities have NOT happened before
+           elseif thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(find(this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots,1,'last'))
                thisTrialData.IsReversal = 0;
-           elseif thisTrialData.SignDisparity == -1 & ~isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == -1)) == 0 % if the disparity is negative and negative disparities have NOT happened before
-               thisTrialData.IsReversal = 0;
-           elseif thisTrialData.TrialNumber > 1 
-               posidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == 1,1,'last');
-               negidx = find(this.Session.currentRun.pastTrialTable.SignDisparity == -1,1,'last');
-               if thisTrialData.SignDisparity == 1 & thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(posidx)
-                   thisTrialData.IsReversal = 0;
-               elseif thisTrialData.SignDisparity == 1 & thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(posidx)
-                   thisTrialData.IsReversal = 1;
-               elseif thisTrialData.SignDisparity == -1 & thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(negidx)
-                   thisTrialData.IsReversal = 0;
-               elseif thisTrialData.SignDisparity == -1 & thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(negidx)
-                   thisTrialData.IsReversal = 1;
-               end
+           elseif thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(find(this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots,1,'last'))
+               thisTrialData.IsReversal = 1;
            end
            
            % Move this forward
@@ -413,9 +336,39 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             t = this.Session.trialDataTable;
 
             figure
-            plot(t.DisparityArcMin(t.SignDisparity == 1))
-            hold
-            plot(t.DisparityArcMin(t.SignDisparity == -1))
+            subplot(2,2,[1 2])
+            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0),'-o','Color','k'); hold on
+            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0),'-o','Color','k')
+            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5),'-o','Color','b')
+            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5),'-o','Color','b')
+            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10),'-o','Color','r')
+            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10),'-o','Color','r')            
+            legend('0','0','5','5','10','10')
+            xlabel('Trials')
+            ylabel('Disparity Arcmins')
+            subplot(2,2,3)
+            bar(1,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0 & t.IsReversal == 1)),'FaceColor','k'); hold on
+            bar(1.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0 & t.IsReversal == 1)),'FaceColor','k')
+            bar(2,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5 & t.IsReversal == 1)),'FaceColor','b')
+            bar(2.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5 & t.IsReversal == 1)),'FaceColor','b')
+            bar(3,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10 & t.IsReversal == 1)),'FaceColor','r')
+            bar(3.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10 & t.IsReversal == 1)),'FaceColor','r')
+            xticks(1:3)
+            xticklabels({'0','5','10'})  
+            ylim([-1 1])
+            ylabel('Threshold, avg of reversals')
+            subplot(2,2,4)
+            bar(1,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0 & t.BlockNumber > 90)),'FaceColor','k'); hold on
+            bar(1.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0 & t.BlockNumber > 90)),'FaceColor','k')
+            bar(2,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5 & t.BlockNumber > 90)),'FaceColor','b')
+            bar(2.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5 & t.BlockNumber > 90)),'FaceColor','b')
+            bar(3,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10 & t.BlockNumber > 90)),'FaceColor','r')
+            bar(3.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10 & t.BlockNumber > 90)),'FaceColor','r')
+            xticks(1:3)
+            xticklabels({'0','5','10'})  
+            ylim([-1 1])
+            ylabel('Threshold, avg of last 10 trials')
+
         end
     end
 end

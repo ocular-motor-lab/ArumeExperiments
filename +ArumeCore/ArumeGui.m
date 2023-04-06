@@ -61,7 +61,6 @@ classdef ArumeGui < matlab.apps.AppBase
         menuTools
         menuToolsBiteBarGui
         menuToolsOpenProjectFolderInExplorer
-        menuToolsConfiguration
         
     end
     
@@ -286,10 +285,6 @@ classdef ArumeGui < matlab.apps.AppBase
             app.menuToolsOpenProjectFolderInExplorer = uimenu(app.menuTools);
             app.menuToolsOpenProjectFolderInExplorer.Text = 'Open project folder in explorer...';
             app.menuToolsOpenProjectFolderInExplorer.Callback = @app.OpenProjectFolderInExplorer;
-            
-            app.menuToolsConfiguration = uimenu(app.menuTools);
-            app.menuToolsConfiguration.Text = 'Configuration ...';
-            app.menuToolsConfiguration.Callback = @app.OpenConfiguration;
         end
         
         function UpdateGui( app, fastOption )
@@ -1070,20 +1065,6 @@ classdef ArumeGui < matlab.apps.AppBase
             if ( ~isempty(app.arumeController.currentProject))
                 winopen(app.arumeController.currentProject.path)
             end
-        end
-
-        function OpenConfiguration( app, ~, ~ )
-
-            configurationDlg = app.arumeController.getConfigurationDlg();
-           
-            
-            if ( ~isempty(configurationDlg) )
-                options = StructDlg(configurationDlg, ['Arume Configuration']);
-                if ( isempty( options ) )
-                    return
-                end
-            end
-
         end
         
         % Comments

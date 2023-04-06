@@ -635,11 +635,6 @@ classdef Arume < handle
             end
         end
         
-        function options = getConfigurationDlg(this)
-            
-            options = [];
-        end
-        
     end
     
     methods( Access = private )

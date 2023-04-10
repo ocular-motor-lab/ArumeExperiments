@@ -135,8 +135,9 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 
                 % Disparity settings:
                 disparity_deg = thisTrialData.DisparityArcMin/60;
-                shiftNeeded_deg = viewingDist * tand(disparity_deg);
-                shiftNeeded_pix = pixPerDeg * shiftNeeded_deg;
+                shiftNeeded_cm = viewingDist * tand(disparity_deg);
+                shiftNeeded_pix = ((screenWidth*2) / moniterWidth_cm) * shiftNeeded_cm;
+                %shiftNeeded_pix = pixPerDeg * shiftNeeded_deg;
                 dots(1, :) = 2*(xmax)*rand(1, numDots) - xmax; % SR x coords
                 dots(2, :) = 2*(ymax)*rand(1, numDots) - ymax; % SR y coords
                 

@@ -20,15 +20,15 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            dlg.InitDisparity = { 6 '* (arcmins)' [0 100] };
-            dlg.InitStepSize = { 6 '* (arcmins)' [0 100] };
+            dlg.InitDisparity = { 5 '* (arcmins)' [0 100] };
+            dlg.InitStepSize = { 5 '* (arcmins)' [0 100] };
             dlg.Number_of_Dots = { 3000 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
             dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] }; 
             
-            dlg.NumberOfRepetitions = {100 '* (N)' [1 100] }; % 100 bc 100 * 2 (sign disparities) = 200 total trials (100 for front, 100 for back)
+            dlg.NumberOfRepetitions = {150 '* (N)' [1 100] }; % 100 bc 100 * 2 (sign disparities) = 200 total trials (100 for front, 100 for back)
             dlg.BackgroundBrightness = 0;
             
             %% CHANGE DEFAULTS values for existing options
@@ -59,7 +59,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
-            conditionVars(i).values = [0 5 10];
+            conditionVars(i).values = [0 5 10 45];
             
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';

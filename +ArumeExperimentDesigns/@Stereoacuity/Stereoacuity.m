@@ -86,7 +86,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 % What the disparity will be on this trial, given the response on the last trial
                 lastAbsoluteTrialDisparity = this.Session.currentRun.pastTrialTable.DisparityArcMinLogAbs(thisTrialsStaircaseTrials(end)); % this should already be in log units, so don't need to change anything here
                 lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisTrialsStaircaseTrials(end));
-                absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (log(this.ExperimentOptions.InitStepSize) / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.75); % from Faes 2007, https://link.springer.com/article/10.3758/BF03193747
+                absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (log(this.ExperimentOptions.InitStepSize) / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.8); % from Faes 2007, https://link.springer.com/article/10.3758/BF03193747
                 thisTrialData.DisparityArcMinLogAbs = absoluteDisparityArcMin;
                 
 %                 % probably don't need this now that we're doing log?

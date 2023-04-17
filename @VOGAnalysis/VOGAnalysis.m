@@ -243,6 +243,14 @@ classdef VOGAnalysis < handle
                 params = VOGAnalysis.GetParameters();
             end
             
+            if ( nargin == 2 )
+                % UGLYYYYYY should update
+                [~,file] = fileparts(dataFolder);
+                params = dataFiles;
+                dataFiles = {[file '.txt']};
+                calibrationFiles = {[file '.cal']};
+            end
+            
             samplesDataTable = table();
             rawData = table();
             cleanedData = table();

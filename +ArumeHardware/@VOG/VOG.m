@@ -14,8 +14,8 @@ classdef VOG  < handle
             if ( ~exist('port','var') || isempty(port) )
                 port = 9000;
             end
-            arumeUtilPath = regexpi(path,['[^;]*arumeutil'],'match');
-            asm = NET.addAssembly(fullfile(arumeUtilPath{1},'EyeTrackerRemoteClient.dll'));
+            arumePath = regexpi(path,['[^;]*arume'],'match');
+            asm = NET.addAssembly(fullfile(arumePath{1},'+ArumeHardware\@VOG\EyeTrackerRemoteClient.dll'));
             ip = '127.0.0.1';
 %             if ( ~exist('openirispath','var') || isempty(openirispath) )
 %                 openirispath = 'M:\TEMP\Arume_openiris_test\Debug';

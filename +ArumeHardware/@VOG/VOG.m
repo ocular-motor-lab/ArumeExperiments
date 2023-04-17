@@ -15,7 +15,7 @@ classdef VOG  < handle
                 port = 9000;
             end
             arumePath = regexpi(path,['[^;]*arume'],'match');
-            asm = NET.addAssembly(fullfile(arumePath{1},'+ArumeHardware\@VOG\EyeTrackerRemoteClient.dll'));
+            asm = NET.addAssembly(fullfile(arumePath{1},'+ArumeHardware\@VOG\OpenIrisRemoteClient.dll'));
             ip = '127.0.0.1';
 %             if ( ~exist('openirispath','var') || isempty(openirispath) )
 %                 openirispath = 'M:\TEMP\Arume_openiris_test\Debug';
@@ -65,7 +65,7 @@ classdef VOG  < handle
 %             end
             
 %             this.eyeTracker = VORLab.VOG.Remote.EyeTrackerClient(ip, port);
-            this.eyeTracker = OpenIris.EyeTrackerClient(ip, port);
+            this.eyeTracker = OpenIris.OpenIrisClient(ip, port);
             
             result = 1;
         end

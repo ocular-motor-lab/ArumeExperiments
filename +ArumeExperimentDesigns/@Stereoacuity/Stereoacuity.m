@@ -20,15 +20,15 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            dlg.InitDisparity = { 6 '* (arcmins)' [0 100] };
-            dlg.InitStepSize = { 6 '* (arcmins)' [0 100] };
+            dlg.InitDisparity = { 5 '* (arcmins)' [0 100] };
+            dlg.InitStepSize = { 15 '* (arcmins)' [0 100] };
             dlg.Number_of_Dots = { 3000 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
             dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] }; 
             
-            dlg.NumberOfRepetitions = {100 '* (N)' [1 100] }; % 100 bc 100 * 2 (sign disparities) = 200 total trials (100 for front, 100 for back)
+            dlg.NumberOfRepetitions = {150 '* (N)' [1 200] }; % 100 bc 100 * 2 (sign disparities) = 200 total trials (100 for front, 100 for back)
             dlg.BackgroundBrightness = 0;
             
             %% CHANGE DEFAULTS values for existing options
@@ -44,7 +44,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             
             dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 90;
-            dlg.TrialsBeforeBreak = 600;
+            dlg.TrialsBeforeBreak = 1200;
             dlg.TrialAbortAction = 'Repeat';
         end
         
@@ -59,7 +59,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
-            conditionVars(i).values = [0 5 10];
+            conditionVars(i).values = [0 5 10 45];
             
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
@@ -86,7 +86,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 % What the disparity will be on this trial, given the response on the last trial
                 lastAbsoluteTrialDisparity = this.Session.currentRun.pastTrialTable.DisparityArcMinLogAbs(thisTrialsStaircaseTrials(end)); % this should already be in log units, so don't need to change anything here
                 lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisTrialsStaircaseTrials(end));
-                absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (log(this.ExperimentOptions.InitStepSize) / (numReversals+1)) * (lastTrialGuessedCorrectly - 0.75); % from Faes 2007, https://link.springer.com/article/10.3758/BF03193747
+                absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (log(this.ExperimentOptions.InitStepSize)) / (numReversals+1) * (lastTrialGuessedCorrectly - 0.8); % from Faes 2007, https://link.springer.com/article/10.3758/BF03193747
                 thisTrialData.DisparityArcMinLogAbs = absoluteDisparityArcMin;
                 
 %                 % probably don't need this now that we're doing log?
@@ -135,8 +135,9 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 
                 % Disparity settings:
                 disparity_deg = thisTrialData.DisparityArcMin/60;
-                shiftNeeded_deg = viewingDist * tand(disparity_deg);
-                shiftNeeded_pix = pixPerDeg * shiftNeeded_deg;
+                shiftNeeded_cm = viewingDist * tand(disparity_deg);
+                shiftNeeded_pix = ((screenWidth*2) / moniterWidth_cm) * shiftNeeded_cm;
+                %shiftNeeded_pix = pixPerDeg * shiftNeeded_deg;
                 dots(1, :) = 2*(xmax)*rand(1, numDots) - xmax; % SR x coords
                 dots(2, :) = 2*(ymax)*rand(1, numDots) - ymax; % SR y coords
                 
@@ -342,8 +343,10 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5),'-o','Color','b')
             plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5),'-o','Color','b')
             plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10),'-o','Color','r')
-            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10),'-o','Color','r')            
-            legend('0','0','5','5','10','10')
+            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10),'-o','Color','r')  
+            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45),'-o','Color','m')
+            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45),'-o','Color','m')
+            legend('0','0','5','5','10','10','45','45')
             xlabel('Trials')
             ylabel('Disparity Arcmins')
             subplot(2,2,3)
@@ -353,8 +356,10 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             bar(2.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5 & t.IsReversal == 1)),'FaceColor','b')
             bar(3,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10 & t.IsReversal == 1)),'FaceColor','r')
             bar(3.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10 & t.IsReversal == 1)),'FaceColor','r')
+            bar(4,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45 & t.IsReversal == 1)),'FaceColor','m')
+            bar(4.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45 & t.IsReversal == 1)),'FaceColor','m')
             xticks(1:3)
-            xticklabels({'0','5','10'})  
+            xticklabels({'0','5','10','45'})  
             ylim([-1 1])
             ylabel('Threshold, avg of reversals')
             subplot(2,2,4)
@@ -364,8 +369,10 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             bar(2.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5 & t.BlockNumber > 90)),'FaceColor','b')
             bar(3,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10 & t.BlockNumber > 90)),'FaceColor','r')
             bar(3.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10 & t.BlockNumber > 90)),'FaceColor','r')
-            xticks(1:3)
-            xticklabels({'0','5','10'})  
+            bar(4,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45 & t.BlockNumber > 90)),'FaceColor','m')
+            bar(4.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45 & t.BlockNumber > 90)),'FaceColor','m')
+            xticks(1:4)
+            xticklabels({'0','5','10','45'})  
             ylim([-1 1])
             ylabel('Threshold, avg of last 10 trials')
 

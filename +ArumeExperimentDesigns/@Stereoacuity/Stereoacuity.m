@@ -9,7 +9,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
     properties
         stimTextureLeft = [];
         stimTextureRight = [];
-        targetColor = [255 0 0];
+        targetColor = [150 150 150];
     end
     
     % ---------------------------------------------------------------------

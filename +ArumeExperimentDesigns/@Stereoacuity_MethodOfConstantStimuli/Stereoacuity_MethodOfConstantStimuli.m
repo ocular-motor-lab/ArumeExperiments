@@ -9,7 +9,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
     properties
         stimTextureLeft = [];
         stimTextureRight = [];
-        targetColor = [255 0 0];
+        targetColor = [150 150 150];
     end
     
     % ---------------------------------------------------------------------
@@ -40,7 +40,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg.DisplayOptions.ScreenHeight = { 34 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenDistance = { 54 '* (cm)' [1 3000] };
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
-            dlg.DisplayOptions.SelectedScreen = { 1 '* (screen)' [0 5] };
+            dlg.DisplayOptions.SelectedScreen = { 2 '* (screen)' [0 5] };
             
             dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 90;
@@ -55,11 +55,11 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
              
             i = i+1;
             conditionVars(i).name   = 'Disparities';
-            conditionVars(i).values = [-1:0.1:1] 
+            conditionVars(i).values = [-.7:0.1:.7] 
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
-            conditionVars(i).values = [0]; %5 10 45];
+            conditionVars(i).values = [0 5 10 45]; %5 10 45];
             
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
@@ -340,6 +340,55 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
     methods
 
         function [out] = Plot_Staircase(this)
+            %%
+            t = this.Session.trialDataTable;
+
+            figure
+            subplot(2,2,[1 2])
+            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0),'-o','Color','k'); hold on
+            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0),'-o','Color','k')
+            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5),'-o','Color','b')
+            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5),'-o','Color','b')
+            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10),'-o','Color','r')
+            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10),'-o','Color','r')  
+            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45),'-o','Color','m')
+            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45),'-o','Color','m')
+            legend('0','0','5','5','10','10','45','45')
+            xlabel('Trials')
+            ylabel('Disparity Arcmins')
+            subplot(2,2,3)
+            bar(1,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0 & t.IsReversal == 1)),'FaceColor','k'); hold on
+            bar(1.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0 & t.IsReversal == 1)),'FaceColor','k')
+            bar(2,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5 & t.IsReversal == 1)),'FaceColor','b')
+            bar(2.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5 & t.IsReversal == 1)),'FaceColor','b')
+            bar(3,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10 & t.IsReversal == 1)),'FaceColor','r')
+            bar(3.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10 & t.IsReversal == 1)),'FaceColor','r')
+            bar(4,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45 & t.IsReversal == 1)),'FaceColor','m')
+            bar(4.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45 & t.IsReversal == 1)),'FaceColor','m')
+            xticks(1:3)
+            xticklabels({'0','5','10','45'})  
+            ylim([-1 1])
+            ylabel('Threshold, avg of reversals')
+            subplot(2,2,4)
+            bar(1,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0 & t.BlockNumber > 90)),'FaceColor','k'); hold on
+            bar(1.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0 & t.BlockNumber > 90)),'FaceColor','k')
+            bar(2,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5 & t.BlockNumber > 90)),'FaceColor','b')
+            bar(2.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5 & t.BlockNumber > 90)),'FaceColor','b')
+            bar(3,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10 & t.BlockNumber > 90)),'FaceColor','r')
+            bar(3.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10 & t.BlockNumber > 90)),'FaceColor','r')
+            bar(4,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45 & t.BlockNumber > 90)),'FaceColor','m')
+            bar(4.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45 & t.BlockNumber > 90)),'FaceColor','m')
+            xticks(1:4)
+            xticklabels({'0','5','10','45'})  
+            ylim([-1 1])
+            ylabel('Threshold, avg of last 10 trials')
+
+        end
+    end
+
+    methods
+
+        function [out] = Plot_StaircaseConstantStim(this)
             %%
             t = this.Session.trialDataTable;
 

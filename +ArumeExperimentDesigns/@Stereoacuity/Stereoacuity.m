@@ -28,7 +28,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
             dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] }; 
             
-            dlg.NumberOfRepetitions = {150 '* (N)' [1 200] }; % 100 bc 100 * 2 (sign disparities) = 200 total trials (100 for front, 100 for back)
+            dlg.NumberOfRepetitions = {100 '* (N)' [1 200] }; % 100 bc 100 * 2 (sign disparities) = 200 total trials (100 for front, 100 for back)
             dlg.BackgroundBrightness = 0;
             
             %% CHANGE DEFAULTS values for existing options
@@ -40,7 +40,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.DisplayOptions.ScreenHeight = { 34 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenDistance = { 54 '* (cm)' [1 3000] };
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
-            dlg.DisplayOptions.SelectedScreen = { 1 '* (screen)' [0 5] };
+            dlg.DisplayOptions.SelectedScreen = { 2 '* (screen)' [0 5] };
             
             dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 90;

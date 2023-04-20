@@ -44,7 +44,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             
             dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 90;
-            dlg.TrialsBeforeBreak = 1200;
+            dlg.TrialsBeforeBreak = 2000;
             dlg.TrialAbortAction = 'Repeat';
         end
         
@@ -59,7 +59,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
-            conditionVars(i).values = [0 5 10 45];
+            conditionVars(i).values = [0 75] %[0 5 10 45];
             
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';

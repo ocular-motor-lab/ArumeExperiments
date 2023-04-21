@@ -55,11 +55,15 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
              
             i = i+1;
             conditionVars(i).name   = 'Disparities';
-            conditionVars(i).values = [-.7:0.1:.7] 
+            conditionVars(i).values = [.1:.05:.6]
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
             conditionVars(i).values = [0 5 10 45]; %5 10 45];
+            
+            i = i+1;
+            conditionVars(i).name   = 'SignDisparity';
+            conditionVars(i).values = [-1 1]; 
             
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
@@ -134,14 +138,8 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 ymax = xmax;
                 
                 % Disparity settings:
-                if thisTrialData.Disparities == 0 % handle what happens when disparity is zero
-                    if rand < 0.5
-                        thisTrialData.Disparities = 0.001 * -1
-                    else
-                        thisTrialData.Disparities = 0.001 * 1
-                    end
-                end
-                disparity_deg = thisTrialData.Disparities/60;
+                thisTrialData.DisparityArcMin = thisTrialData.Disparities * thisTrialData.SignDisparity;
+                disparity_deg = thisTrialData.DisparityArcMin/60;
                 shiftNeeded_cm = viewingDist * tand(disparity_deg);
                 shiftNeeded_pix = ((screenWidth*2) / moniterWidth_cm) * shiftNeeded_cm;
                 %shiftNeeded_pix = pixPerDeg * shiftNeeded_deg;

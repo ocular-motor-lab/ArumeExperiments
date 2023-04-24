@@ -55,7 +55,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
              
             i = i+1;
             conditionVars(i).name   = 'Disparities';
-            conditionVars(i).values = [.1:.05:.6];
+            conditionVars(i).values = [0.1:0.05:0.7];
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
@@ -190,9 +190,9 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 rightStimDots = [rightPolarPtX;rightPolarPtY];
                 
                 % What the response should be
-                if thisTrialData.Disparities > 0
+                if thisTrialData.DisparityArcMin > 0
                     thisTrialData.CorrectResponse = 'F';
-                elseif thisTrialData.Disparities < 0
+                elseif thisTrialData.DisparityArcMin < 0
                     thisTrialData.CorrectResponse = 'B';
 %                 elseif thisTrialData.DisparityArcMin == 0
 %                     thisTrialData.DisparityArcMin
@@ -316,11 +316,11 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
            end
            
            % Record if the trial was a reversal
-           if isempty(this.Session.currentRun.pastTrialTable) | isempty(find(this.Session.currentRun.pastTrialTable.Disparities == thisTrialData.Disparities & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots)) % if this is the first trial of the whole experiment or if this staircase has never occured before
+           if isempty(this.Session.currentRun.pastTrialTable) | isempty(find(this.Session.currentRun.pastTrialTable.DisparityArcMin == thisTrialData.DisparityArcMin & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots)) % if this is the first trial of the whole experiment or if this staircase has never occured before
                thisTrialData.IsReversal = 0;
-           elseif thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(find(this.Session.currentRun.pastTrialTable.Disparities == thisTrialData.Disparities & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots,1,'last'))
+           elseif thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(find(this.Session.currentRun.pastTrialTable.DisparityArcMin == thisTrialData.DisparityArcMin & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots,1,'last'))
                thisTrialData.IsReversal = 0;
-           elseif thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(find(this.Session.currentRun.pastTrialTable.Disparities == thisTrialData.Disparities & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots,1,'last'))
+           elseif thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(find(this.Session.currentRun.pastTrialTable.DisparityArcMin == thisTrialData.DisparityArcMin & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots,1,'last'))
                thisTrialData.IsReversal = 1;
            end
            

@@ -18,7 +18,7 @@ classdef FreeViewingFixation < ArumeExperimentDesigns.EyeTracking
                          
             dlg.TargetSize = {0.5 '* (deg)' [0.1 10]};
             
-            dlg.BackgroundBrightness = 0;
+            dlg.BackgroundBrightness = 255;
             
             dlg.StimulusContrast0to100 = {60 '* (%)' [0 100] };
             dlg.StimSizeDeg = {20 '* (deg)' [1 100] };

@@ -205,6 +205,7 @@ classdef Arume < handle
             % find the configuration file
             if ( ~exist(fullfile(folder,'arumeconf.mat'),'file'))
                 conf = [];
+                conf.recentProjects = {};
                 this.configuration = conf;
                 save(fullfile(folder,'arumeconf.mat'), 'conf');
             end

@@ -21,7 +21,7 @@ classdef TiltedReading < ArumeExperimentDesigns.EyeTracking
             
             %% ADD new options
             dlg.StimSizeDeg = {30 '* (deg)' [1 100] };
-            dlg.ImTilt = {45 '* (deg)' [0 90] };
+            dlg.ImTilt = {30 '* (deg)' [0 90] };
             dlg.Initial_Fixation_Duration = {2 '* (s)' [1 100] };
             dlg.TargetSize = 0.5;
             
@@ -31,13 +31,14 @@ classdef TiltedReading < ArumeExperimentDesigns.EyeTracking
             
             %% CHANGE DEFAULTS values for existing options
             
-            dlg.UseEyeTracker = 0;
-            dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult Speed Stimulus'; % which variables to display every trial in the command line separated by spaces
+            dlg.UseEyeTracker = 1;
+            dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult'; % which variables to display every trial in the command line separated by spaces
             
             dlg.DisplayOptions.ScreenWidth = { 144 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenHeight = { 80 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenDistance = { 90 '* (cm)' [1 3000] };
-            
+            dlg.DisplayOptions.SelectedScreen = { 1 '* (screen)' [0 5] };
+
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 60;
             dlg.TrialsBeforeBreak = 1000;
@@ -85,8 +86,8 @@ classdef TiltedReading < ArumeExperimentDesigns.EyeTracking
             %             stimSizePix         = pixelsPerDeg * stimSizeDeg;
             
             % non linear aproximation
-            stimSizeCm  = 2*tand(stimSizeDeg/2)*monitorDistanceCm
-            stimSizePix = (monitorWidthPix/monitorWidthCm)*stimSizeCm
+            stimSizeCm  = 2*tand(stimSizeDeg/2)*monitorDistanceCm;
+            stimSizePix = (monitorWidthPix/monitorWidthCm)*stimSizeCm;
             
             Isquare = uint8(double(I(:,(size(I,2) - size(I,1))/2+(1:(size(I,1))),:,:)));
             Isquare = imresize(Isquare, [stimSizePix stimSizePix], 'bilinear');

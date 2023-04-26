@@ -27,6 +27,8 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
             dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] }; 
+            dlg.InitFixDuration = { 0.25 '* (sec)' [0 60] };
+            dlg.EndFixDuration = { 0.25 '* (sec)' [0 60] };
             
             dlg.NumberOfRepetitions = {15 '* (N)' [1 200] }; 
             dlg.BackgroundBrightness = 0;
@@ -219,7 +221,8 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                     % -----------------------------------------------------------------
                     
                     
-                    if ( secondsElapsed <= this.ExperimentOptions.TimeStimOn ) % then show dots + fixation dot
+                    % If it's during the time when the stimulus (dots) is on, then snow the stimulus plus the fixation dot
+                    if ( secondsElapsed > this.ExperimentOptions.InitFixDuration && secondsElapsed < this.ExperimentOptions.TimeStimOn ) % then show dots + fixation dot
                         % Select left-eye image buffer for drawing:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         

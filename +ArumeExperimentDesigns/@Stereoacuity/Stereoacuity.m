@@ -26,7 +26,9 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
-            dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] }; 
+            dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] };
+            dlg.InitFixDuration = { 0.25 '* (sec)' [0 60] };
+            dlg.EndFixDuration = { 0.25 '* (sec)' [0 60] };
             
             dlg.NumberOfRepetitions = {100 '* (N)' [1 200] }; % 100 bc 100 * 2 (sign disparities) = 200 total trials (100 for front, 100 for back)
             dlg.BackgroundBrightness = 0;
@@ -213,8 +215,8 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                     % --- Drawing of stimulus -----------------------------------------
                     % -----------------------------------------------------------------
                     
-                    
-                    if ( secondsElapsed <= this.ExperimentOptions.TimeStimOn ) % then show dots + fixation dot
+                    % If it's during the time when the stimulus (dots) is on, then snow the stimulus plus the fixation dot
+                    if ( secondsElapsed > this.ExperimentOptions.InitFixDuration && secondsElapsed < this.ExperimentOptions.TimeStimOn ) % then show dots + fixation dot
                         % Select left-eye image buffer for drawing:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         
@@ -233,7 +235,8 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                         
                     end
                     
-                    if ( secondsElapsed > this.ExperimentOptions.TimeStimOn ) % then show only fixation dot
+                    % If it's either: 1) the initial fixation time, or 2) the post-trial ending fixation time, then just show the fixation dot
+                    if ( secondsElapsed < this.ExperimentOptions.InitFixDuration || secondsElapsed < this.ExperimentOptions.TimeStimOn + this.ExperimentOptions.EndFixDuration) 
                         % Select left-eye image buffer for drawing:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         

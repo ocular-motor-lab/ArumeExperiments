@@ -57,7 +57,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
              
             i = i+1;
             conditionVars(i).name   = 'Disparities';
-            conditionVars(i).values = [.05 0.1:0.1:0.7];
+            conditionVars(i).values = [0.1:0.1:0.8];
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
@@ -241,7 +241,8 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                         
                     end
                     
-                    if ( secondsElapsed > this.ExperimentOptions.TimeStimOn ) % then show only fixation dot
+                    % If it's either: 1) the initial fixation time, or 2) the post-trial ending fixation time, then just show the fixation dot
+                    if ( secondsElapsed < this.ExperimentOptions.InitFixDuration || secondsElapsed < this.ExperimentOptions.TimeStimOn + this.ExperimentOptions.EndFixDuration) 
                         % Select left-eye image buffer for drawing:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         

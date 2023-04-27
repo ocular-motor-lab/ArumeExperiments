@@ -10,6 +10,7 @@ classdef TiltedReading < ArumeExperimentDesigns.EyeTracking
         fixRad = 20;
         fixColor = [255 0 0];
         stimTexture = [];
+        fixRectPix = [];
     end
     
     % ---------------------------------------------------------------------
@@ -52,7 +53,7 @@ classdef TiltedReading < ArumeExperimentDesigns.EyeTracking
             
             i = i+1;
             conditionVars(i).name   = 'Image';
-            conditionVars(i).values = {'01' '02' '03' '04' '05' '06' '07' '08' '09' '10'};
+            conditionVars(i).values = {'01' '02' '03' '04' '05' '06' '07' '08' '09' '10' '11' '12' '13' '14' '15' '16' '17' '18' '19' '20'};
             
             i = i+1;
             conditionVars(i).name   = 'ImTilt';
@@ -93,6 +94,10 @@ classdef TiltedReading < ArumeExperimentDesigns.EyeTracking
             Isquare = imresize(Isquare, [stimSizePix stimSizePix], 'bilinear');
             this.stimTexture = Screen('MakeTexture', this.Graph.window, Isquare);
             
+            % How big fixation spot should be
+            this.fixRectPix = this.ExperimentOptions.TargetSize * monitorWidthPix / monitorWidthDeg;
+
+            
         end
         
         
@@ -132,12 +137,12 @@ classdef TiltedReading < ArumeExperimentDesigns.EyeTracking
                     
                     %-- Find the center of the screen
                     [mx, my] = RectCenter(graph.wRect);
-                    fixRect = [0 0 10 10];
+                    fixRect = [0 0 this.fixRectPix this.fixRectPix];
                     fixRect = CenterRectOnPointd( fixRect, mx, my );
                     
                     if ( secondsElapsed <= this.ExperimentOptions.Initial_Fixation_Duration )
                         % For the fixation dot
-                        Screen('FillOval', graph.window,  this.fixColor, fixRect); % UPDATE FIXRECT TO BE THE FIXATION DOT SIZE FROM ABOVE
+                        Screen('FillOval', graph.window,  this.fixColor, fixRect); 
                     end
                     
                     if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration )

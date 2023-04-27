@@ -205,6 +205,9 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                             trialStartTime = datetime(this.Session.currentRun.pastTrialTable.DateTimeTrialStart(i));
 
                             pastClosestCalibration = find((trialStartTime - calibrations.DateTime)>0,1, 'last');
+                            if ( isempty( pastClosestCalibration))
+                                continue;
+                            end
 
                             if (i==1)
                                 if ( (trialStartTime-calibrations.DateTime(pastClosestCalibration)) < minutes(5) )

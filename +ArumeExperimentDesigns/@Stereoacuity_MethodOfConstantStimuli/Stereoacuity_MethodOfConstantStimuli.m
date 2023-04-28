@@ -22,7 +22,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             %% ADD new options
             dlg.InitDisparity = { 5 '* (arcmins)' [0 100] };
             dlg.InitStepSize = { 15 '* (arcmins)' [0 100] };
-            dlg.Number_of_Dots = { 3000 '* (deg/s)' [10 10000] };
+            dlg.Number_of_Dots = { 3500 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             %dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
             dlg.visibleWindow_deg = {15 '* (deg)' [1 100] };
@@ -130,10 +130,11 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 end
                 dots(3, :) = (ones(size(dots,2),1)')*shiftNeeded_pix; % how much the dots will shift by in pixels
                 
-                % Don't shift all the dots, only shift the ones further
-                % than 2 degs out 
-                idxs = find(distFromCenter<pixPerDeg*2); 
-                dots(3, idxs) = dots(3, idxs) * 0;
+                % % Don't shift all the dots, only shift the ones further
+                % % than 2 degs out 
+                % % Update, don't love the way this looks
+                % idxs = find(distFromCenter<pixPerDeg*2); 
+                % dots(3, idxs) = dots(3, idxs) * 0;
                  
                 % Right and left shifted dots
                 leftStimDots = dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; % zeros here bc no shift in vertical dots 

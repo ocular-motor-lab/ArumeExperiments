@@ -76,39 +76,6 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
         end
         
         
-%         function [trialResult, thisTrialData] = runPreTrial( this, thisTrialData )
-%             Enum = ArumeCore.ExperimentDesign.getEnum();
-%             trialResult = Enum.trialResult.CORRECT;
-%             
-%             % Calculate the disparity, depending on whether or not the staircase exists
-%             
-%             if isempty(this.Session.currentRun.pastTrialTable) || isempty(find(this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots)) % if this is the first trial of the whole experiment or if this staircase has never occured before
-%                  thisTrialData.DisparityArcMinLogAbs = log(this.ExperimentOptions.InitDisparity); % first disparity of this staircase will be the initial disparity
-% 
-%             else
-%                 thisTrialsStaircaseTrials = find(this.Session.currentRun.pastTrialTable.SignDisparity == thisTrialData.SignDisparity & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots);
-%                 numReversals = sum(this.Session.currentRun.pastTrialTable.IsReversal(thisTrialsStaircaseTrials));
-%                 
-%                 % What the disparity will be on this trial, given the response on the last trial
-%                 lastAbsoluteTrialDisparity = this.Session.currentRun.pastTrialTable.DisparityArcMinLogAbs(thisTrialsStaircaseTrials(end)); % this should already be in log units, so don't need to change anything here
-%                 lastTrialGuessedCorrectly = this.Session.currentRun.pastTrialTable.GuessedCorrectly(thisTrialsStaircaseTrials(end));
-%                 absoluteDisparityArcMin = lastAbsoluteTrialDisparity - (log(this.ExperimentOptions.InitStepSize)) / (numReversals+1) * (lastTrialGuessedCorrectly - 0.8); % from Faes 2007, https://link.springer.com/article/10.3758/BF03193747
-%                 thisTrialData.DisparityArcMinLogAbs = absoluteDisparityArcMin;
-%                 
-% %                 % probably don't need this now that we're doing log?
-% %                 if exp(thisTrialData.DisparityArcMinLog) > 0 & thisTrialData.SignDisparity == -1 % if you went below/above zero when you weren't supposed to
-% %                     thisTrialData.DisparityArcMinLog = 0.001 *  thisTrialData.SignDisparity;
-% %                 elseif exp(thisTrialData.DisparityArcMinLog) < 0 & thisTrialData.SignDisparity == 1 % if you went below/above zero when you weren't supposed to
-% %                     thisTrialData.DisparityArcMinLog = 0.001 *  thisTrialData.SignDisparity;
-% %                 end
-%             end
-%             
-%             thisTrialData.DisparityArcMinLog =  thisTrialData.DisparityArcMinLogAbs * thisTrialData.SignDisparity;
-%             thisTrialData.DisparityArcMin = exp(thisTrialData.DisparityArcMinLogAbs) * thisTrialData.SignDisparity;
-%             
-%         end
-        
-        
         function [trialResult, thisTrialData] = runTrial( this, thisTrialData )
             
             try
@@ -161,19 +128,11 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 end
                 dots(3, :) = (ones(size(dots,2),1)')*shiftNeeded_pix; % how much the dots will shift by in pixels
                 
-%                 % Stim Prep for shifting only the center dots of the stimulus (not the
-%                 % whole thing). The inside center dots shifting is a square, not circle. 
-%                 vec_x = dots(1, :);
-%                 vec_y = dots(2, :);
-%                 vec_x(vec_x < -xmax/2) = 0;
-%                 vec_x(vec_x > xmax/2) = 0;
-%                 vec_y(vec_y < -ymax/2) = 0;
-%                 vec_y(vec_y > ymax/2) = 0;
-%                 idx_x = find(vec_x==0);
-%                 idx_y = find(vec_y==0);
-%                 dots(3,idx_x) = 0;
-%                 dots(3,idx_y) = 0;
-%                 
+                % Don't shift all the dots, only shift the ones further
+                % than 2 degs out 
+                idxs = find(distFromCenter<pixPerDeg*2); 
+                dots(3, idxs) = dots(3, idxs) * 0;
+                 
                 % Right and left shifted dots
                 leftStimDots = dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; % zeros here bc no shift in vertical dots 
                 rightStimDots = dots(1:2, :) - [dots(3, :)/2; zeros(1, numDots)];

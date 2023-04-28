@@ -22,7 +22,7 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
             %% ADD new options
             dlg.InitDisparity = { 5 '* (arcmins)' [0 100] };
             dlg.InitStepSize = { 15 '* (arcmins)' [0 100] };
-            dlg.Number_of_Dots = { 3000 '* (deg/s)' [10 10000] };
+            dlg.Number_of_Dots = { 3500 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
@@ -130,8 +130,9 @@ classdef Stereoacuity < ArumeExperimentDesigns.EyeTracking
                 dots = zeros(3, numDots);
                 
                 % How big should the window (entire dots stimulus) be in pix?
-                visibleWindow_cm = this.ExperimentOptions.visibleWindow_cm; % in cm, this is how much of the screen you can see w one eye at a viewingDist of 20 (from haploscope calcs!)
-                visibleWindow_pix = ((screenWidth*2) / moniterWidth_cm) * visibleWindow_cm;
+                %visibleWindow_cm = this.ExperimentOptions.visibleWindow_cm; % in cm, this is how much of the screen you can see w one eye at a viewingDist of 20 (from haploscope calcs!)
+                %visibleWindow_pix = ((screenWidth*2) / moniterWidth_cm) * visibleWindow_cm;
+                visibleWindow_pix = this.ExperimentOptions.visibleWindow_deg * pixPerDeg;
                 xmax = visibleWindow_pix / 2;
                 ymax = xmax;
                 

@@ -22,7 +22,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             %% ADD new options
             dlg.InitDisparity = { 5 '* (arcmins)' [0 100] };
             dlg.InitStepSize = { 15 '* (arcmins)' [0 100] };
-            dlg.Number_of_Dots = { 3000 '* (deg/s)' [10 10000] };
+            dlg.Number_of_Dots = { 3500 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             %dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
             dlg.visibleWindow_deg = {15 '* (deg)' [1 100] };

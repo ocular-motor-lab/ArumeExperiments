@@ -161,25 +161,27 @@ classdef TiltedReading < ArumeExperimentDesigns.EyeTracking
                     % -----------------------------------------------------------------
                     % --- Collecting responses  ---------------------------------------
                     % -----------------------------------------------------------------
-                    
-                    [keyIsDown, secs, keyCode, ~] = KbCheck();
-                    if ( keyIsDown )
-                        keys = find(keyCode);
-                        for i=1:length(keys)
-                            KbName(keys(i));
-                            switch(KbName(keys(i)))
-                                case 'space'
-                                    response = 1;
+                    if secondsElapsed > 4
+                        [keyIsDown, secs, keyCode, ~] = KbCheck();
+                        if ( keyIsDown )
+                            keys = find(keyCode);
+                            for i=1:length(keys)
+                                KbName(keys(i));
+                                switch(KbName(keys(i)))
+                                    case 'space'
+                                        response = 1;
+                                end
                             end
+                            
                         end
-                        
+                        if ( ~isempty( response) )
+                            thisTrialData.ResponseTime = GetSecs;
+                            thisTrialData.TrialDurInSec = secondsElapsed - this.ExperimentOptions.Initial_Fixation_Duration;
+                            
+                            break;
+                        end
                     end
-                    if ( ~isempty( response) )
-                        thisTrialData.ResponseTime = GetSecs;
-                        thisTrialData.TrialDurInSec = secondsElapsed - this.ExperimentOptions.Initial_Fixation_Duration;
-                        
-                        break;
-                    end
+                    
                     % -----------------------------------------------------------------
                     % --- END Collecting responses  -----------------------------------
                     % -----------------------------------------------------------------

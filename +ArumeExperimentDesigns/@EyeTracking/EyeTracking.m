@@ -202,6 +202,9 @@ classdef EyeTracking  < ArumeCore.ExperimentDesign
                         % loop through trials to find the relavant calibration
                         calibrationsForEachTrial = nan(height(this.Session.currentRun.pastTrialTable),1);
                         for i=1:height(this.Session.currentRun.pastTrialTable)
+                            if ( isempty( calibrations))
+                                continue;
+                            end
                             trialStartTime = datetime(this.Session.currentRun.pastTrialTable.DateTimeTrialStart(i));
 
                             pastClosestCalibration = find((trialStartTime - calibrations.DateTime)>0,1, 'last');

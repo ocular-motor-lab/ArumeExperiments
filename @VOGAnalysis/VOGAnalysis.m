@@ -141,6 +141,16 @@ classdef VOGAnalysis < handle
                 headSignals{end+1} = 'YawVel';
             end
 
+            if ( any(strcmp('HeadMagX',calibratedData.Properties.VariableNames)))
+                headSignals{end+1} = 'MagX';
+            end
+            if ( any(strcmp('HeadMagY',calibratedData.Properties.VariableNames)))
+                headSignals{end+1} = 'MagY';
+            end
+            if ( any(strcmp('HeadMagZ',calibratedData.Properties.VariableNames)))
+                headSignals{end+1} = 'MagZ';
+            end
+
 
             if ( any(strcmp('HeadRotationW',calibratedData.Properties.VariableNames)))
                 headSignals{end+1} = 'RotationW';
@@ -380,7 +390,9 @@ classdef VOGAnalysis < handle
                 data.HeadRollVel          	= dataFromFile.GyroX;
                 data.HeadPitchVel         	= dataFromFile.GyroZ;
                 data.HeadYawVel             = dataFromFile.GyroY;
-                
+                data.HeadMagX               = dataFromFile.MagnetometerX;
+                data.HeadMagY               = dataFromFile.MagnetometerY;
+                data.HeadMagZ               = dataFromFile.MagnetometerZ;
                 
                 data.LeftCR1X               = dataFromFile.LeftCR1X;
                 data.LeftCR1Y               = dataFromFile.LeftCR1Y;

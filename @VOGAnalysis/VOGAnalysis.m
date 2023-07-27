@@ -978,10 +978,10 @@ classdef VOGAnalysis < handle
             calibratedData.RightX_UNCALIBRATED = rawData.RightX;
             calibratedData.RightY_UNCALIBRATED = rawData.RightY;
             
-            lx = rawData.LeftX_UNCALIBRATED - rawData.LeftCR1X;
-            ly = rawData.LeftY_UNCALIBRATED - rawData.LeftCR1Y;
-            rx = rawData.RightX_UNCALIBRATED - rawData.RightCR1X;
-            ry = rawData.RightY_UNCALIBRATED - rawData.RightCR1Y;
+            lx = calibratedData.LeftX_UNCALIBRATED - rawData.LeftCR1X;
+            ly = calibratedData.LeftY_UNCALIBRATED - rawData.LeftCR1Y;
+            rx = calibratedData.RightX_UNCALIBRATED - rawData.RightCR1X;
+            ry = calibratedData.RightY_UNCALIBRATED - rawData.RightCR1Y;
             
             calibratedData.LeftX = calibrationTable{'LeftEye', 'SignX'}*(lx- calibrationTable{'LeftEye', 'RefX'})/calibrationTable{'LeftEye', 'GlobeRadiusX'}*60;
             calibratedData.LeftY = calibrationTable{'LeftEye', 'SignY'}*(ly - calibrationTable{'LeftEye', 'RefY'})/calibrationTable{'LeftEye', 'GlobeRadiusY'}*60;

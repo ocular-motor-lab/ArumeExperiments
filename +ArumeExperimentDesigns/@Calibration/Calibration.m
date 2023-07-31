@@ -82,7 +82,7 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
                 end
                 
                 while secondsRemaining > 0
-                    
+
                     secondsElapsed      = GetSecs - thisTrialData.TimeStartLoop;
                     secondsRemaining    = this.ExperimentOptions.TrialDuration - secondsElapsed;
                     
@@ -90,6 +90,7 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
                     % -----------------------------------------------------------------
                     % --- Drawing of stimulus -----------------------------------------
                     % -----------------------------------------------------------------
+                    Screen('FillRect', graph.window, this.ExperimentOptions.BackgroundBrightness);
                     
                     %-- Draw fixation spot
                     [mx, my] = RectCenter(this.Graph.wRect);

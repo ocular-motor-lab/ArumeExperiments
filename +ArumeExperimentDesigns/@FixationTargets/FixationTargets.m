@@ -22,11 +22,12 @@ classdef FixationTargets < ArumeExperimentDesigns.EyeTracking
             dlg.DisplayOptions.ScreenHeight = { 80 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenDistance = { 90 '* (cm)' [1 3000] };
                       
-            dlg.TrialDuration =  { 3 '* (s)' [1 100] };
+            dlg.TrialDuration =  { 20 '* (s)' [1 100] };
+            dlg.NumberRepetitions = 5;
             
             dlg.TargetSize = 0.5;
             dlg.Calibration_Distance_H = { 20 '* (deg)' [1 3000] };
-            dlg.Calibration_Distance_V = { 20 '* (deg)' [1 3000] };
+            dlg.Calibration_Distance_V = { 15 '* (deg)' [1 3000] };
             
             dlg.BackgroundBrightness = 0;
         end
@@ -48,14 +49,14 @@ classdef FixationTargets < ArumeExperimentDesigns.EyeTracking
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
             trialTableOptions.trialAbortAction = 'Delay';
-            trialTableOptions.trialsPerSession = (length(targets)+1)*1;
+            trialTableOptions.trialsPerSession = (length(targets)+1)*this.ExperimentOptions.NumberRepetitions;
 
             trialTableOptions.blockSequence       = 'Sequential';	% Sequential, Random, Random with repetition, ...numberOfTimesRepeatBlockSequence = 1;
             trialTableOptions.blocksToRun         = 3;
             trialTableOptions.blocks                = struct( 'fromCondition', 1, 'toCondition', 1, 'trialsToRun', 1 );
             trialTableOptions.blocks(2)             = struct( 'fromCondition', 2, 'toCondition', length(targets), 'trialsToRun', length(targets)-1 );
             trialTableOptions.blocks(3)             = struct( 'fromCondition', 1, 'toCondition', 1, 'trialsToRun', 1 );
-            trialTableOptions.numberOfTimesRepeatBlockSequence = 21;
+            trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberRepetitions;
             trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
         end
 
@@ -90,9 +91,10 @@ classdef FixationTargets < ArumeExperimentDesigns.EyeTracking
                     % -----------------------------------------------------------------
                     % --- Drawing of stimulus -----------------------------------------
                     % -----------------------------------------------------------------
+                    Screen('FillRect', graph.window, this.ExperimentOptions.BackgroundBrightness);
                     
                     %-- Draw fixation spot
-                    [mx, my] = RectCenter(this.Graph.wRect)
+                    [mx, my] = RectCenter(this.Graph.wRect);
                    % this.Graph.pxWidth
                    % targetHPix
                     targetPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(this.ExperimentOptions.TargetSize);

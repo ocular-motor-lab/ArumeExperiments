@@ -325,7 +325,7 @@ classdef ArumeGui < matlab.apps.AppBase
             if ( ~isempty( app.arumeController.currentSession ) )
                 app.menuAnalyze.Enable = 'on';
                 app.menuPlot.Enable = 'on';
-                if ( isscalar( app.arumeController.selectedSessions ) )
+                if ( length( app.arumeController.selectedSessions )==1 )
                     app.menuRun.Enable = 'on';
                     app.menuAnalyzeMarkData.Enable = 'on';
                 else
@@ -371,11 +371,11 @@ classdef ArumeGui < matlab.apps.AppBase
                 end
                 
                 
-                if ( app.arumeController.currentSession.isFinished )
+                %if ( app.arumeController.currentSession.isFinished )
                     set(app.menuAnalyzeMarkData, 'Enable', 'on');
-                else
-                    set(app.menuAnalyzeMarkData, 'Enable', 'off');
-                end
+                %else
+                %    set(app.menuAnalyzeMarkData, 'Enable', 'off');
+                %end
                 
                 set(app.menuSessionRename, 'Enable', 'on');
                 set(app.menuSessionDelete, 'Enable', 'On');

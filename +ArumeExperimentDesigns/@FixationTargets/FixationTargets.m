@@ -1,4 +1,4 @@
-classdef Calibration < ArumeExperimentDesigns.EyeTracking
+classdef FixationTargets < ArumeExperimentDesigns.EyeTracking
     %OPTOKINETICTORSION Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -92,7 +92,7 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
                     % -----------------------------------------------------------------
                     
                     %-- Draw fixation spot
-                    [mx, my] = RectCenter(this.Graph.wRect);
+                    [mx, my] = RectCenter(this.Graph.wRect)
                    % this.Graph.pxWidth
                    % targetHPix
                     targetPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(this.ExperimentOptions.TargetSize);

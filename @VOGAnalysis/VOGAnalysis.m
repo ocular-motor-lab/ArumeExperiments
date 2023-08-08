@@ -94,6 +94,13 @@ classdef VOGAnalysis < handle
             if ( sum(strcmp('LeftCR1Y',calibratedData.Properties.VariableNames))>0 || sum(strcmp('RightCR1Y',calibratedData.Properties.VariableNames))>0 )
                 eyeSignals{end+1} = 'CR1Y';
             end
+            
+            if ( sum(strcmp('LeftCR2X',calibratedData.Properties.VariableNames))>0 || sum(strcmp('RightCR2X',calibratedData.Properties.VariableNames))>0 )
+                eyeSignals{end+1} = 'CR2X';
+            end
+            if ( sum(strcmp('LeftCR2Y',calibratedData.Properties.VariableNames))>0 || sum(strcmp('RightCR2Y',calibratedData.Properties.VariableNames))>0 )
+                eyeSignals{end+1} = 'CR2Y';
+            end
 
             
             if ( sum(strcmp('LeftX_UNCALIBRATED',calibratedData.Properties.VariableNames))>0 || sum(strcmp('RightX_UNCALIBRATED',calibratedData.Properties.VariableNames))>0 )
@@ -282,7 +289,17 @@ classdef VOGAnalysis < handle
                 
                 [dataFile, rawDataFile] = VOGAnalysis.LoadVOGdata(dataFilePath);
                 calibrationTables       = VOGAnalysis.ReadCalibration(calibrationFilePath);
-                calibratedDataFile      = VOGAnalysis.CalibrateData(dataFile, calibrationTables);
+
+
+                switch( params.Calibration.Calibration_Type)
+                    case 'Pupil-CR'
+                        calibratedDataFile      = VOGAnalysis.CalibrateDataCR(dataFile, calibrationTables   );
+                    case 'DPI'
+                        calibratedDataFile      = VOGAnalysis.CalibrateDataDPI(dataFile, calibrationTables);
+                    case 'Pupil'
+                        calibratedDataFile      = VOGAnalysis.CalibrateData(dataFile, calibrationTables);
+                end
+
                 cleanedDataFile         = VOGAnalysis.CleanData(calibratedDataFile, params);
                 fileSamplesDataSet      = VOGAnalysis.ResampleData(cleanedDataFile, params);
                 
@@ -357,6 +374,8 @@ classdef VOGAnalysis < handle
                         dataFromFile.GyroX          	= dataFromFile2.GyroX;
                         dataFromFile.GyroZ              = dataFromFile2.GyroZ;
                         dataFromFile.GyroY              = dataFromFile2.GyroY;
+                        dataFromFile.Int0               = dataFromFile2.Int0;
+                        dataFromFile.Int1               = dataFromFile2.Int1;
                     end
                 end
                 
@@ -402,6 +421,14 @@ classdef VOGAnalysis < handle
                 data.LeftCR1Y               = dataFromFile.LeftCR1Y;
                 data.RightCR1X              = dataFromFile.RightCR1X;
                 data.RightCR1Y              = dataFromFile.RightCR1Y;
+                
+                data.LeftCR2X               = dataFromFile.LeftCR2X;
+                data.LeftCR2Y               = dataFromFile.LeftCR2Y;
+                data.RightCR2X              = dataFromFile.RightCR2X;
+                data.RightCR2Y              = dataFromFile.RightCR2Y;
+                
+                data.Int0               = dataFromFile.Int0;
+                data.Int1               = dataFromFile.Int1;
                 
             else
                 % OLD VERSION OF THE DATA FILES (text file does not have headers)
@@ -987,10 +1014,14 @@ classdef VOGAnalysis < handle
             rx = calibratedData.RightX_UNCALIBRATED - rawData.RightCR1X;
             ry = calibratedData.RightY_UNCALIBRATED - rawData.RightCR1Y;
             
-            calibratedData.LeftX = calibrationTable{'LeftEye', 'SignX'}*(lx- calibrationTable{'LeftEye', 'RefX'})/calibrationTable{'LeftEye', 'GlobeRadiusX'}*60;
-            calibratedData.LeftY = calibrationTable{'LeftEye', 'SignY'}*(ly - calibrationTable{'LeftEye', 'RefY'})/calibrationTable{'LeftEye', 'GlobeRadiusY'}*60;
-            calibratedData.RightX = calibrationTable{'RightEye', 'SignX'}*(rx - calibrationTable{'RightEye', 'RefX'})/calibrationTable{'RightEye', 'GlobeRadiusX'}*60;
-            calibratedData.RightY = calibrationTable{'RightEye', 'SignY'}*(ry - calibrationTable{'RightEye', 'RefY'})/calibrationTable{'RightEye', 'GlobeRadiusY'}*60;
+             calibratedData.LeftX = calibrationTable{'LeftEye', 'SignX'}*(lx- calibrationTable{'LeftEye', 'RefX'})/calibrationTable{'LeftEye', 'GlobeRadiusX'}*60;
+             calibratedData.LeftY = calibrationTable{'LeftEye', 'SignY'}*(ly - calibrationTable{'LeftEye', 'RefY'})/calibrationTable{'LeftEye', 'GlobeRadiusY'}*60;
+             calibratedData.RightX = calibrationTable{'RightEye', 'SignX'}*(rx - calibrationTable{'RightEye', 'RefX'})/calibrationTable{'RightEye', 'GlobeRadiusX'}*60;
+             calibratedData.RightY = calibrationTable{'RightEye', 'SignY'}*(ry - calibrationTable{'RightEye', 'RefY'})/calibrationTable{'RightEye', 'GlobeRadiusY'}*60;
+%             calibratedData.LeftX = (lx - median(lx,'omitnan'))/3;
+%             calibratedData.LeftY = (ly - median(ly,'omitnan'))/3;
+%             calibratedData.RightX = (rx - median(rx,'omitnan'))/3;
+%             calibratedData.RightY = (ry - median(ry,'omitnan'))/3;
         end
 
 
@@ -1038,10 +1069,14 @@ classdef VOGAnalysis < handle
             rx = calibratedData.RightCR1X - rawData.RightCR2X;
             ry = calibratedData.RightCR1Y - rawData.RightCR2Y;
             
-            calibratedData.LeftX = calibrationTable{'LeftEye', 'SignX'}*(lx- calibrationTable{'LeftEye', 'RefX'})/calibrationTable{'LeftEye', 'GlobeRadiusX'}*60;
-            calibratedData.LeftY = calibrationTable{'LeftEye', 'SignY'}*(ly - calibrationTable{'LeftEye', 'RefY'})/calibrationTable{'LeftEye', 'GlobeRadiusY'}*60;
-            calibratedData.RightX = calibrationTable{'RightEye', 'SignX'}*(rx - calibrationTable{'RightEye', 'RefX'})/calibrationTable{'RightEye', 'GlobeRadiusX'}*60;
-            calibratedData.RightY = calibrationTable{'RightEye', 'SignY'}*(ry - calibrationTable{'RightEye', 'RefY'})/calibrationTable{'RightEye', 'GlobeRadiusY'}*60;
+%             calibratedData.LeftX = calibrationTable{'LeftEye', 'SignX'}*(lx- calibrationTable{'LeftEye', 'RefX'})/calibrationTable{'LeftEye', 'GlobeRadiusX'}*60;
+%             calibratedData.LeftY = calibrationTable{'LeftEye', 'SignY'}*(ly - calibrationTable{'LeftEye', 'RefY'})/calibrationTable{'LeftEye', 'GlobeRadiusY'}*60;
+%             calibratedData.RightX = calibrationTable{'RightEye', 'SignX'}*(rx - calibrationTable{'RightEye', 'RefX'})/calibrationTable{'RightEye', 'GlobeRadiusX'}*60;
+%             calibratedData.RightY = calibrationTable{'RightEye', 'SignY'}*(ry - calibrationTable{'RightEye', 'RefY'})/calibrationTable{'RightEye', 'GlobeRadiusY'}*60;
+            calibratedData.LeftX = (lx - median(lx,'omitnan'))/5;
+            calibratedData.LeftY = (ly - median(ly,'omitnan'))/5;
+            calibratedData.RightX = (rx - median(rx,'omitnan'))/5;
+            calibratedData.RightY = (ry - median(ry,'omitnan'))/5;
         end
         
         function [calibratedData] = CalibrateData(rawData, calibrationTable )
@@ -2952,11 +2987,16 @@ classdef VOGAnalysis < handle
                     h(1) = subplot(3,1,1,'nextplot','add');
                     plot(timeL, data.LeftPupilX, 'color', [ MEDIUM_BLUE ])
                     plot(timeR, data.RightPupilX, 'color', [ MEDIUM_RED])
+                    plot(timeL, data.LeftCR1X, 'color', [ MEDIUM_BLUE ]/2)
+                    plot(timeR, data.RightCR1X, 'color', [ MEDIUM_RED]/2)
                     ylabel('Horizontal (deg)','fontsize', 16);
+                    legend({'Left' 'Right' 'LeftCR1' 'RightCR1'})
                     
                     h(2) = subplot(3,1,2,'nextplot','add');
                     plot(timeL, data.LeftPupilY, 'color', [ MEDIUM_BLUE ])
                     plot(timeR, data.RightPupilY, 'color', [ MEDIUM_RED])
+                    plot(timeL, data.LeftCR1Y, 'color', [ MEDIUM_BLUE ]/2)
+                    plot(timeR, data.RightCR1Y, 'color', [ MEDIUM_RED]/2)
                     ylabel('Vertical (deg)','fontsize', 16);
                     
                     h(3) = subplot(3,1,3,'nextplot','add');

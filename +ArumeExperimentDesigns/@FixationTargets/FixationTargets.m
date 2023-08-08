@@ -226,6 +226,137 @@ classdef FixationTargets < ArumeExperimentDesigns.EyeTracking
              PlotCalibration(analysisResults.calibrationTable, samplesDataTable, calibratedCalibrationData, targetPosition)
              title('pupil calibration')
         end
+
+        function [out, options] = PlotAggregate_MicroCorrelations(this, sessions, options)
+
+
+            out = [];
+            if ( nargin == 1 )
+                options = this.PlotAggregate_MicroCorrelations('get_defaults');
+            end
+            
+            if ( ischar(sessions) )
+                command = sessions;
+                switch( command)
+                    case 'get_options'
+                        options =[];
+                        return
+                    case 'get_defaults'
+                        optionsDlg = VOGAnalysis.PlotAggregate_MicroCorrelations('get_options');
+                        options = StructDlg(optionsDlg,'',[],[],'off');
+                        return
+                end
+            end
+
+
+            data = [];
+            % for each subj, ignoring 000
+            for subj = 1:length(sessions)
+                %load data
+                AnalysisResults_QuickPhases = sessions(subj).analysisResults.QuickPhases;
+
+                % pick the center positions
+                center_indx = AnalysisResults_QuickPhases.Left_X_MeanPosition <= 2 &...
+                    AnalysisResults_QuickPhases.Left_X_MeanPosition >= -2 &...
+                    AnalysisResults_QuickPhases.Left_Y_MeanPosition <= 2 &...
+                    AnalysisResults_QuickPhases.Left_Y_MeanPosition >= -2;
+
+                d = AnalysisResults_QuickPhases(center_indx,:);
+
+                % create the table
+                data(subj).X_Vergence = d.Left_X_Displacement - d.Right_X_Displacement;
+                data(subj).Y_Vergence = d.Left_Y_Displacement - d.Right_Y_Displacement;
+                data(subj).T_Vergence = d.Left_T_Displacement - d.Right_T_Displacement;
+
+                data(subj).X_Version = (d.Left_X_Displacement + d.Right_X_Displacement)./2;
+                data(subj).Y_Version = (d.Left_Y_Displacement + d.Right_Y_Displacement)./2;
+                data(subj).T_Version = (d.Left_T_Displacement + d.Right_T_Displacement)./2;
+            end
+
+
+%% create the corr table
+
+% combine all data
+dataAll.X_Vergence = [];
+dataAll.Y_Vergence = [];
+dataAll.T_Vergence = [];
+
+dataAll.X_Version = [];
+dataAll.Y_Version = [];
+dataAll.T_Version = [];
+
+for subj = 1:length(data)
+    dataAll.X_Vergence = [dataAll.X_Vergence; data(subj).X_Vergence];
+    dataAll.Y_Vergence = [dataAll.Y_Vergence; data(subj).Y_Vergence];
+    dataAll.T_Vergence = [dataAll.T_Vergence; data(subj).T_Vergence];
+
+    dataAll.Y_Version = [dataAll.Y_Version; data(subj).Y_Version];
+    dataAll.X_Version = [dataAll.X_Version; data(subj).X_Version];
+    dataAll.T_Version = [dataAll.T_Version; data(subj).T_Version];
+end
+
+dataAll_ = [...
+dataAll.X_Vergence,...
+dataAll.Y_Vergence,...
+dataAll.T_Vergence,...
+dataAll.X_Version,...
+dataAll.Y_Version,...
+dataAll.T_Version...    
+];
+
+[R,P] = corr(dataAll_,'rows','complete');
+
+c = 0;
+figure,
+for i = 1:6
+    for j = 1:6
+        c = c + 1;
+        h(i,j) = subplot(6,6,c);
+        if i >= j, continue; end
+        plot(dataAll_(:,j),dataAll_(:,i),'.');
+        xlim([-1,1])
+        ylim([-1,1])
+        title(strcat("R = ",num2str(round(R(c),2))))
+    end
+end
+
+linkaxes(h(:))
+
+n = [...
+    "X Vergence",...
+    "Y Vergence",...
+    "T Vergence",...
+    "X Version",...
+    "Y Version",...
+    "T Version"...
+    ];
+
+c=1;
+for i = 1:6:36
+    subplot(6,6,i)
+    ylabel(n(c))
+    c=c+1;
+end
+
+
+for i = 31:36
+    subplot(6,6,i)
+    xlabel(n(i-30))
+end
+
+sgtitle("Center Fixational Micro Saccades Amplitude (degree)")
+        end
+
+        function [out] = Plot_Listings(this)
+            figure
+            s = this.Session.samplesDataTable;
+             plot(s.LeftX, s.LeftT,'o')
+             hold
+             plot(s.RightX, s.RightT,'o')
+             set(gca,'xlim',[-20 20],'ylim',[-20 20])
+             xlabel('Horizontal')
+             ylabel('Torsion')
+        end
     end
 end
 

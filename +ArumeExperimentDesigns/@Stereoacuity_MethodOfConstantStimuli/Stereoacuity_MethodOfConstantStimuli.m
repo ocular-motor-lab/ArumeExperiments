@@ -41,9 +41,9 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             
             dlg.DisplayOptions.ScreenWidth = { 59.5 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenHeight = { 34 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenDistance = { 54 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenDistance = { 57.5 '* (cm)' [1 3000] };
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
-            dlg.DisplayOptions.SelectedScreen = { 2 '* (screen)' [0 5] };
+            dlg.DisplayOptions.SelectedScreen = { 1 '* (screen)' [0 5] };
             
             dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 90;
@@ -58,7 +58,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
              
             i = i+1;
             conditionVars(i).name   = 'Disparities';
-            conditionVars(i).values = [0.1:0.1:0.8];
+            conditionVars(i).values = [1]; %[0.1:0.1:0.8];
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
@@ -84,21 +84,22 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 Enum = ArumeCore.ExperimentDesign.getEnum();
                 graph = this.Graph;
                 trialResult = Enum.trialResult.CORRECT;
-                
                 Screen('FillRect', graph.window, 0); % not sure if needed
-                ShowCursor()
-                
+                ShowCursor();
                 
                 % Screen and monitor settings
                 screenWidth_pix = this.Graph.wRect(3); % screen width of one of the two eyes in pix
                 moniterWidth_deg = (atan2d(this.ExperimentOptions.DisplayOptions.ScreenWidth/2, this.ExperimentOptions.DisplayOptions.ScreenDistance)) * 2;
                 pixPerDeg = (screenWidth_pix*2) / moniterWidth_deg;
                                 
+                % Get fixation spot size in pix
+                fixSizePix = pixPerDeg * this.ExperimentOptions.FixationSpotSize;
+                
                 % How big should the dots stimulus be in pix
                 dots = zeros(3, this.ExperimentOptions.Number_of_Dots);
                 stimWindow_pix = this.ExperimentOptions.stimWindow_deg * pixPerDeg;
-                xmax = stimWindow_pix / 2; % TODO MEASURE HOW BIG THE WINDOW ACTUALLY IS 
-                ymax = xmax;
+                %xmax = stimWindow_pix / 2; % TODO MEASURE HOW BIG THE WINDOW ACTUALLY IS 
+                %ymax = xmax;
                 
                 % Disparity settings:
                 thisTrialData.DisparityArcMin = thisTrialData.Disparities * thisTrialData.SignDisparity;
@@ -106,18 +107,15 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
 %                 shiftNeeded_cm = viewingDist * tand(disparity_deg); % SR unclear why i was going back to cm?
 %                 shiftNeeded_pix = ((screenWidth*2) / moniterWidth_cm) * shiftNeeded_cm;
                 disparityNeeded_pix = pixPerDeg*disparity_deg;
-                dots(1, :) = 2*(xmax)*rand(1, this.ExperimentOptions.Number_of_Dots) - xmax; % SR x coords
-                dots(2, :) = 2*(ymax)*rand(1, this.ExperimentOptions.Number_of_Dots) - ymax; % SR y coords
-                
-                % Get fixation spot size in pix
-                fixSizePix = pixPerDeg * this.ExperimentOptions.FixationSpotSize;
+                dots(1, :) = stimWindow_pix*rand(1, this.ExperimentOptions.Number_of_Dots) - (stimWindow_pix/2); % SR x coords
+                dots(2, :) = stimWindow_pix*rand(1, this.ExperimentOptions.Number_of_Dots) - (stimWindow_pix/2); % SR y coords
                 
                 % Make the dot stimulus circular :D 
                 distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
                 while isempty(distFromCenter(distFromCenter>ymax | distFromCenter<fixSizePix)) == 0 % while there are dots that are outside of the desired circle
                     idxs=find(distFromCenter>ymax | distFromCenter<fixSizePix);
-                    dots(1, idxs) = 2*(xmax)*rand(1, length(idxs)) - xmax; % resample those dots
-                    dots(2, idxs) = 2*(ymax)*rand(1, length(idxs)) - ymax; 
+                    dots(1, idxs) = stimWindow_pix*rand(1, length(idxs)) - (stimWindow_pix/2); % resample those dots
+                    dots(2, idxs) = stimWindow_pix*rand(1, length(idxs)) - (stimWindow_pix/2); 
                     distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
                 end
                 dots(3, :) = (ones(size(dots,2),1)')*disparityNeeded_pix; % how much the dots will shift by in pixels

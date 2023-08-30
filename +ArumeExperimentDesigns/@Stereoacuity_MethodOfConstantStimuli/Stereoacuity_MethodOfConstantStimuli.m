@@ -23,7 +23,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg.Number_of_Dots = { 3500 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             dlg.stimWindow_deg = {15 '* (deg)' [1 100] };
-            dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
+            dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
             dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] }; 
             dlg.InitFixDuration = { 0.25 '* (sec)' [0 60] };
             dlg.EndFixDuration = { 0.25 '* (sec)' [0 60] };
@@ -55,7 +55,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
              
             i = i+1;
             conditionVars(i).name   = 'Disparities';
-            conditionVars(i).values = [0.1:0.1:0.8];
+            conditionVars(i).values = [0.1:0.2:0.9];
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
@@ -269,54 +269,54 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
         
     end
 
-    methods
-
-        function [out] = Plot_Staircase(this)
-            %%
-            t = this.Session.trialDataTable;
-
-            figure
-            subplot(2,2,[1 2])
-            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0),'-o','Color','k'); hold on
-            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0),'-o','Color','k')
-            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5),'-o','Color','b')
-            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5),'-o','Color','b')
-            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10),'-o','Color','r')
-            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10),'-o','Color','r')  
-            plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45),'-o','Color','m')
-            plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45),'-o','Color','m')
-            legend('0','0','5','5','10','10','45','45')
-            xlabel('Trials')
-            ylabel('Disparity Arcmins')
-            subplot(2,2,3)
-            bar(1,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0 & t.IsReversal == 1)),'FaceColor','k'); hold on
-            bar(1.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0 & t.IsReversal == 1)),'FaceColor','k')
-            bar(2,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5 & t.IsReversal == 1)),'FaceColor','b')
-            bar(2.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5 & t.IsReversal == 1)),'FaceColor','b')
-            bar(3,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10 & t.IsReversal == 1)),'FaceColor','r')
-            bar(3.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10 & t.IsReversal == 1)),'FaceColor','r')
-            bar(4,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45 & t.IsReversal == 1)),'FaceColor','m')
-            bar(4.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45 & t.IsReversal == 1)),'FaceColor','m')
-            xticks(1:3)
-            xticklabels({'0','5','10','45'})  
-            ylim([-1 1])
-            ylabel('Threshold, avg of reversals')
-            subplot(2,2,4)
-            bar(1,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0 & t.BlockNumber > 90)),'FaceColor','k'); hold on
-            bar(1.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0 & t.BlockNumber > 90)),'FaceColor','k')
-            bar(2,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5 & t.BlockNumber > 90)),'FaceColor','b')
-            bar(2.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5 & t.BlockNumber > 90)),'FaceColor','b')
-            bar(3,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10 & t.BlockNumber > 90)),'FaceColor','r')
-            bar(3.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10 & t.BlockNumber > 90)),'FaceColor','r')
-            bar(4,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45 & t.BlockNumber > 90)),'FaceColor','m')
-            bar(4.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45 & t.BlockNumber > 90)),'FaceColor','m')
-            xticks(1:4)
-            xticklabels({'0','5','10','45'})  
-            ylim([-1 1])
-            ylabel('Threshold, avg of last 10 trials')
-
-        end
-    end
+    % methods
+    % 
+    %     function [out] = Plot_Staircase(this)
+    %         %%
+    %         t = this.Session.trialDataTable;
+    % 
+    %         figure
+    %         subplot(2,2,[1 2])
+    %         plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0),'-o','Color','k'); hold on
+    %         plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0),'-o','Color','k')
+    %         plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5),'-o','Color','b')
+    %         plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5),'-o','Color','b')
+    %         plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10),'-o','Color','r')
+    %         plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10),'-o','Color','r')  
+    %         plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45),'-o','Color','m')
+    %         plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45),'-o','Color','m')
+    %         legend('0','0','5','5','10','10','45','45')
+    %         xlabel('Trials')
+    %         ylabel('Disparity Arcmins')
+    %         subplot(2,2,3)
+    %         bar(1,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0 & t.IsReversal == 1)),'FaceColor','k'); hold on
+    %         bar(1.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0 & t.IsReversal == 1)),'FaceColor','k')
+    %         bar(2,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5 & t.IsReversal == 1)),'FaceColor','b')
+    %         bar(2.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5 & t.IsReversal == 1)),'FaceColor','b')
+    %         bar(3,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10 & t.IsReversal == 1)),'FaceColor','r')
+    %         bar(3.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10 & t.IsReversal == 1)),'FaceColor','r')
+    %         bar(4,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45 & t.IsReversal == 1)),'FaceColor','m')
+    %         bar(4.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45 & t.IsReversal == 1)),'FaceColor','m')
+    %         xticks(1:3)
+    %         xticklabels({'0','5','10','45'})  
+    %         ylim([-1 1])
+    %         ylabel('Threshold, avg of reversals')
+    %         subplot(2,2,4)
+    %         bar(1,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0 & t.BlockNumber > 90)),'FaceColor','k'); hold on
+    %         bar(1.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0 & t.BlockNumber > 90)),'FaceColor','k')
+    %         bar(2,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5 & t.BlockNumber > 90)),'FaceColor','b')
+    %         bar(2.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5 & t.BlockNumber > 90)),'FaceColor','b')
+    %         bar(3,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10 & t.BlockNumber > 90)),'FaceColor','r')
+    %         bar(3.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10 & t.BlockNumber > 90)),'FaceColor','r')
+    %         bar(4,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45 & t.BlockNumber > 90)),'FaceColor','m')
+    %         bar(4.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45 & t.BlockNumber > 90)),'FaceColor','m')
+    %         xticks(1:4)
+    %         xticklabels({'0','5','10','45'})  
+    %         ylim([-1 1])
+    %         ylabel('Threshold, avg of last 10 trials')
+    % 
+    %     end
+    % end
 
     methods
 
@@ -324,136 +324,136 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             %%
             t = this.Session.trialDataTable;
 
-            
-% Plotting the psychometric function
-RotateDotsCond = [0,10,45];
-SignDispCond = [1 -1];
-whichone = 1; figure(1);
 
-% lets start with just one condition
-for asign = 1:length(SignDispCond)
-    for arotation = 1:length(RotateDotsCond)
-        idxs = find(t.RotateDots == RotateDotsCond(arotation) & t.SignDisparity == SignDispCond(asign));
-        temp=array2table([t.DisparityArcMin(idxs) t.GuessedCorrectly(idxs)],'VariableNames',{'DisparityArcMin','GuessedCorrectly'});
-        temp_sorted = sortrows(temp);
-        
-        % Define the ranges for alpha and beta that you want to search over
-        aRange = linspace(-2,2,height(temp)); %"threshold" parameter range, alpha
-        bRange = linspace(-10,30,height(temp)); %"slope" parameter range, beta
-        LLE = zeros(length(bRange),length(aRange));
-        loglikelihood_trials = [];
-        
-        % For all combinations of alpha and beta, get the log likelihoods
-        % for each trial describing how likely it is for that data point to
-        % exist based on the tested alpha + beta
-        for bi = 1:length(bRange)
-            for ai = 1:length(aRange)
-                for atrial = 1:height(temp)
-                    switch (true)
-                        case SignDispCond(asign) == 1
-                            if temp.GuessedCorrectly(atrial) == 1
-                                loglikelihood_trials(atrial) = log( 0.5./(1+exp(-bRange(bi).*(temp.DisparityArcMin(atrial)-aRange(ai))))+0.5); % logistic equation: 1./(1 + exp(-b.*(x-a)))
-                                
-                            elseif temp.GuessedCorrectly(atrial) == 0
-                                loglikelihood_trials(atrial) = log( 1- (0.5./(1+exp(-bRange(bi).*(temp.DisparityArcMin(atrial)-aRange(ai)))) +0.5) );
-                                
+            % Plotting the psychometric function
+            RotateDotsCond = [0,10,45];
+            SignDispCond = [1 -1];
+            whichone = 1; figure(1);
+
+            % lets start with just one condition
+            for asign = 1:length(SignDispCond)
+                for arotation = 1:length(RotateDotsCond)
+                    idxs = find(t.RotateDots == RotateDotsCond(arotation) & t.SignDisparity == SignDispCond(asign));
+                    temp=array2table([t.DisparityArcMin(idxs) t.GuessedCorrectly(idxs)],'VariableNames',{'DisparityArcMin','GuessedCorrectly'});
+                    temp_sorted = sortrows(temp);
+
+                    % Define the ranges for alpha and beta that you want to search over
+                    aRange = linspace(-2,2,height(temp)); %"threshold" parameter range, alpha
+                    bRange = linspace(-10,30,height(temp)); %"slope" parameter range, beta
+                    LLE = zeros(length(bRange),length(aRange));
+                    loglikelihood_trials = [];
+
+                    % For all combinations of alpha and beta, get the log likelihoods
+                    % for each trial describing how likely it is for that data point to
+                    % exist based on the tested alpha + beta
+                    for bi = 1:length(bRange)
+                        for ai = 1:length(aRange)
+                            for atrial = 1:height(temp)
+                                switch (true)
+                                    case SignDispCond(asign) == 1
+                                        if temp.GuessedCorrectly(atrial) == 1
+                                            loglikelihood_trials(atrial) = log( 0.5./(1+exp(-bRange(bi).*(temp.DisparityArcMin(atrial)-aRange(ai))))+0.5); % logistic equation: 1./(1 + exp(-b.*(x-a)))
+
+                                        elseif temp.GuessedCorrectly(atrial) == 0
+                                            loglikelihood_trials(atrial) = log( 1- (0.5./(1+exp(-bRange(bi).*(temp.DisparityArcMin(atrial)-aRange(ai)))) +0.5) );
+
+                                        end
+                                    case SignDispCond(asign) == -1
+                                        if temp.GuessedCorrectly(atrial) == 1
+                                            loglikelihood_trials(atrial) = log( 0.5./(1+exp(bRange(bi).*(temp.DisparityArcMin(atrial)-aRange(ai))))+0.5); % logistic equation: 1./(1 + exp(-b.*(x-a)))
+
+                                        elseif temp.GuessedCorrectly(atrial) == 0
+                                            loglikelihood_trials(atrial) = log( 1- (0.5./(1+exp(bRange(bi).*(temp.DisparityArcMin(atrial)-aRange(ai)))) +0.5) );
+
+                                        end
+                                end
                             end
-                        case SignDispCond(asign) == -1
-                            if temp.GuessedCorrectly(atrial) == 1
-                                loglikelihood_trials(atrial) = log( 0.5./(1+exp(bRange(bi).*(temp.DisparityArcMin(atrial)-aRange(ai))))+0.5); % logistic equation: 1./(1 + exp(-b.*(x-a)))
-                                
-                            elseif temp.GuessedCorrectly(atrial) == 0
-                                loglikelihood_trials(atrial) = log( 1- (0.5./(1+exp(bRange(bi).*(temp.DisparityArcMin(atrial)-aRange(ai)))) +0.5) );
-                                
-                            end
+                            % Sum the log likelihoods for all the trials and put it
+                            % into a matrix for an alpha/beta combination
+                            LLE(bi,ai) = sum(loglikelihood_trials);
+
+                        end
+                        %plot(LLE(bi,:)); pause;
                     end
-                end
-                % Sum the log likelihoods for all the trials and put it
-                % into a matrix for an alpha/beta combination
-                LLE(bi,ai) = sum(loglikelihood_trials);
-                
-            end
-            %plot(LLE(bi,:)); pause;
-        end
-        
-        % Get the maximum likelihood of the alpha and beta parameters
-        [themax,theidx]=max(LLE(:));
-        [maybeX,maybeY] = meshgrid(1:height(temp),1:height(temp));
-        if maybeX(theidx) == 1 | maybeX(theidx) == 100 | maybeY(theidx) == 1 | maybeY(theidx) == 100
-            disp('search range isnt big enough!')
-            break
-        end
-        the_a_parameter = aRange(maybeX(theidx));
-        the_b_parameter = bRange(maybeY(theidx));
-        
-        % What is the 80% threshold from our staircase
-        p=0.8; %from arume staircase
-        what_is_the_threshold = (log(1-p / p-0.5)) ./ -the_b_parameter + the_a_parameter; 
-        
-        % How do you want to group the raw data for visualization?
-        grouping_method = 2; %1 or 2
-        
-        % Preparing visualization
-        temp_sorted = sortrows(temp);
-        if grouping_method == 1
-            % Group the raw data so that each chunk has the same number of data points
-            sizeOfChunk = 10;
-            thechunk = 1:sizeOfChunk;
-            for achunk = 1:100/sizeOfChunk
-                themeans(achunk) = mean(temp_sorted.DisparityArcMin(thechunk));
-                theresponses(achunk) = mean(temp_sorted.GuessedCorrectly(thechunk));
-                thechunk = thechunk + sizeOfChunk;
-            end
-            
-        elseif grouping_method == 2
-            % Group the raw data in steps of 0.1
-            temp_sorted.roundedDisparities = round(temp_sorted.DisparityArcMin*10)/10;
-            maybe = find(diff(temp_sorted.roundedDisparities));
-            starting = 1;
-            temp_sorted.meanedResp=zeros(height(temp_sorted),1)
-            for i = 1:length(maybe)
-                ending = maybe(i);
-                temp_sorted.meanedResp(starting:ending) = mean(temp_sorted.GuessedCorrectly(starting:ending));
-                forplotting(i)=length(starting:ending);
-                starting = ending+1;
-                if starting > maybe(end) % if it's the last chunk
-                    temp_sorted.meanedResp(starting:end) = mean(temp_sorted.GuessedCorrectly(starting:end));
-                    forplotting(i+1) = length(starting:100);
-                end
-            end
-        end
-        
-        % Visualize!
-        subplot(2,4,whichone)
-        if SignDispCond(asign) == -1
-            x = -3:.01:0;
-            plot(x, 0.5./(1 + exp(the_b_parameter.*(x-the_a_parameter)))+0.5,'linewidth',2); hold on
-        else
-            x = 0:.01:3;
-            plot(x, 0.5./(1 + exp(-the_b_parameter.*(x-the_a_parameter)))+0.5,'linewidth',2); hold on
-        end
-        
-        if grouping_method == 1
-            plot(themeans, theresponses,'o','markersize',7,'color','k','linewidth',1)
-        elseif grouping_method == 2
-            [disparities,idx] = unique(temp_sorted.roundedDisparities);
-            meanedResponses = temp_sorted.meanedResp(idx);
-            for i = 1:length(disparities)
-                plot(disparities(i),meanedResponses(i),'o','markersize',(forplotting(i)+10)/2,'color','k','linewidth',1)
-            end
-        end
-        ylim([0 1])
-        xlabel('Disparity (arcmin)')
-        ylabel('Proportion Correct')
-        title(sprintf('Rotation: %s',string(RotateDotsCond(arotation))))
-        text(min(xlim)+0.05, min(ylim)+0.13, sprintf('Threshold param: %.2f', what_is_the_threshold), 'Horiz','left', 'Vert','bottom')
-        text(min(xlim)+0.05, min(ylim)+0.08, sprintf('Alpha param: %.2f', the_a_parameter), 'Horiz','left', 'Vert','bottom')
-        text(min(xlim)+0.05, min(ylim)+0.03, sprintf('Beta param: %.2f', the_b_parameter), 'Horiz','left', 'Vert','bottom')
 
-        whichone = whichone + 1;
-        
-    end
-end
+                    % Get the maximum likelihood of the alpha and beta parameters
+                    [themax,theidx]=max(LLE(:));
+                    [maybeX,maybeY] = meshgrid(1:height(temp),1:height(temp));
+                    if maybeX(theidx) == 1 | maybeX(theidx) == 100 | maybeY(theidx) == 1 | maybeY(theidx) == 100
+                        disp('search range isnt big enough!')
+                        break
+                    end
+                    the_a_parameter = aRange(maybeX(theidx));
+                    the_b_parameter = bRange(maybeY(theidx));
+
+                    % What is the 80% threshold from our staircase
+                    p=0.8; %from arume staircase
+                    what_is_the_threshold = (log(1-p / p-0.5)) ./ -the_b_parameter + the_a_parameter;
+
+                    % How do you want to group the raw data for visualization?
+                    grouping_method = 2; %1 or 2
+
+                    % Preparing visualization
+                    temp_sorted = sortrows(temp);
+                    if grouping_method == 1
+                        % Group the raw data so that each chunk has the same number of data points
+                        sizeOfChunk = 10;
+                        thechunk = 1:sizeOfChunk;
+                        for achunk = 1:100/sizeOfChunk
+                            themeans(achunk) = mean(temp_sorted.DisparityArcMin(thechunk));
+                            theresponses(achunk) = mean(temp_sorted.GuessedCorrectly(thechunk));
+                            thechunk = thechunk + sizeOfChunk;
+                        end
+
+                    elseif grouping_method == 2
+                        % Group the raw data in steps of 0.1
+                        temp_sorted.roundedDisparities = round(temp_sorted.DisparityArcMin*10)/10;
+                        maybe = find(diff(temp_sorted.roundedDisparities));
+                        starting = 1;
+                        temp_sorted.meanedResp=zeros(height(temp_sorted),1)
+                        for i = 1:length(maybe)
+                            ending = maybe(i);
+                            temp_sorted.meanedResp(starting:ending) = mean(temp_sorted.GuessedCorrectly(starting:ending));
+                            forplotting(i)=length(starting:ending);
+                            starting = ending+1;
+                            if starting > maybe(end) % if it's the last chunk
+                                temp_sorted.meanedResp(starting:end) = mean(temp_sorted.GuessedCorrectly(starting:end));
+                                forplotting(i+1) = length(starting:100);
+                            end
+                        end
+                    end
+
+                    % Visualize!
+                    subplot(2,4,whichone)
+                    if SignDispCond(asign) == -1
+                        x = -3:.01:0;
+                        plot(x, 0.5./(1 + exp(the_b_parameter.*(x-the_a_parameter)))+0.5,'linewidth',2); hold on
+                    else
+                        x = 0:.01:3;
+                        plot(x, 0.5./(1 + exp(-the_b_parameter.*(x-the_a_parameter)))+0.5,'linewidth',2); hold on
+                    end
+
+                    if grouping_method == 1
+                        plot(themeans, theresponses,'o','markersize',7,'color','k','linewidth',1)
+                    elseif grouping_method == 2
+                        [disparities,idx] = unique(temp_sorted.roundedDisparities);
+                        meanedResponses = temp_sorted.meanedResp(idx);
+                        for i = 1:length(disparities)
+                            plot(disparities(i),meanedResponses(i),'o','markersize',(forplotting(i)+10)/2,'color','k','linewidth',1)
+                        end
+                    end
+                    ylim([0 1])
+                    xlabel('Disparity (arcmin)')
+                    ylabel('Proportion Correct')
+                    title(sprintf('Rotation: %s',string(RotateDotsCond(arotation))))
+                    text(min(xlim)+0.05, min(ylim)+0.13, sprintf('Threshold param: %.2f', what_is_the_threshold), 'Horiz','left', 'Vert','bottom')
+                    text(min(xlim)+0.05, min(ylim)+0.08, sprintf('Alpha param: %.2f', the_a_parameter), 'Horiz','left', 'Vert','bottom')
+                    text(min(xlim)+0.05, min(ylim)+0.03, sprintf('Beta param: %.2f', the_b_parameter), 'Horiz','left', 'Vert','bottom')
+
+                    whichone = whichone + 1;
+
+                end
+            end
 
 
 

@@ -43,7 +43,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg.DisplayOptions.ScreenHeight = { 34 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenDistance = { 57.5 '* (cm)' [1 3000] };
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
-            dlg.DisplayOptions.SelectedScreen = { 1 '* (screen)' [0 5] };
+            dlg.DisplayOptions.SelectedScreen = { 2 '* (screen)' [0 5] };
             
             dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 90;
@@ -112,8 +112,8 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 
                 % Make the dot stimulus circular :D 
                 distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
-                while isempty(distFromCenter(distFromCenter>ymax | distFromCenter<fixSizePix)) == 0 % while there are dots that are outside of the desired circle
-                    idxs=find(distFromCenter>ymax | distFromCenter<fixSizePix);
+                while isempty(distFromCenter(distFromCenter>stimWindow_pix/2 | distFromCenter<fixSizePix)) == 0 % while there are dots that are outside of the desired circle
+                    idxs=find(distFromCenter>stimWindow_pix/2 | distFromCenter<fixSizePix);
                     dots(1, idxs) = stimWindow_pix*rand(1, length(idxs)) - (stimWindow_pix/2); % resample those dots
                     dots(2, idxs) = stimWindow_pix*rand(1, length(idxs)) - (stimWindow_pix/2); 
                     distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);

@@ -20,13 +20,13 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            dlg.InitDisparity = { 5 '* (arcmins)' [0 100] };
-            dlg.InitStepSize = { 15 '* (arcmins)' [0 100] };
+            %dlg.InitDisparity = { 5 '* (arcmins)' [0 100] };
+            %dlg.InitStepSize = { 15 '* (arcmins)' [0 100] };
             dlg.Number_of_Dots = { 3500 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             %dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
-            dlg.visibleWindow_deg = {15 '* (deg)' [1 100] };
-            dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
+            dlg.stimWindow_deg = {15 '* (deg)' [1 100] };
+            dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
             dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] }; 
             dlg.InitFixDuration = { 0.25 '* (sec)' [0 60] };
             dlg.EndFixDuration = { 0.25 '* (sec)' [0 60] };
@@ -86,41 +86,33 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 trialResult = Enum.trialResult.CORRECT;
                 
                 Screen('FillRect', graph.window, 0); % not sure if needed
+                ShowCursor()
                 
-                % Screen width and height of one of the two eye displays in pixels
-                screenWidth = this.Graph.wRect(3);
-                screenHeight = this.Graph.wRect(4);
                 
-                % Settings
-                moniterWidth_cm =  this.ExperimentOptions.DisplayOptions.ScreenWidth;
-                viewingDist = this.ExperimentOptions.DisplayOptions.ScreenDistance;
-                moniterWidth_deg = (atan2d(moniterWidth_cm/2, viewingDist)) * 2;
-                pixPerDeg = (screenWidth*2) / moniterWidth_deg;
-                
-                % Stimulus settings:
-                numDots = this.ExperimentOptions.Number_of_Dots;
-                dots = zeros(3, numDots);
-                
-                % How big should the window (entire dots stimulus) be in pix?
-                %visibleWindow_cm = this.ExperimentOptions.visibleWindow_cm; % in cm, this is how much of the screen you can see w one eye at a viewingDist of 20 (from haploscope calcs!)
-                %visibleWindow_pix = ((screenWidth*2) / moniterWidth_cm) * visibleWindow_cm;
-                visibleWindow_pix = this.ExperimentOptions.visibleWindow_deg * pixPerDeg;
-                xmax = visibleWindow_pix / 2;
+                % Screen and monitor settings
+                screenWidth_pix = this.Graph.wRect(3); % screen width of one of the two eyes in pix
+                moniterWidth_deg = (atan2d(this.ExperimentOptions.DisplayOptions.ScreenWidth/2, this.ExperimentOptions.DisplayOptions.ScreenDistance)) * 2;
+                pixPerDeg = (screenWidth_pix*2) / moniterWidth_deg;
+                                
+                % How big should the dots stimulus be in pix
+                dots = zeros(3, this.ExperimentOptions.Number_of_Dots);
+                stimWindow_pix = this.ExperimentOptions.stimWindow_deg * pixPerDeg;
+                xmax = stimWindow_pix / 2; % TODO MEASURE HOW BIG THE WINDOW ACTUALLY IS 
                 ymax = xmax;
                 
                 % Disparity settings:
                 thisTrialData.DisparityArcMin = thisTrialData.Disparities * thisTrialData.SignDisparity;
                 disparity_deg = thisTrialData.DisparityArcMin/60;
-                shiftNeeded_cm = viewingDist * tand(disparity_deg);
-                shiftNeeded_pix = ((screenWidth*2) / moniterWidth_cm) * shiftNeeded_cm;
-                %shiftNeeded_pix = pixPerDeg * shiftNeeded_deg;
-                dots(1, :) = 2*(xmax)*rand(1, numDots) - xmax; % SR x coords
-                dots(2, :) = 2*(ymax)*rand(1, numDots) - ymax; % SR y coords
+%                 shiftNeeded_cm = viewingDist * tand(disparity_deg); % SR unclear why i was going back to cm?
+%                 shiftNeeded_pix = ((screenWidth*2) / moniterWidth_cm) * shiftNeeded_cm;
+                disparityNeeded_pix = pixPerDeg*disparity_deg;
+                dots(1, :) = 2*(xmax)*rand(1, this.ExperimentOptions.Number_of_Dots) - xmax; % SR x coords
+                dots(2, :) = 2*(ymax)*rand(1, this.ExperimentOptions.Number_of_Dots) - ymax; % SR y coords
                 
                 % Get fixation spot size in pix
                 fixSizePix = pixPerDeg * this.ExperimentOptions.FixationSpotSize;
                 
-                % Make the window (entire dot stimulus) circular :D 
+                % Make the dot stimulus circular :D 
                 distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
                 while isempty(distFromCenter(distFromCenter>ymax | distFromCenter<fixSizePix)) == 0 % while there are dots that are outside of the desired circle
                     idxs=find(distFromCenter>ymax | distFromCenter<fixSizePix);
@@ -128,7 +120,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                     dots(2, idxs) = 2*(ymax)*rand(1, length(idxs)) - ymax; 
                     distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
                 end
-                dots(3, :) = (ones(size(dots,2),1)')*shiftNeeded_pix; % how much the dots will shift by in pixels
+                dots(3, :) = (ones(size(dots,2),1)')*disparityNeeded_pix; % how much the dots will shift by in pixels
                 
                 % % Don't shift all the dots, only shift the ones further
                 % % than 2 degs out 
@@ -136,9 +128,9 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 % idxs = find(distFromCenter<pixPerDeg*2); 
                 % dots(3, idxs) = dots(3, idxs) * 0;
                  
-                % Right and left shifted dots
-                leftStimDots = dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; % zeros here bc no shift in vertical dots 
-                rightStimDots = dots(1:2, :) - [dots(3, :)/2; zeros(1, numDots)];
+                % Right and left shifted dots % SR DOES IT MATTER PLUS LEFT/RIGHT OR MINUS?
+                leftStimDots = [dots(1,:)+(dots(3,:)/2); dots(2,:)]; %dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; 
+                rightStimDots = [dots(1,:)-(dots(3,:)/2); dots(2,:)]; 
                 
                 % Rotating the dots if needed
                 leftDistFromCenter = sqrt((leftStimDots(1,:)).^2 + (leftStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
@@ -158,16 +150,11 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                     thisTrialData.CorrectResponse = 'F';
                 elseif thisTrialData.DisparityArcMin < 0
                     thisTrialData.CorrectResponse = 'B';
-%                 elseif thisTrialData.DisparityArcMin == 0
-%                     thisTrialData.DisparityArcMin
-%                     disp('Crashed here')
-%                     thisTrialData.DisparityArcMin
                 end
                 
                 % For the while loop trial start
-                trialDuration = this.ExperimentOptions.TrialDuration;
                 lastFlipTime                        = Screen('Flip', graph.window);
-                secondsRemaining                    = trialDuration;
+                secondsRemaining                    = this.ExperimentOptions.TrialDuration;
                 thisTrialData.TimeStartLoop         = lastFlipTime;
                 
                 response = []; %initialize this
@@ -175,7 +162,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 while secondsRemaining > 0
                     
                     secondsElapsed      = GetSecs - thisTrialData.TimeStartLoop;
-                    secondsRemaining    = trialDuration - secondsElapsed;
+                    secondsRemaining    = this.ExperimentOptions.TrialDuration - secondsElapsed;
                     
                     
                     % -----------------------------------------------------------------

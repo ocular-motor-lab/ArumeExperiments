@@ -20,11 +20,8 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            %dlg.InitDisparity = { 5 '* (arcmins)' [0 100] };
-            %dlg.InitStepSize = { 15 '* (arcmins)' [0 100] };
             dlg.Number_of_Dots = { 3500 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
-            %dlg.visibleWindow_cm = {16 '* (cm)' [1 100] };
             dlg.stimWindow_deg = {15 '* (deg)' [1 100] };
             dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
             dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] }; 
@@ -43,7 +40,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg.DisplayOptions.ScreenHeight = { 34 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenDistance = { 57.5 '* (cm)' [1 3000] };
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
-            dlg.DisplayOptions.SelectedScreen = { 2 '* (screen)' [0 5] };
+            dlg.DisplayOptions.SelectedScreen = { 1 '* (screen)' [0 5] };
             
             dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 90;
@@ -58,7 +55,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
              
             i = i+1;
             conditionVars(i).name   = 'Disparities';
-            conditionVars(i).values = [1]; %[0.1:0.1:0.8];
+            conditionVars(i).values = [0.1:0.1:0.8];
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
@@ -139,7 +136,6 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 rightThetaDeg = atan2d(rightStimDots(2,:),rightStimDots(1,:));
                 rightPolarPtX = cosd(rightThetaDeg + thisTrialData.RotateDots) .* rightDistFromCenter;
                 rightPolarPtY = sind(rightThetaDeg + thisTrialData.RotateDots) .* rightDistFromCenter;
-                % rotated dots
                 leftStimDots = [leftPolarPtX;leftPolarPtY];
                 rightStimDots = [rightPolarPtX;rightPolarPtY];
                 
@@ -204,7 +200,6 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                         Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
                         
-                        
                     end
                                         
                     
@@ -266,23 +261,11 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                thisTrialData.GuessedCorrectly = 0;
            end
            
-           % Record if the trial was a reversal
-           if isempty(this.Session.currentRun.pastTrialTable) | isempty(find(this.Session.currentRun.pastTrialTable.DisparityArcMin == thisTrialData.DisparityArcMin & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots)) % if this is the first trial of the whole experiment or if this staircase has never occured before
-               thisTrialData.IsReversal = 0;
-           elseif thisTrialData.GuessedCorrectly == this.Session.currentRun.pastTrialTable.GuessedCorrectly(find(this.Session.currentRun.pastTrialTable.DisparityArcMin == thisTrialData.DisparityArcMin & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots,1,'last'))
-               thisTrialData.IsReversal = 0;
-           elseif thisTrialData.GuessedCorrectly ~= this.Session.currentRun.pastTrialTable.GuessedCorrectly(find(this.Session.currentRun.pastTrialTable.DisparityArcMin == thisTrialData.DisparityArcMin & this.Session.currentRun.pastTrialTable.RotateDots == thisTrialData.RotateDots,1,'last'))
-               thisTrialData.IsReversal = 1;
-           end
-           
            % Move this forward
            trialResult = thisTrialData.TrialResult;
-           
        end
             
-       
-
-                    
+             
         
     end
 

@@ -18,9 +18,9 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult TargetPosition'; % which variables to display every trial in the command line separated by spaces
                 
-            dlg.DisplayOptions.ScreenWidth = { 144 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenWidth = { 142.8 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenHeight = { 80 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenDistance = { 90 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenDistance = { 85 '* (cm)' [1 3000] };
                       
             dlg.TrialDuration =  { 3 '* (s)' [1 100] };
             

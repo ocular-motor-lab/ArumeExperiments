@@ -38,9 +38,9 @@ classdef ExperimentDesign < handle
                 
                 dlg.DisplayOptions.ForegroundColor      = 0;
                 dlg.DisplayOptions.BackgroundColor      = 128;
-                dlg.DisplayOptions.ScreenWidth                 = { 121 '* (cm)' [1 3000] };
-                dlg.DisplayOptions.ScreenHeight                = { 68 '* (cm)' [1 3000] };
-                dlg.DisplayOptions.ScreenDistance              = { 90 '* (cm)' [1 3000] };
+                dlg.DisplayOptions.ScreenWidth          = { 142.8 '* (cm)' [1 3000] };
+                dlg.DisplayOptions.ScreenHeight         = { 80 '* (cm)' [1 3000] };
+                dlg.DisplayOptions.ScreenDistance       = { 85 '* (cm)' [1 3000] };
                 dlg.DisplayOptions.ShowTrialTable       = { {'0','{1}'} };
                 dlg.DisplayOptions.PlaySound            = { {'0','{1}'} };
                 dlg.DisplayOptions.StereoMode           = { 0 '* (mode)' [0 9] }; % SR added, 0 should be the default

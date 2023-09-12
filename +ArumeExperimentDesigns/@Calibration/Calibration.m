@@ -35,7 +35,7 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
         function trialTable = SetUpTrialTable(this)
             
 
-            targets = 1:9;
+            targets = 1:17;
 
             %-- condition variables ---------------------------------------
             i= 0;
@@ -63,7 +63,8 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
             
             h = this.ExperimentOptions.Calibration_Distance_H;
             v = this.ExperimentOptions.Calibration_Distance_V;
-            targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v]};
+            targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v],...
+                [h/2,0],[-h/2,0],[0,v/2],[0,-v/2],[h/2,v/2],[h/2,-v/2],[-h/2,v/2],[-h/2,-v/2]};
 
             try
                 
@@ -103,6 +104,9 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
                     fixRect = CenterRectOnPointd( fixRect, mx+targetHPix/2, my+targetYPix/2 );
                     Screen('FillOval', graph.window, this.fixColor, fixRect);
                     
+                    fixRectCenter = CenterRectOnPointd( fixRect./2, mx+targetHPix/2, my+targetYPix/2 );
+                    Screen('FillOval', graph.window, [250,250,250], fixRectCenter);
+
                     Screen('DrawingFinished', graph.window); % Tell PTB that no further drawing commands will follow before Screen('Flip')
                     
                     
@@ -141,7 +145,8 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
 
             h = this.ExperimentOptions.Calibration_Distance_H/2;
             v = -this.ExperimentOptions.Calibration_Distance_V/2;
-            targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v]};
+            targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v],...
+                [h/2,0],[-h/2,0],[0,v/2],[0,-v/2],[h/2,v/2],[h/2,-v/2],[-h/2,v/2],[-h/2,-v/2]};
             targetPositions = cell2mat(targetPositions');
 
              calibrationPointsX = targetPositions(trialDataTable.TargetPosition,1);
@@ -184,11 +189,10 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
             trialDataTable = this.Session.trialDataTable;
             sessionDataTable = this.Session.sessionDataTable;
 
-
-
             h = this.ExperimentOptions.Calibration_Distance_H/2;
             v = -this.ExperimentOptions.Calibration_Distance_V/2;
-            targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v]};
+            targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v],...
+                [h/2,0],[-h/2,0],[0,v/2],[0,-v/2],[h/2,v/2],[h/2,-v/2],[-h/2,v/2],[-h/2,-v/2]};
             targetPositions = cell2mat(targetPositions');
 
              calibrationPointsX = targetPositions(trialDataTable.TargetPosition,1);

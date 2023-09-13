@@ -5,6 +5,7 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
     properties
         fixRad = 20;
         fixColor = [255 0 0];
+        targetPositions =[];
     end
     
     % ---------------------------------------------------------------------
@@ -25,6 +26,7 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
             dlg.TrialDuration =  { 3 '* (s)' [1 100] };
             
             dlg.TargetSize = 0.5;
+            dlg.Calibration_Type = { {'4 dots' '{9 dots}' '17 dots'} };
             dlg.Calibration_Distance_H = { 20 '* (deg)' [1 3000] };
             dlg.Calibration_Distance_V = { 20 '* (deg)' [1 3000] };
             
@@ -35,7 +37,12 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
         function trialTable = SetUpTrialTable(this)
             
 
-            targets = 1:17;
+            switch(this.ExperimentOptions.Calibration_Type)
+                case '4 dots' '{9 dots}' '17 dots'
+            this.targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v],...
+                [h/2,0],[-h/2,0],[0,v/2],[0,-v/2],[h/2,v/2],[h/2,-v/2],[-h/2,v/2],[-h/2,-v/2]};
+
+            targets = 1:length(this.targetPositions);
 
             %-- condition variables ---------------------------------------
             i= 0;
@@ -63,8 +70,6 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
             
             h = this.ExperimentOptions.Calibration_Distance_H;
             v = this.ExperimentOptions.Calibration_Distance_V;
-            targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v],...
-                [h/2,0],[-h/2,0],[0,v/2],[0,-v/2],[h/2,v/2],[h/2,-v/2],[-h/2,v/2],[-h/2,-v/2]};
 
             try
                 

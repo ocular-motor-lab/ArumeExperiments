@@ -5,6 +5,7 @@ classdef FixationTargets < ArumeExperimentDesigns.EyeTracking
     properties
         fixRad = 20;
         fixColor = [255 0 0];
+        targetPositions =[];
     end
 
     % ---------------------------------------------------------------------
@@ -26,17 +27,36 @@ classdef FixationTargets < ArumeExperimentDesigns.EyeTracking
             dlg.NumberRepetitions = 10;
 
             dlg.TargetSize = 1;
-%             dlg.Calibration_Distance_H = { 20 '* (deg)' [1 3000] };
-%             dlg.Calibration_Distance_V = { 15 '* (deg)' [1 3000] };
+            dlg.Calibration_Type = { {'Center dot' '5 dots' '{9 dots}' '13 dots' '17 dots'} };
+            dlg.Calibration_Distance_H = { 20 '* (deg)' [1 3000] };
+            dlg.Calibration_Distance_V = { 15 '* (deg)' [1 3000] };
 
             dlg.BackgroundBrightness = 0;
         end
 
 
         function trialTable = SetUpTrialTable(this)
+            h = this.ExperimentOptions.Calibration_Distance_H;
+            v = this.ExperimentOptions.Calibration_Distance_V;
 
+            temp = 1.5;
+            switch(this.ExperimentOptions.Calibration_Type)
+                case 'Center dot'
+                    this.targetPositions = {[0,0]};
+                case '5 dots' 
+                    this.targetPositions = {[0,0],[h,v],[h,-v],[-h,v],[-h,-v]};
+                case '9 dots'
+                    this.targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v]};
+                case '13 dots' 
+                    this.targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v],...
+                [h/temp,v/temp],[h/temp,-v/temp],[-h/temp,v/temp],[-h/temp,-v/temp]};
+                case '17 dots'
+                    this.targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v],...
+                [h/temp,0],[-h/temp,0],[0,v/temp],[0,-v/temp],[h/temp,v/temp],[h/temp,-v/temp],[-h/temp,v/temp],[-h/temp,-v/temp]};
+            end
+            
 
-            targets = 1;%:9;
+            targets = 1:length(this.targetPositions);
 
             %-- condition variables ---------------------------------------
             i= 0;
@@ -62,10 +82,6 @@ classdef FixationTargets < ArumeExperimentDesigns.EyeTracking
 
         function [trialResult, thisTrialData] = runTrial( this, thisTrialData )
 
-%             h = this.ExperimentOptions.Calibration_Distance_H;
-%             v = this.ExperimentOptions.Calibration_Distance_V;
-            targetPositions = {[0,0]};%,[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v]};
-
             try
 
                 Enum = ArumeCore.ExperimentDesign.getEnum();
@@ -76,8 +92,6 @@ classdef FixationTargets < ArumeExperimentDesigns.EyeTracking
                 lastFlipTime        = GetSecs;
                 secondsRemaining    = this.ExperimentOptions.TrialDuration;
                 thisTrialData.TimeStartLoop = lastFlipTime;
-                
-                secondsRemainingGap = 5;
 
                 if ( ~isempty(this.eyeTracker) )
                     thisTrialData.EyeTrackerFrameStartLoop = this.eyeTracker.RecordEvent(sprintf('TRIAL_START_LOOP %d %d %d', thisTrialData.TrialNumber, thisTrialData.Condition, thisTrialData.TargetPosition) );
@@ -99,8 +113,8 @@ classdef FixationTargets < ArumeExperimentDesigns.EyeTracking
                     % this.Graph.pxWidth
                     % targetHPix
                     targetPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(this.ExperimentOptions.TargetSize);
-                    targetHPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(targetPositions{thisTrialData.TargetPosition}(1));
-                    targetYPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(targetPositions{thisTrialData.TargetPosition}(2));
+                    targetHPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(this.targetPositions{thisTrialData.TargetPosition}(1));
+                    targetYPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(this.targetPositions{thisTrialData.TargetPosition}(2));
                     fixRect = [0 0 targetPix/2 targetPix/2];
                     fixRect = CenterRectOnPointd( fixRect, mx+targetHPix/2, my+targetYPix/2 );
                     Screen('FillOval', graph.window, this.fixColor, fixRect);
@@ -151,14 +165,10 @@ classdef FixationTargets < ArumeExperimentDesigns.EyeTracking
 
             [analysisResults, samplesDataTable, trialDataTable, sessionDataTable]  = RunDataAnalyses@ArumeExperimentDesigns.EyeTracking(this, analysisResults, samplesDataTable, trialDataTable, sessionDataTable, options);
 
+            targetPositions_ = cell2mat(this.targetPositions');
 
-%             h = this.ExperimentOptions.Calibration_Distance_H/2;
-%             v = -this.ExperimentOptions.Calibration_Distance_V/2;
-            targetPositions = {[0,0]};%,[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v]};
-            targetPositions = cell2mat(targetPositions');
-
-            calibrationPointsX = targetPositions(trialDataTable.TargetPosition,1);
-            calibrationPointsY = targetPositions(trialDataTable.TargetPosition,2);
+            calibrationPointsX = targetPositions_(trialDataTable.TargetPosition,1);
+            calibrationPointsY = targetPositions_(trialDataTable.TargetPosition,2);
 
             fstart = round(trialDataTable.SampleStartTrial + 0.500*samplesDataTable.Properties.UserData.sampleRate);
             fstops = trialDataTable.SampleStopTrial;
@@ -284,11 +294,11 @@ classdef FixationTargets < ArumeExperimentDesigns.EyeTracking
             linkaxes(h(:))
 
             n = [...
-                "X Vergence",...
-                "Y Vergence",...
+                "H Vergence",...
+                "V Vergence",...
                 "T Vergence",...
-                "X Version",...
-                "Y Version",...
+                "H Version",...
+                "V Version",...
                 "T Version"...
                 ];
 
@@ -308,7 +318,7 @@ classdef FixationTargets < ArumeExperimentDesigns.EyeTracking
             sgtitle("Center Fixational Micro Saccades Amplitude (degree)")
         end
 
-        function [out] = Plot_Listings(this)
+        function Plot_Listings(this)
             figure
             s = this.Session.samplesDataTable;
             plot(s.LeftX, s.LeftT,'o')

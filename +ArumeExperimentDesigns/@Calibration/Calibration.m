@@ -25,8 +25,8 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
                       
             dlg.TrialDuration =  { 3 '* (s)' [1 100] };
             
-            dlg.TargetSize = 0.5;
-            dlg.Calibration_Type = { {'4 dots' '{9 dots}' '17 dots'} };
+            dlg.TargetSize = 1;
+            dlg.Calibration_Type = { {'5 dots' '{9 dots}' '13 dots' '17 dots'} };
             dlg.Calibration_Distance_H = { 20 '* (deg)' [1 3000] };
             dlg.Calibration_Distance_V = { 20 '* (deg)' [1 3000] };
             
@@ -36,11 +36,24 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
 
         function trialTable = SetUpTrialTable(this)
             
+            h = this.ExperimentOptions.Calibration_Distance_H;
+            v = this.ExperimentOptions.Calibration_Distance_V;
 
+            temp = 1.5;
             switch(this.ExperimentOptions.Calibration_Type)
-                case '4 dots' '{9 dots}' '17 dots'
-            this.targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v],...
-                [h/2,0],[-h/2,0],[0,v/2],[0,-v/2],[h/2,v/2],[h/2,-v/2],[-h/2,v/2],[-h/2,-v/2]};
+                
+                case '5 dots' 
+                    this.targetPositions = {[0,0],[h,v],[h,-v],[-h,v],[-h,-v]};
+                case '9 dots'
+                    this.targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v]};
+                case '13 dots' 
+                    this.targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v],...
+                [h/temp,v/temp],[h/temp,-v/temp],[-h/temp,v/temp],[-h/temp,-v/temp]};
+                case '17 dots'
+                    this.targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v],...
+                [h/temp,0],[-h/temp,0],[0,v/temp],[0,-v/temp],[h/temp,v/temp],[h/temp,-v/temp],[-h/temp,v/temp],[-h/temp,-v/temp]};
+            end
+            
 
             targets = 1:length(this.targetPositions);
 
@@ -67,10 +80,6 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
         end
 
         function [trialResult, thisTrialData] = runTrial( this, thisTrialData )
-            
-            h = this.ExperimentOptions.Calibration_Distance_H;
-            v = this.ExperimentOptions.Calibration_Distance_V;
-
             try
                 
                 Enum = ArumeCore.ExperimentDesign.getEnum();
@@ -103,8 +112,8 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
                    % this.Graph.pxWidth
                    % targetHPix
                     targetPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(this.ExperimentOptions.TargetSize);
-                    targetHPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(targetPositions{thisTrialData.TargetPosition}(1));
-                    targetYPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(targetPositions{thisTrialData.TargetPosition}(2));
+                    targetHPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(this.targetPositions{thisTrialData.TargetPosition}(1));
+                    targetYPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(this.targetPositions{thisTrialData.TargetPosition}(2));
                     fixRect = [0 0 targetPix/2 targetPix/2];
                     fixRect = CenterRectOnPointd( fixRect, mx+targetHPix/2, my+targetYPix/2 );
                     Screen('FillOval', graph.window, this.fixColor, fixRect);
@@ -147,15 +156,10 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
              
              [analysisResults, samplesDataTable, trialDataTable, sessionDataTable]  = RunDataAnalyses@ArumeExperimentDesigns.EyeTracking(this, analysisResults, samplesDataTable, trialDataTable, sessionDataTable, options);
 
+            targetPositions_ = cell2mat(this.targetPositions');
 
-            h = this.ExperimentOptions.Calibration_Distance_H/2;
-            v = -this.ExperimentOptions.Calibration_Distance_V/2;
-            targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v],...
-                [h/2,0],[-h/2,0],[0,v/2],[0,-v/2],[h/2,v/2],[h/2,-v/2],[-h/2,v/2],[-h/2,-v/2]};
-            targetPositions = cell2mat(targetPositions');
-
-             calibrationPointsX = targetPositions(trialDataTable.TargetPosition,1);
-             calibrationPointsY = targetPositions(trialDataTable.TargetPosition,2);
+             calibrationPointsX = targetPositions_(trialDataTable.TargetPosition,1);
+             calibrationPointsY = targetPositions_(trialDataTable.TargetPosition,2);
              
              fstart = round(trialDataTable.SampleStartTrial + 0.500*samplesDataTable.Properties.UserData.sampleRate);
              fstops = trialDataTable.SampleStopTrial;
@@ -186,7 +190,7 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
     % ---------------------------------------------------------------------
     methods ( Access = public )
 
-        function [out] = Plot_CalibrationDebug(this)
+        function Plot_CalibrationDebug(this)
 
 
             analysisResults = this.Session.analysisResults;
@@ -194,14 +198,10 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
             trialDataTable = this.Session.trialDataTable;
             sessionDataTable = this.Session.sessionDataTable;
 
-            h = this.ExperimentOptions.Calibration_Distance_H/2;
-            v = -this.ExperimentOptions.Calibration_Distance_V/2;
-            targetPositions = {[0,0],[h,0],[-h,0],[0,v],[0,-v],[h,v],[h,-v],[-h,v],[-h,-v],...
-                [h/2,0],[-h/2,0],[0,v/2],[0,-v/2],[h/2,v/2],[h/2,-v/2],[-h/2,v/2],[-h/2,-v/2]};
-            targetPositions = cell2mat(targetPositions');
+            targetPositions_ = cell2mat(this.targetPositions');
 
-             calibrationPointsX = targetPositions(trialDataTable.TargetPosition,1);
-             calibrationPointsY = targetPositions(trialDataTable.TargetPosition,2);
+             calibrationPointsX = targetPositions_(trialDataTable.TargetPosition,1);
+             calibrationPointsY = targetPositions_(trialDataTable.TargetPosition,2);
              
              fstart = round(trialDataTable.SampleStartTrial + 0.500*samplesDataTable.Properties.UserData.sampleRate);
              fstops = trialDataTable.SampleStopTrial;
@@ -236,6 +236,129 @@ classdef Calibration < ArumeExperimentDesigns.EyeTracking
              PlotCalibration(analysisResults.calibrationTable, samplesDataTable, calibratedCalibrationData, targetPosition)
              title('pupil calibration')
         end
+
+        % needs to be modified for large saccades
+        function [out, options] = PlotAggregate_MircoCorrelations(this, sessions, options)
+
+
+            out = [];
+            if ( nargin == 1 )
+                options = this.PlotAggregate_MircoCorrelations('get_defaults');
+            end
+
+            if ( ischar(sessions) )
+                command = sessions;
+                switch( command)
+                    case 'get_options'
+                        options =[];
+                        return
+                    case 'get_defaults'
+                        optionsDlg = VOGAnalysis.PlotAggregate_MicroCorrelations('get_options');
+                        options = StructDlg(optionsDlg,'',[],[],'off');
+                        return
+                end
+            end
+
+
+            data = [];
+            % for each subj, ignoring 000
+            for subj = 1:length(sessions)
+                %load data
+                AnalysisResults_QuickPhases = sessions(subj).analysisResults.QuickPhases;
+
+                % pick the center positions
+                center_indx = AnalysisResults_QuickPhases.Left_X_MeanPosition <= 2 &...
+                    AnalysisResults_QuickPhases.Left_X_MeanPosition >= -2 &...
+                    AnalysisResults_QuickPhases.Left_Y_MeanPosition <= 2 &...
+                    AnalysisResults_QuickPhases.Left_Y_MeanPosition >= -2;
+
+                d = AnalysisResults_QuickPhases(center_indx,:);
+
+                % create the table
+                data(subj).X_Vergence = d.Left_X_Displacement - d.Right_X_Displacement;
+                data(subj).Y_Vergence = d.Left_Y_Displacement - d.Right_Y_Displacement;
+                data(subj).T_Vergence = d.Left_T_Displacement - d.Right_T_Displacement;
+
+                data(subj).X_Version = (d.Left_X_Displacement + d.Right_X_Displacement)./2;
+                data(subj).Y_Version = (d.Left_Y_Displacement + d.Right_Y_Displacement)./2;
+                data(subj).T_Version = (d.Left_T_Displacement + d.Right_T_Displacement)./2;
+            end
+
+
+            %% create the corr table
+
+            % combine all data
+            dataAll.X_Vergence = [];
+            dataAll.Y_Vergence = [];
+            dataAll.T_Vergence = [];
+
+            dataAll.X_Version = [];
+            dataAll.Y_Version = [];
+            dataAll.T_Version = [];
+
+            for subj = 1:length(data)
+                dataAll.X_Vergence = [dataAll.X_Vergence; data(subj).X_Vergence];
+                dataAll.Y_Vergence = [dataAll.Y_Vergence; data(subj).Y_Vergence];
+                dataAll.T_Vergence = [dataAll.T_Vergence; data(subj).T_Vergence];
+
+                dataAll.Y_Version = [dataAll.Y_Version; data(subj).Y_Version];
+                dataAll.X_Version = [dataAll.X_Version; data(subj).X_Version];
+                dataAll.T_Version = [dataAll.T_Version; data(subj).T_Version];
+            end
+
+            dataAll_ = [...
+                dataAll.X_Vergence,...
+                dataAll.Y_Vergence,...
+                dataAll.T_Vergence,...
+                dataAll.X_Version,...
+                dataAll.Y_Version,...
+                dataAll.T_Version...
+                ];
+
+            [R,P] = corr(dataAll_,'rows','complete');
+
+            c = 0;
+            figure,
+            for i = 1:6
+                for j = 1:6
+                    c = c + 1;
+                    h(i,j) = subplot(6,6,c);
+                    if i >= j, continue; end
+                    plot(dataAll_(:,j),dataAll_(:,i),'.');
+                    xlim([-1,1])
+                    ylim([-1,1])
+                    title(strcat("R = ",num2str(round(R(c),2))))
+                end
+            end
+
+            linkaxes(h(:))
+
+            n = [...
+                "H Vergence",...
+                "V Vergence",...
+                "T Vergence",...
+                "H Version",...
+                "V Version",...
+                "T Version"...
+                ];
+
+            c=1;
+            for i = 1:6:36
+                subplot(6,6,i)
+                ylabel(n(c))
+                c=c+1;
+            end
+
+
+            for i = 31:36
+                subplot(6,6,i)
+                xlabel(n(i-30))
+            end
+
+            sgtitle("Center Fixational Micro Saccades Amplitude (degree)")
+        end
+
+
     end
 end
 

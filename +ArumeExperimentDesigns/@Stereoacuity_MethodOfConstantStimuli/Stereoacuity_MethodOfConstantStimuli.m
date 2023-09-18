@@ -95,8 +95,6 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 % How big should the dots stimulus be in pix
                 dots = zeros(3, this.ExperimentOptions.Number_of_Dots);
                 stimWindow_pix = this.ExperimentOptions.stimWindow_deg * pixPerDeg;
-                %xmax = stimWindow_pix / 2; % TODO MEASURE HOW BIG THE WINDOW ACTUALLY IS 
-                %ymax = xmax;
                 
                 % Disparity settings:
                 thisTrialData.DisparityArcMin = thisTrialData.Disparities * thisTrialData.SignDisparity;

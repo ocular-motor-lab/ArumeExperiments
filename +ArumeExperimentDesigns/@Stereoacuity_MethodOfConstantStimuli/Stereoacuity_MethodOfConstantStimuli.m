@@ -44,7 +44,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             
             dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 90;
-            dlg.TrialsBeforeBreak = 1200;
+            dlg.TrialsBeforeBreak = 5;
             dlg.TrialAbortAction = 'Repeat';
         end
         

@@ -38,13 +38,13 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             
             dlg.DisplayOptions.ScreenWidth = { 59.5 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenHeight = { 34 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenDistance = { 57.5 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenDistance = { 57 '* (cm)' [1 3000] };
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
             dlg.DisplayOptions.SelectedScreen = { 1 '* (screen)' [0 5] };
             
             dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 90;
-            dlg.TrialsBeforeBreak = 100;
+            dlg.TrialsBeforeBreak = 200;
             dlg.TrialAbortAction = 'Repeat';
         end
         

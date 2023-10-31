@@ -28,7 +28,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg.InitFixDuration = { 0.25 '* (sec)' [0 60] };
             dlg.EndFixDuration = { 0.25 '* (sec)' [0 60] };
             
-            dlg.NumberOfRepetitions = {15 '* (N)' [1 200] }; 
+            dlg.NumberOfRepetitions = {20 '* (N)' [1 200] }; 
             dlg.BackgroundBrightness = 0;
             
             %% CHANGE DEFAULTS values for existing options
@@ -44,7 +44,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             
             dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 90;
-            dlg.TrialsBeforeBreak = 5;
+            dlg.TrialsBeforeBreak = 100;
             dlg.TrialAbortAction = 'Repeat';
         end
         
@@ -59,7 +59,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
-            conditionVars(i).values = [0 10 45]; %5 10 45];
+            conditionVars(i).values = [0 5 10]; %[0 10 45];
             
             i = i+1;
             conditionVars(i).name   = 'SignDisparity';

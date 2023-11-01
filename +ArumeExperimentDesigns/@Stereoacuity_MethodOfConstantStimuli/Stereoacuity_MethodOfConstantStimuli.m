@@ -24,7 +24,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
             dlg.stimWindow_deg = {15 '* (deg)' [1 100] };
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
-            dlg.TimeStimOn = { 1 '* (sec)' [0 60] }; 
+            dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] }; 
             dlg.InitFixDuration = { 1 '* (sec)' [0 60] };
             
             dlg.NumberOfRepetitions = {20 '* (N)' [1 200] }; 
@@ -41,7 +41,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
             dlg.DisplayOptions.SelectedScreen = { 1 '* (screen)' [0 5] };
             
-            dlg.HitKeyBeforeTrial = 0;
+            dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 90;
             dlg.TrialsBeforeBreak = 200;
             dlg.TrialAbortAction = 'Repeat';
@@ -54,7 +54,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
              
             i = i+1;
             conditionVars(i).name   = 'Disparities';
-            conditionVars(i).values = 0.5:0.2:0.9;
+            conditionVars(i).values = 0.1:0.2:0.9;
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';

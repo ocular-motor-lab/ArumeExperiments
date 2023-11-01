@@ -41,7 +41,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
             dlg.DisplayOptions.SelectedScreen = { 1 '* (screen)' [0 5] };
             
-            dlg.HitKeyBeforeTrial = 1;
+            dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 90;
             dlg.TrialsBeforeBreak = 200;
             dlg.TrialAbortAction = 'Repeat';
@@ -221,8 +221,10 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                             switch(KbName(keys(i)))
                                 case 'RightArrow'
                                     response = 'F';
+                                    WaitSecs(.25)
                                 case 'LeftArrow'
                                     response = 'B';
+                                    WaitSecs(.25)
                                 % add case escape to exit better? 
                             end
                         end

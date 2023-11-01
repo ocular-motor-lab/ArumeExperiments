@@ -26,7 +26,6 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
             dlg.TimeStimOn = { 1 '* (sec)' [0 60] }; 
             dlg.InitFixDuration = { 1 '* (sec)' [0 60] };
-            dlg.EndFixDuration = { 0.25 '* (sec)' [0 60] };
             
             dlg.NumberOfRepetitions = {20 '* (N)' [1 200] }; 
             dlg.BackgroundBrightness = 0;
@@ -42,7 +41,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg.DisplayOptions.StereoMode = { 4 '* (mode)' [0 9] }; 
             dlg.DisplayOptions.SelectedScreen = { 1 '* (screen)' [0 5] };
             
-            dlg.HitKeyBeforeTrial = 0;%1;
+            dlg.HitKeyBeforeTrial = 1;
             dlg.TrialDuration = 90;
             dlg.TrialsBeforeBreak = 200;
             dlg.TrialAbortAction = 'Repeat';
@@ -99,8 +98,6 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 % Disparity settings:
                 thisTrialData.DisparityArcMin = thisTrialData.Disparities * thisTrialData.SignDisparity;
                 disparity_deg = thisTrialData.DisparityArcMin/60;
-%                 shiftNeeded_cm = viewingDist * tand(disparity_deg); % SR unclear why i was going back to cm?
-%                 shiftNeeded_pix = ((screenWidth*2) / moniterWidth_cm) * shiftNeeded_cm;
                 disparityNeeded_pix = pixPerDeg*disparity_deg;
                 dots(1, :) = stimWindow_pix*rand(1, this.ExperimentOptions.Number_of_Dots) - (stimWindow_pix/2); % SR x coords
                 dots(2, :) = stimWindow_pix*rand(1, this.ExperimentOptions.Number_of_Dots) - (stimWindow_pix/2); % SR y coords
@@ -125,7 +122,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 leftStimDots = [dots(1,:)+(dots(3,:)/2); dots(2,:)]; %dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; 
                 rightStimDots = [dots(1,:)-(dots(3,:)/2); dots(2,:)]; 
                 
-                % Rotating the dots if needed
+                % Rotating the dots 
                 leftDistFromCenter = sqrt((leftStimDots(1,:)).^2 + (leftStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
                 leftThetaDeg = atan2d(leftStimDots(2,:),leftStimDots(1,:));
                 leftPolarPtX = cosd(leftThetaDeg + thisTrialData.RotateDots) .* leftDistFromCenter;
@@ -162,8 +159,8 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                     % -----------------------------------------------------------------
                     
                     
-                    % If it's during the time when the stimulus (dots) is on, then snow the stimulus plus the fixation dot
-                    if ( secondsElapsed > this.ExperimentOptions.InitFixDuration && secondsElapsed < this.ExperimentOptions.TimeStimOn ) % then show dots + fixation dot
+                    % If it's during the time when the stimulus (dots) is on, then show the stimulus plus the fixation dot
+                    if ( secondsElapsed > this.ExperimentOptions.InitFixDuration && secondsElapsed < this.ExperimentOptions.InitFixDuration + this.ExperimentOptions.TimeStimOn) % then show dots + fixation dot
                         % Select left-eye image buffer for drawing:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         
@@ -182,8 +179,8 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                         
                     end
                     
-                    % If it's either: 1) the initial fixation time, or 2) the post-trial ending fixation time, then just show the fixation dot
-                    if ( secondsElapsed < this.ExperimentOptions.InitFixDuration || secondsElapsed > this.ExperimentOptions.TimeStimOn + this.ExperimentOptions.InitFixDuration) 
+                    % If it's the initial fixation time, or if it's after the stimulus time has expired, then just show the fixation dot
+                    if ( secondsElapsed <= this.ExperimentOptions.InitFixDuration ||  secondsElapsed > this.ExperimentOptions.InitFixDuration + this.ExperimentOptions.TimeStimOn) 
                         % Select left-eye image buffer for drawing:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         
@@ -226,6 +223,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                                     response = 'F';
                                 case 'LeftArrow'
                                     response = 'B';
+                                % add case escape to exit better? 
                             end
                         end
                         if ( ~isempty(response) ) % if there is a response, break this trial and start the next
@@ -267,54 +265,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
         
     end
 
-    % methods
-    % 
-    %     function [out] = Plot_Staircase(this)
-    %         %%
-    %         t = this.Session.trialDataTable;
-    % 
-    %         figure
-    %         subplot(2,2,[1 2])
-    %         plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0),'-o','Color','k'); hold on
-    %         plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0),'-o','Color','k')
-    %         plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5),'-o','Color','b')
-    %         plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5),'-o','Color','b')
-    %         plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10),'-o','Color','r')
-    %         plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10),'-o','Color','r')  
-    %         plot(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45),'-o','Color','m')
-    %         plot(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45),'-o','Color','m')
-    %         legend('0','0','5','5','10','10','45','45')
-    %         xlabel('Trials')
-    %         ylabel('Disparity Arcmins')
-    %         subplot(2,2,3)
-    %         bar(1,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0 & t.IsReversal == 1)),'FaceColor','k'); hold on
-    %         bar(1.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0 & t.IsReversal == 1)),'FaceColor','k')
-    %         bar(2,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5 & t.IsReversal == 1)),'FaceColor','b')
-    %         bar(2.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5 & t.IsReversal == 1)),'FaceColor','b')
-    %         bar(3,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10 & t.IsReversal == 1)),'FaceColor','r')
-    %         bar(3.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10 & t.IsReversal == 1)),'FaceColor','r')
-    %         bar(4,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45 & t.IsReversal == 1)),'FaceColor','m')
-    %         bar(4.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45 & t.IsReversal == 1)),'FaceColor','m')
-    %         xticks(1:3)
-    %         xticklabels({'0','5','10','45'})  
-    %         ylim([-1 1])
-    %         ylabel('Threshold, avg of reversals')
-    %         subplot(2,2,4)
-    %         bar(1,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 0 & t.BlockNumber > 90)),'FaceColor','k'); hold on
-    %         bar(1.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 0 & t.BlockNumber > 90)),'FaceColor','k')
-    %         bar(2,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 5 & t.BlockNumber > 90)),'FaceColor','b')
-    %         bar(2.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 5 & t.BlockNumber > 90)),'FaceColor','b')
-    %         bar(3,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 10 & t.BlockNumber > 90)),'FaceColor','r')
-    %         bar(3.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 10 & t.BlockNumber > 90)),'FaceColor','r')
-    %         bar(4,mean(t.DisparityArcMin(t.SignDisparity == 1 & t.RotateDots == 45 & t.BlockNumber > 90)),'FaceColor','m')
-    %         bar(4.1,mean(t.DisparityArcMin(t.SignDisparity == -1 & t.RotateDots == 45 & t.BlockNumber > 90)),'FaceColor','m')
-    %         xticks(1:4)
-    %         xticklabels({'0','5','10','45'})  
-    %         ylim([-1 1])
-    %         ylabel('Threshold, avg of last 10 trials')
-    % 
-    %     end
-    % end
+    
 
     methods
 

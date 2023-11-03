@@ -569,6 +569,7 @@ classdef ExperimentDesign < handle
                             
                             switch( result )
                                 case 'c'
+                                    trialsSinceBreak=0; %SR addition 9/22/2023
                                     state = RUNNING;
                                 case {'q' 0}
                                     dlgResult = this.Graph.DlgYesNo( 'Are you sure you want to exit?',[],[],20,20);

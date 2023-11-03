@@ -20,15 +20,15 @@ classdef PupilSize < ArumeExperimentDesigns.EyeTracking
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            dlg.Number_of_Dots = { 3500 '* (deg/s)' [10 10000] };
-            dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
+            dlg.Number_of_Dots = { 1500 '* (deg/s)' [10 10000] };
+            dlg.Size_of_Dots = { 2 '* (pix)' [1 100] };
             dlg.stimWindow_deg = {2 '* (deg)' [1 100] };
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
             dlg.TimeStimOn = { 10 '* (sec)' [0 60] };
             dlg.InitFixDuration = { 0.25 '* (sec)' [0 60] };
             dlg.EndFixDuration = { 0.25 '* (sec)' [0 60] };
             
-            dlg.NumberOfRepetitions = {15 '* (N)' [1 200] };
+            dlg.NumberOfRepetitions = {1 '* (N)' [1 200] };
             dlg.BackgroundBrightness = 0;
             
             %% CHANGE DEFAULTS values for existing options
@@ -55,7 +55,7 @@ classdef PupilSize < ArumeExperimentDesigns.EyeTracking
             
             i = i+1;
             conditionVars(i).name   = 'Disparities';
-            conditionVars(i).values = [.5 1 1.5 2 2.5];
+            conditionVars(i).values = [.1 .5 1 1.5 2 2.5 3 3.5 4];
                         
             i = i+1;
             conditionVars(i).name   = 'SignDisparity';
@@ -144,7 +144,6 @@ classdef PupilSize < ArumeExperimentDesigns.EyeTracking
                         
                         % Draw left stim:
                         Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1); % the 1 at the end means dot type where 1 2 or 3 is circular
-                        %Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
                         
                         % Select right-eye image buffer for drawing:
@@ -152,28 +151,10 @@ classdef PupilSize < ArumeExperimentDesigns.EyeTracking
                         
                         % Draw right stim:
                         Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1);
-                        %Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
                         
                     end
                     
-%                     % If it's either: 1) the initial fixation time, or 2) the post-trial ending fixation time, then just show the fixation dot
-%                     if ( secondsElapsed < this.ExperimentOptions.InitFixDuration || secondsElapsed < this.ExperimentOptions.TimeStimOn + this.ExperimentOptions.EndFixDuration)
-%                         % Select left-eye image buffer for drawing:
-%                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
-%                         
-%                         % Draw left stim:
-%                         Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
-%                         Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
-%                         
-%                         % Select right-eye image buffer for drawing:
-%                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
-%                         
-%                         % Draw right stim:
-%                         Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
-%                         Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
-%                         
-%                     end
                     
                     
                     % -----------------------------------------------------------------

@@ -20,14 +20,15 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            dlg.Number_of_Dots = { 3500 '* (deg/s)' [10 10000] };
+            dlg.Number_of_Dots = { 3000 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
-            dlg.stimWindow_deg = {15 '* (deg)' [1 100] };
+            dlg.MaxStimDeg = {12.5 '* (deg)' [1 100] };
+            dlg.MinStimDeg = {7.5 '* (deg)' [1 100] };
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
             dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] }; 
             dlg.InitFixDuration = { 1 '* (sec)' [0 60] };
             
-            dlg.NumberOfRepetitions = {20 '* (N)' [1 200] }; 
+            dlg.NumberOfRepetitions = {15 '* (N)' [1 200] }; 
             dlg.BackgroundBrightness = 0;
             
             %% CHANGE DEFAULTS values for existing options
@@ -54,7 +55,9 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
              
             i = i+1;
             conditionVars(i).name   = 'Disparities';
-            conditionVars(i).values = 0.1:0.2:0.9;
+            %conditionVars(i).values = [0.1:0.2:0.9];
+            conditionVars(i).values = [0.7:0.2:1.3];
+            %conditionVars(i).values = ones(size([0.1:0.2:0.9]))*30;
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
@@ -93,37 +96,34 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 
                 % How big should the dots stimulus be in pix
                 dots = zeros(3, this.ExperimentOptions.Number_of_Dots);
-                stimWindow_pix = this.ExperimentOptions.stimWindow_deg * pixPerDeg;
+                stimWindow_pix = this.ExperimentOptions.MaxStimDeg * pixPerDeg;
+                stimRingMin_pix = this.ExperimentOptions.MinStimDeg * pixPerDeg;
                 
-                % Disparity settings:
+                % Initialize disparity settings:
                 thisTrialData.DisparityArcMin = thisTrialData.Disparities * thisTrialData.SignDisparity;
                 disparity_deg = thisTrialData.DisparityArcMin/60;
                 disparityNeeded_pix = pixPerDeg*disparity_deg;
+
+                % Initialize dots
                 dots(1, :) = stimWindow_pix*rand(1, this.ExperimentOptions.Number_of_Dots) - (stimWindow_pix/2); % SR x coords
                 dots(2, :) = stimWindow_pix*rand(1, this.ExperimentOptions.Number_of_Dots) - (stimWindow_pix/2); % SR y coords
                 
-                % Make the dot stimulus circular :D 
+                % Make the dot stimulus circular 
                 distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
-                while isempty(distFromCenter(distFromCenter>stimWindow_pix/2 | distFromCenter<fixSizePix)) == 0 % while there are dots that are outside of the desired circle
-                    idxs=find(distFromCenter>stimWindow_pix/2 | distFromCenter<fixSizePix);
+                while isempty(distFromCenter(distFromCenter>stimWindow_pix/2 | distFromCenter<stimRingMin_pix/2)) == 0 % while there are dots that are outside of the desired circle
+                    idxs=find(distFromCenter>stimWindow_pix/2 | distFromCenter<stimRingMin_pix/2);
                     dots(1, idxs) = stimWindow_pix*rand(1, length(idxs)) - (stimWindow_pix/2); % resample those dots
                     dots(2, idxs) = stimWindow_pix*rand(1, length(idxs)) - (stimWindow_pix/2); 
                     distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
                 end
                 dots(3, :) = (ones(size(dots,2),1)')*disparityNeeded_pix; % how much the dots will shift by in pixels
                 
-                % % Don't shift all the dots, only shift the ones further
-                % % than 2 degs out 
-                % % Update, don't love the way this looks
-                % idxs = find(distFromCenter<pixPerDeg*2); 
-                % dots(3, idxs) = dots(3, idxs) * 0;
-                 
                 % Right and left shifted dots % SR DOES IT MATTER PLUS LEFT/RIGHT OR MINUS?
                 leftStimDots = [dots(1,:)+(dots(3,:)/2); dots(2,:)]; %dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; 
                 rightStimDots = [dots(1,:)-(dots(3,:)/2); dots(2,:)]; 
                 
                 % Rotating the dots 
-                leftDistFromCenter = sqrt((leftStimDots(1,:)).^2 + (leftStimDots(2,:)).^2); %where leftStimDots(1,:) is the x coord and leftStimDots(2,:) is the y coord
+                leftDistFromCenter = sqrt((leftStimDots(1,:)).^2 + (leftStimDots(2,:)).^2); %dist is measured from the ORIGIN (0,0) which is where the fixation dot is so we're rotating around fixation dot
                 leftThetaDeg = atan2d(leftStimDots(2,:),leftStimDots(1,:));
                 leftPolarPtX = cosd(leftThetaDeg + thisTrialData.RotateDots) .* leftDistFromCenter;
                 leftPolarPtY = sind(leftThetaDeg + thisTrialData.RotateDots) .* leftDistFromCenter;
@@ -213,25 +213,34 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                     % --- Collecting responses  ---------------------------------------
                     % -----------------------------------------------------------------
                     
-                    [keyIsDown, secs, keyCode, deltaSecs] = KbCheck();
-                    if ( keyIsDown )
-                        keys = find(keyCode);
-                        for i=1:length(keys)
-                            KbName(keys(i));
-                            switch(KbName(keys(i)))
-                                case 'RightArrow'
-                                    response = 'F';
-                                    WaitSecs(.25)
-                                case 'LeftArrow'
-                                    response = 'B';
-                                    WaitSecs(.25)
-                                % add case escape to exit better? 
+                    % Only collect responses after the stim has been displayed
+                    if secondsElapsed > this.ExperimentOptions.InitFixDuration
+                        [keyIsDown, secs, keyCode, deltaSecs] = KbCheck();
+                        if ( keyIsDown )
+                            keys = find(keyCode);
+                            for i=1:length(keys)
+                                KbName(keys(i));
+                                switch(KbName(keys(i)))
+                                    case 'RightArrow'
+                                        response = 'F';
+                                        WaitSecs(.25)
+                                    case 'LeftArrow'
+                                        response = 'B';
+                                        WaitSecs(.25)
+                                    case 'DownArrow'
+                                        response = 'F';
+                                        WaitSecs(.25)
+                                    case 'UpArrow'
+                                        response = 'B';
+                                        WaitSecs(.25)
+                                        % add case escape to exit better?
+                                end
                             end
-                        end
-                        if ( ~isempty(response) ) % if there is a response, break this trial and start the next
-                            thisTrialData.Response = response;
-                            thisTrialData.ResponseTime = GetSecs;
-                            break;
+                            if ( ~isempty(response) ) % if there is a response, break this trial and start the next
+                                thisTrialData.Response = response;
+                                thisTrialData.ResponseTime = GetSecs;
+                                break;
+                            end
                         end
                     end
                 end

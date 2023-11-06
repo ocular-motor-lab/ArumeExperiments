@@ -20,15 +20,15 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            dlg.Number_of_Dots = { 3000 '* (deg/s)' [10 10000] };
+            dlg.Number_of_Dots = { 1000 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
-            dlg.MaxStimDeg = {12.5 '* (deg)' [1 100] };
-            dlg.MinStimDeg = {7.5 '* (deg)' [1 100] };
+            dlg.MaxStimDeg = {12 '* (deg)' [1 100] };
+            dlg.MinStimDeg = {10 '* (deg)' [1 100] };
             dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
             dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] }; 
             dlg.InitFixDuration = { 1 '* (sec)' [0 60] };
             
-            dlg.NumberOfRepetitions = {15 '* (N)' [1 200] }; 
+            dlg.NumberOfRepetitions = {20 '* (N)' [1 200] }; 
             dlg.BackgroundBrightness = 0;
             
             %% CHANGE DEFAULTS values for existing options
@@ -56,7 +56,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             i = i+1;
             conditionVars(i).name   = 'Disparities';
             %conditionVars(i).values = [0.1:0.2:0.9];
-            conditionVars(i).values = [0.7:0.2:1.3];
+            conditionVars(i).values = [0.5:0.2:1.3];
             %conditionVars(i).values = ones(size([0.1:0.2:0.9]))*30;
             
             i = i+1;
@@ -223,17 +223,16 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                                 switch(KbName(keys(i)))
                                     case 'RightArrow'
                                         response = 'F';
-                                        WaitSecs(.25)
+                                        %WaitSecs(.25)
                                     case 'LeftArrow'
                                         response = 'B';
-                                        WaitSecs(.25)
+                                        %WaitSecs(.25)
                                     case 'DownArrow'
                                         response = 'F';
-                                        WaitSecs(.25)
+                                       % WaitSecs(.25)
                                     case 'UpArrow'
                                         response = 'B';
-                                        WaitSecs(.25)
-                                        % add case escape to exit better?
+                                        %WaitSecs(.25)
                                 end
                             end
                             if ( ~isempty(response) ) % if there is a response, break this trial and start the next
@@ -246,7 +245,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 end
                 
                 if ( isempty(response) )
-                    thisTrialData.Response = 'NoResponse';
+                    thisTrialData.Response = 'N';
                     thisTrialData.ResponseTime = GetSecs;
                     trialResult = Enum.trialResult.ABORT;
                 else

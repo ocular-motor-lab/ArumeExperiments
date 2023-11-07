@@ -277,139 +277,71 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
     
 
     methods
-
+        
         function [out] = Plot_ConstantStim(this)
             %%
-            t = this.Session.trialDataTable;
-
-
-            % Plotting the psychometric function
-            RotateDotsCond = [0,10,45];
-            SignDispCond = [1 -1];
-            whichone = 1; figure(1);
-
-            % lets start with just one condition
-            for asign = 1:length(SignDispCond)
+            trialTable = this.Session.trialDataTable;
+            
+            
+            trialTable.RespondedFront = ones(size(trialTable,1),1);
+            trialTable.RespondedFront(trialTable.Response == 'B') = trialTable.RespondedFront(trialTable.Response == 'B') *0;
+            RotateDotsCond = unique(trialTable.RotateDots);
+            thresholdTable = table();
+            here=1;
+            
+            for asubject = 1:length(subjects)
+                figure('Position',1.0e+03 * [0.3243  1.0297 1.2357  0.3083]);
+                
                 for arotation = 1:length(RotateDotsCond)
-                    idxs = find(t.RotateDots == RotateDotsCond(arotation) & t.SignDisparity == SignDispCond(asign));
-                    temp=array2table([t.DisparityArcMin(idxs) t.GuessedCorrectly(idxs)],'VariableNames',{'DisparityArcMin','GuessedCorrectly'});
-                    temp_sorted = sortrows(temp);
-
-                    % Define the ranges for alpha and beta that you want to search over
-                    aRange = linspace(-2,2,height(temp)); %"threshold" parameter range, alpha
-                    bRange = linspace(-10,30,height(temp)); %"slope" parameter range, beta
-                    LLE = zeros(length(bRange),length(aRange));
-                    loglikelihood_trials = [];
-
-                    % For all combinations of alpha and beta, get the log likelihoods
-                    % for each trial describing how likely it is for that data point to
-                    % exist based on the tested alpha + beta
-                    for bi = 1:length(bRange)
-                        for ai = 1:length(aRange)
-                            for atrial = 1:height(temp)
-                                switch (true)
-                                    case SignDispCond(asign) == 1
-                                        if temp.GuessedCorrectly(atrial) == 1
-                                            loglikelihood_trials(atrial) = log( 0.5./(1+exp(-bRange(bi).*(temp.DisparityArcMin(atrial)-aRange(ai))))+0.5); % logistic equation: 1./(1 + exp(-b.*(x-a)))
-
-                                        elseif temp.GuessedCorrectly(atrial) == 0
-                                            loglikelihood_trials(atrial) = log( 1- (0.5./(1+exp(-bRange(bi).*(temp.DisparityArcMin(atrial)-aRange(ai)))) +0.5) );
-
-                                        end
-                                    case SignDispCond(asign) == -1
-                                        if temp.GuessedCorrectly(atrial) == 1
-                                            loglikelihood_trials(atrial) = log( 0.5./(1+exp(bRange(bi).*(temp.DisparityArcMin(atrial)-aRange(ai))))+0.5); % logistic equation: 1./(1 + exp(-b.*(x-a)))
-
-                                        elseif temp.GuessedCorrectly(atrial) == 0
-                                            loglikelihood_trials(atrial) = log( 1- (0.5./(1+exp(bRange(bi).*(temp.DisparityArcMin(atrial)-aRange(ai)))) +0.5) );
-
-                                        end
-                                end
-                            end
-                            % Sum the log likelihoods for all the trials and put it
-                            % into a matrix for an alpha/beta combination
-                            LLE(bi,ai) = sum(loglikelihood_trials);
-
-                        end
-                        %plot(LLE(bi,:)); pause;
+                    idxs = find(trialTable.RotateDots == RotateDotsCond(arotation) & trialTable.Subject == subjects(asubject));
+                    temp=sortrows(array2table([trialTable.DisparityArcMin(idxs) trialTable.RespondedFront(idxs)],'VariableNames',{'DisparityArcMin','RespondedFront'}));
+                    
+                    % Fit model
+                    modelspec = 'RespondedFront ~ DisparityArcMin';
+                    mdl = fitglm(temp(:,{'RespondedFront', 'DisparityArcMin'}), modelspec, 'Distribution', 'binomial');
+                    a=[-1:0.01:0, 0.01:0.01:1];
+                    p = predict(mdl,a');
+                    
+                    % Get average response for that disparity
+                    temp.meanedResp=zeros(height(temp),1);
+                    [uniqueDisparities,~] = unique(temp.DisparityArcMin);
+                    for i = 1:length(uniqueDisparities)
+                        idxs=find(temp.DisparityArcMin == uniqueDisparities(i));
+                        temp.meanedResp(idxs) = mean(temp.RespondedFront(idxs));
                     end
-
-                    % Get the maximum likelihood of the alpha and beta parameters
-                    [themax,theidx]=max(LLE(:));
-                    [maybeX,maybeY] = meshgrid(1:height(temp),1:height(temp));
-                    if maybeX(theidx) == 1 | maybeX(theidx) == 100 | maybeY(theidx) == 1 | maybeY(theidx) == 100
-                        disp('search range isnt big enough!')
-                        break
-                    end
-                    the_a_parameter = aRange(maybeX(theidx));
-                    the_b_parameter = bRange(maybeY(theidx));
-
-                    % What is the 80% threshold from our staircase
-                    p=0.8; %from arume staircase
-                    what_is_the_threshold = (log(1-p / p-0.5)) ./ -the_b_parameter + the_a_parameter;
-
-                    % How do you want to group the raw data for visualization?
-                    grouping_method = 2; %1 or 2
-
-                    % Preparing visualization
-                    temp_sorted = sortrows(temp);
-                    if grouping_method == 1
-                        % Group the raw data so that each chunk has the same number of data points
-                        sizeOfChunk = 10;
-                        thechunk = 1:sizeOfChunk;
-                        for achunk = 1:100/sizeOfChunk
-                            themeans(achunk) = mean(temp_sorted.DisparityArcMin(thechunk));
-                            theresponses(achunk) = mean(temp_sorted.GuessedCorrectly(thechunk));
-                            thechunk = thechunk + sizeOfChunk;
-                        end
-
-                    elseif grouping_method == 2
-                        % Group the raw data in steps of 0.1
-                        temp_sorted.roundedDisparities = round(temp_sorted.DisparityArcMin*10)/10;
-                        maybe = find(diff(temp_sorted.roundedDisparities));
-                        starting = 1;
-                        temp_sorted.meanedResp=zeros(height(temp_sorted),1)
-                        for i = 1:length(maybe)
-                            ending = maybe(i);
-                            temp_sorted.meanedResp(starting:ending) = mean(temp_sorted.GuessedCorrectly(starting:ending));
-                            forplotting(i)=length(starting:ending);
-                            starting = ending+1;
-                            if starting > maybe(end) % if it's the last chunk
-                                temp_sorted.meanedResp(starting:end) = mean(temp_sorted.GuessedCorrectly(starting:end));
-                                forplotting(i+1) = length(starting:100);
-                            end
-                        end
-                    end
-
-                    % Visualize!
-                    subplot(2,4,whichone)
-                    if SignDispCond(asign) == -1
-                        x = -3:.01:0;
-                        plot(x, 0.5./(1 + exp(the_b_parameter.*(x-the_a_parameter)))+0.5,'linewidth',2); hold on
-                    else
-                        x = 0:.01:3;
-                        plot(x, 0.5./(1 + exp(-the_b_parameter.*(x-the_a_parameter)))+0.5,'linewidth',2); hold on
-                    end
-
-                    if grouping_method == 1
-                        plot(themeans, theresponses,'o','markersize',7,'color','k','linewidth',1)
-                    elseif grouping_method == 2
-                        [disparities,idx] = unique(temp_sorted.roundedDisparities);
-                        meanedResponses = temp_sorted.meanedResp(idx);
-                        for i = 1:length(disparities)
-                            plot(disparities(i),meanedResponses(i),'o','markersize',(forplotting(i)+10)/2,'color','k','linewidth',1)
-                        end
-                    end
+                    
+                    % Get the numbers
+                    alpha = mdl.Coefficients.Estimate(2);
+                    beta=mdl.Coefficients.Estimate(1);
+                    p1=0.5;
+                    x1 = (log(p1/(1-p1))-beta)/alpha; %PSE % log(p/1-p) = ax+b where we know p and a and b and are trying to get x.
+                    p2=.25;
+                    x2 = (log(p2/(1-p2))-beta)/alpha;
+                    p3=.75;
+                    x3 = (log(p3/(1-p3))-beta)/alpha;
+                    slope = (p3-p2) / (x3-x2);
+                    threshold=(x3-x2)/2;
+                    
+                    % Add them to a table
+                    thresholdTable.Subject(here) = subjects(asubject);
+                    thresholdTable.Condition(here) = RotateDotsCond(arotation);
+                    thresholdTable.Slope(here) = slope;
+                    thresholdTable.Threshold(here) = threshold;
+                    
+                    % Plot
+                    subplot(1,3,arotation)
+                    plot(a,p) % plot prediction
+                    hold on;
+                    plot(temp.DisparityArcMin,temp.meanedResp,'o'); hold on
                     ylim([0 1])
                     xlabel('Disparity (arcmin)')
-                    ylabel('Proportion Correct')
-                    title(sprintf('Rotation: %s',string(RotateDotsCond(arotation))))
-                    text(min(xlim)+0.05, min(ylim)+0.13, sprintf('Threshold param: %.2f', what_is_the_threshold), 'Horiz','left', 'Vert','bottom')
-                    text(min(xlim)+0.05, min(ylim)+0.08, sprintf('Alpha param: %.2f', the_a_parameter), 'Horiz','left', 'Vert','bottom')
-                    text(min(xlim)+0.05, min(ylim)+0.03, sprintf('Beta param: %.2f', the_b_parameter), 'Horiz','left', 'Vert','bottom')
-
-                    whichone = whichone + 1;
-
+                    ylabel('Proportion Front')
+                    %text(min(xlim)+0.05, max(ylim)-0.1, sprintf('PSE: %.2f', x1), 'Horiz','left', 'Vert','bottom')
+                    text(min(xlim)+0.05, max(ylim)-0.1, sprintf('Slope: %.2f', slope), 'Horiz','left', 'Vert','bottom')
+                    text(min(xlim)+0.05, max(ylim)-0.15, sprintf('Threshold(arcmin): %.2f', threshold), 'Horiz','left', 'Vert','bottom')
+                    title([sprintf('Subj: %s',string(subjects(asubject))) sprintf('   Rotation: %s',string(RotateDotsCond(arotation)))])
+                    
+                    here=here+1;
                 end
             end
 

@@ -20,12 +20,12 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            dlg.Number_of_Dots = { 1000 '* (deg/s)' [10 10000] };
-            dlg.Size_of_Dots = { 4 '* (pix)' [1 100] };
-            dlg.MaxStimDeg = {12 '* (deg)' [1 100] };
-            dlg.MinStimDeg = {10 '* (deg)' [1 100] };
-            dlg.FixationSpotSize = { 0.4 '* (diameter_in_deg)' [0 5] };
-            dlg.TimeStimOn = { 0.5 '* (sec)' [0 60] }; 
+            dlg.Number_of_Dots = { 100 '* (deg/s)' [10 10000] };
+            dlg.Size_of_Dots = { 1 '* (pix)' [1 100] };
+            dlg.MaxStimDeg = {3 '* (deg)' [1 100] };
+            dlg.MinStimDeg = {2 '* (deg)' [1 100] };
+            dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
+            dlg.TimeStimOn = { 0.2 '* (sec)' [0 60] }; 
             dlg.InitFixDuration = { 1 '* (sec)' [0 60] };
             
             dlg.NumberOfRepetitions = {20 '* (N)' [1 200] }; 
@@ -55,13 +55,12 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
              
             i = i+1;
             conditionVars(i).name   = 'Disparities';
-            %conditionVars(i).values = [0.1:0.2:0.9];
-            conditionVars(i).values = [0.5:0.2:1.3];
+            conditionVars(i).values = [0.1:0.2:0.9];
             %conditionVars(i).values = ones(size([0.1:0.2:0.9]))*30;
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
-            conditionVars(i).values = [0 5 10]; %[0 10 45];
+            conditionVars(i).values = [0 -5 -10]; %[0 10 45];
             
             i = i+1;
             conditionVars(i).name   = 'SignDisparity';

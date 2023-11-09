@@ -23,7 +23,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg.Number_of_Dots = { 1000 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 1 '* (pix)' [1 100] };
             dlg.MaxStimDeg = {3 '* (deg)' [1 100] };
-            dlg.MinStimDeg = {1.5 '* (deg)' [1 100] };
+            dlg.MinStimDeg = {2 '* (deg)' [1 100] };
             dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
             dlg.TimeStimOn = { 0.2 '* (sec)' [0 60] }; 
             dlg.InitFixDuration = { 1 '* (sec)' [0 60] };
@@ -60,7 +60,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
-            conditionVars(i).values = [0 -5 -10]; %[0 10 45];
+            conditionVars(i).values = [0 5 10]; %[0 10 45];
             
             i = i+1;
             conditionVars(i).name   = 'SignDisparity';
@@ -286,14 +286,12 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             trialTable.RespondedFront = ones(size(trialTable,1),1);
             trialTable.RespondedFront(trialTable.Response == 'B') = trialTable.RespondedFront(trialTable.Response == 'B') *0;
             RotateDotsCond = unique(trialTable.RotateDots);
-            thresholdTable = table();
             here=1;
             
-            for asubject = 1:length(subjects)
-                figure('Position',1.0e+03 * [0.3243  1.0297 1.2357  0.3083]);
+                figure
                 
                 for arotation = 1:length(RotateDotsCond)
-                    idxs = find(trialTable.RotateDots == RotateDotsCond(arotation) & trialTable.Subject == subjects(asubject));
+                    idxs = find(trialTable.RotateDots == RotateDotsCond(arotation));
                     temp=sortrows(array2table([trialTable.DisparityArcMin(idxs) trialTable.RespondedFront(idxs)],'VariableNames',{'DisparityArcMin','RespondedFront'}));
                     
                     % Fit model
@@ -321,13 +319,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                     x3 = (log(p3/(1-p3))-beta)/alpha;
                     slope = (p3-p2) / (x3-x2);
                     threshold=(x3-x2)/2;
-                    
-                    % Add them to a table
-                    thresholdTable.Subject(here) = subjects(asubject);
-                    thresholdTable.Condition(here) = RotateDotsCond(arotation);
-                    thresholdTable.Slope(here) = slope;
-                    thresholdTable.Threshold(here) = threshold;
-                    
+                  
                     % Plot
                     subplot(1,3,arotation)
                     plot(a,p) % plot prediction
@@ -339,11 +331,11 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                     %text(min(xlim)+0.05, max(ylim)-0.1, sprintf('PSE: %.2f', x1), 'Horiz','left', 'Vert','bottom')
                     text(min(xlim)+0.05, max(ylim)-0.1, sprintf('Slope: %.2f', slope), 'Horiz','left', 'Vert','bottom')
                     text(min(xlim)+0.05, max(ylim)-0.15, sprintf('Threshold(arcmin): %.2f', threshold), 'Horiz','left', 'Vert','bottom')
-                    title([sprintf('Subj: %s',string(subjects(asubject))) sprintf('   Rotation: %s',string(RotateDotsCond(arotation)))])
+                    title(sprintf('Rotation: %s',string(RotateDotsCond(arotation))))
                     
                     here=here+1;
                 end
-            end
+            
 
 
 

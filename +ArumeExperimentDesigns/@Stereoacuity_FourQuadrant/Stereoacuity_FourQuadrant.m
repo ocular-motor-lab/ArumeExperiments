@@ -66,6 +66,10 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
             conditionVars(i).name   = 'SignDisparity';
             conditionVars(i).values = [-1 1]; 
             
+            i = i+1;
+            conditionVars(i).name   = 'WhichQuadrant';
+            conditionVars(i).values = [1 2 3 4]; % where 1 is top left, 2 is top right, 3 is bottom left, 4 is bottom right
+            
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
             trialTableOptions.trialAbortAction = 'Repeat'; % Repeat, Delay, Drop
@@ -117,7 +121,23 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                 end
                 dots(3, :) = (ones(size(dots,2),1)')*disparityNeeded_pix; % how much the dots will shift by in pixels
                 
-                % Right and left shifted dots % SR DOES IT MATTER PLUS LEFT/RIGHT OR MINUS?
+                % Figuring out how much to shift the dots by in a guassian
+                % way. first, calculate dist from center of the dots
+                distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
+                
+                % then sort by how far away from center the dots are 
+                [B,I]=sort(distFromCenter);
+                dots=dots(1:2,I); % so now B and dots are sorted the same way 
+                
+                % finally, figure out how much you need to shift the dots 
+                %y = normpdf(linspace(min(dots(1,:)),max(dots(1,:)),length(dots)),disparityNeeded_pix,1) %std of 1
+                if disparityNeeded_pix < 0
+                    dots(3,:)=linspace(disparityNeeded_pix,0,length(dots)); % TODO this is not it
+                else
+                    dots(3,:)=linspace(0,disparityNeeded_pix,length(dots)); % TODO this is not it
+                end
+                
+                % Right and left shifted dots 
                 leftStimDots = [dots(1,:)+(dots(3,:)/2); dots(2,:)]; %dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; 
                 rightStimDots = [dots(1,:)-(dots(3,:)/2); dots(2,:)]; 
                 
@@ -132,6 +152,14 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                 rightPolarPtY = sind(rightThetaDeg + thisTrialData.RotateDots) .* rightDistFromCenter;
                 leftStimDots = [leftPolarPtX;leftPolarPtY];
                 rightStimDots = [rightPolarPtX;rightPolarPtY];
+                
+%                 % Placing the stim
+%                 if thisTrialData.WhichQuadrant == 1
+%                 stimulus(1)=
+%                 stimulus(2)=
+%                 stimulus(3)=
+%                 stimulus(4)=
+                                
                 
                 % What the response should be
                 if thisTrialData.DisparityArcMin > 0

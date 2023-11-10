@@ -20,7 +20,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            dlg.Number_of_Dots = { 1000 '* (deg/s)' [10 10000] };
+            dlg.Number_of_Dots = { 350 '* (num)' [10 10000] };
             dlg.Size_of_Dots = { 1 '* (pix)' [1 100] };
             dlg.MaxStimDeg = {3 '* (deg)' [1 100] };
             dlg.MinStimDeg = {2 '* (deg)' [1 100] };
@@ -117,7 +117,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 end
                 dots(3, :) = (ones(size(dots,2),1)')*disparityNeeded_pix; % how much the dots will shift by in pixels
                 
-                % Right and left shifted dots % SR DOES IT MATTER PLUS LEFT/RIGHT OR MINUS?
+                % Right and left shifted dots 
                 leftStimDots = [dots(1,:)+(dots(3,:)/2); dots(2,:)]; %dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; 
                 rightStimDots = [dots(1,:)-(dots(3,:)/2); dots(2,:)]; 
                 
@@ -222,16 +222,12 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                                 switch(KbName(keys(i)))
                                     case 'RightArrow'
                                         response = 'F';
-                                        %WaitSecs(.25)
                                     case 'LeftArrow'
                                         response = 'B';
-                                        %WaitSecs(.25)
                                     case 'DownArrow'
                                         response = 'F';
-                                       % WaitSecs(.25)
                                     case 'UpArrow'
                                         response = 'B';
-                                        %WaitSecs(.25)
                                 end
                             end
                             if ( ~isempty(response) ) % if there is a response, break this trial and start the next

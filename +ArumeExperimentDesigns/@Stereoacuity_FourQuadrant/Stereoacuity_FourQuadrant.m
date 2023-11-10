@@ -23,9 +23,9 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
             dlg.Number_of_Dots = { 1000 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 1 '* (pix)' [1 100] };
             dlg.MaxStimDeg = {3 '* (deg)' [1 100] };
-            dlg.MinStimDeg = {2 '* (deg)' [1 100] };
+            dlg.MinStimDeg = {0.5 '* (deg)' [0 100] };
             dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
-            dlg.TimeStimOn = { 0.2 '* (sec)' [0 60] }; 
+            dlg.TimeStimOn = { 5 '* (sec)' [0 60] }; 
             dlg.InitFixDuration = { 1 '* (sec)' [0 60] };
             
             dlg.NumberOfRepetitions = {20 '* (N)' [1 200] }; 
@@ -164,10 +164,10 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         
                         % Draw left stim:
-                        Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/4, 1); % top left
-                        Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2 + this.Graph.wRect(3)/4, this.Graph.wRect(4)/4], 1); % top right
-                        Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [255 0 0], [this.Graph.wRect(3)/4, this.Graph.wRect(4)/2 + this.Graph.wRect(4)/4], 1); % bottom left
-                        Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3:4)/2 + this.Graph.wRect(3:4)/4], 1); % bottom right
+                        Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2-100], 1); % top left
+                        Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2-100], 1); % top right
+                        Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2+100], 1); % bottom left
+                        Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2+100], 1); % bottom right
                         Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
                         
@@ -175,10 +175,10 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
                         
                         % Draw right stim:
-                        Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [255 0 0], this.Graph.wRect(3:4)/4, 1); % top left
-                        Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2 + this.Graph.wRect(3)/4, this.Graph.wRect(4)/4], 1); % top right
-                        Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/4, this.Graph.wRect(4)/2 + this.Graph.wRect(4)/4], 1); % bottom left
-                        Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3:4)/2 + this.Graph.wRect(3:4)/4], 1); % bottom right
+                        Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2-100], 1); % top left
+                        Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2-100], 1); % top right
+                        Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2+100], 1); % bottom left
+                        Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2+100], 1); % bottom right
                         Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
                         

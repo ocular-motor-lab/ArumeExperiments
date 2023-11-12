@@ -20,12 +20,13 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            dlg.Number_of_Dots = { 1000 '* (deg/s)' [10 10000] };
+            dlg.Number_of_Dots = { 2500 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 1 '* (pix)' [1 100] };
             dlg.MaxStimDeg = {3 '* (deg)' [1 100] };
             dlg.MinStimDeg = {0.5 '* (deg)' [0 100] };
             dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
-            dlg.TimeStimOn = { 5 '* (sec)' [0 60] }; 
+            dlg.TimeStimOn = { 10 '* (sec)' [0 60] }; 
+            dlg.FixToStimDist = { 2.5 '* (deg)' [0 60] }; 
             dlg.InitFixDuration = { 1 '* (sec)' [0 60] };
             
             dlg.NumberOfRepetitions = {20 '* (N)' [1 200] }; 
@@ -55,7 +56,8 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
              
             i = i+1;
             conditionVars(i).name   = 'Disparities';
-            conditionVars(i).values = [0.1:0.2:0.9];
+            conditionVars(i).values = [0.7:0.2:1.3];
+            %conditionVars(i).values = [0.1:0.2:0.9];
             %conditionVars(i).values = ones(size([0.1:0.2:0.9]))*30;
             
             i = i+1;
@@ -96,6 +98,9 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                                 
                 % Get fixation spot size in pix
                 fixSizePix = pixPerDeg * this.ExperimentOptions.FixationSpotSize;
+
+                % Get fixation spot to central stimulus distance in pix
+                fixToStimDist = pixPerDeg * this.ExperimentOptions.FixToStimDist;
                 
                 % How big should the dots stimulus be in pix
                 dots = zeros(3, this.ExperimentOptions.Number_of_Dots);
@@ -119,7 +124,6 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                     dots(2, idxs) = stimWindow_pix*rand(1, length(idxs)) - (stimWindow_pix/2); 
                     distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
                 end
-                dots(3, :) = (ones(size(dots,2),1)')*disparityNeeded_pix; % how much the dots will shift by in pixels
                 
                 % Figuring out how much to shift the dots by in a guassian
                 % way. first, calculate dist from center of the dots
@@ -131,12 +135,9 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                 
                 % finally, figure out how much you need to shift the dots 
                 %y = normpdf(linspace(min(dots(1,:)),max(dots(1,:)),length(dots)),disparityNeeded_pix,1) %std of 1
-                if disparityNeeded_pix < 0
-                    dots(3,:)=linspace(disparityNeeded_pix,0,length(dots)); % TODO this is not it
-                else
-                    dots(3,:)=linspace(0,disparityNeeded_pix,length(dots)); % TODO this is not it
-                end
-                
+                %dots(3,:)=linspace(disparityNeeded_pix,0,length(dots)); % TODO this is not it
+                dots(3, :) = (ones(size(dots,2),1)')*disparityNeeded_pix; % how much the dots will shift by in pixels
+
                 % Right and left shifted dots 
                 leftStimDots = [dots(1,:)+(dots(3,:)/2); dots(2,:)]; %dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; 
                 rightStimDots = [dots(1,:)-(dots(3,:)/2); dots(2,:)]; 
@@ -196,10 +197,10 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         
                         % Draw left stim:
-                        Screen('DrawDots', this.Graph.window, order{1}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2-100], 1); % top left
-                        Screen('DrawDots', this.Graph.window, order{2}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2-100], 1); % top right
-                        Screen('DrawDots', this.Graph.window, order{3}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2+100], 1); % bottom left
-                        Screen('DrawDots', this.Graph.window, order{4}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2+100], 1); % bottom right
+                        Screen('DrawDots', this.Graph.window, order{1}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-fixToStimDist, this.Graph.wRect(4)/2-fixToStimDist], 1); % top left
+                        Screen('DrawDots', this.Graph.window, order{2}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+fixToStimDist, this.Graph.wRect(4)/2-fixToStimDist], 1); % top right
+                        Screen('DrawDots', this.Graph.window, order{3}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-fixToStimDist, this.Graph.wRect(4)/2+fixToStimDist], 1); % bottom left
+                        Screen('DrawDots', this.Graph.window, order{4}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+fixToStimDist, this.Graph.wRect(4)/2+fixToStimDist], 1); % bottom right
                         Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
                         
@@ -207,10 +208,10 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
                         
                         % Draw right stim:
-                        Screen('DrawDots', this.Graph.window, order{5}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2-100], 1); % top left
-                        Screen('DrawDots', this.Graph.window, order{6}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2-100], 1); % top right
-                        Screen('DrawDots', this.Graph.window, order{7}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2+100], 1); % bottom left
-                        Screen('DrawDots', this.Graph.window, order{8}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2+100], 1); % bottom right
+                        Screen('DrawDots', this.Graph.window, order{5}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-fixToStimDist, this.Graph.wRect(4)/2-fixToStimDist], 1); % top left
+                        Screen('DrawDots', this.Graph.window, order{6}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+fixToStimDist, this.Graph.wRect(4)/2-fixToStimDist], 1); % top right
+                        Screen('DrawDots', this.Graph.window, order{7}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-fixToStimDist, this.Graph.wRect(4)/2+fixToStimDist], 1); % bottom left
+                        Screen('DrawDots', this.Graph.window, order{8}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+fixToStimDist, this.Graph.wRect(4)/2+fixToStimDist], 1); % bottom right
                         Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
                         

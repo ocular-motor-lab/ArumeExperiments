@@ -153,19 +153,23 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                 leftStimDots = [leftPolarPtX;leftPolarPtY];
                 rightStimDots = [rightPolarPtX;rightPolarPtY];
                 
-%                 % Placing the stim
-%                 if thisTrialData.WhichQuadrant == 1
-%                 stimulus(1)=
-%                 stimulus(2)=
-%                 stimulus(3)=
-%                 stimulus(4)=
+                % Placing the stim
+                if thisTrialData.WhichQuadrant == 1
+                    order={rightStimDots, leftStimDots, leftStimDots,leftStimDots,leftStimDots,rightStimDots,rightStimDots,rightStimDots};
+                elseif thisTrialData.WhichQuadrant == 2
+                    order={leftStimDots, rightStimDots, leftStimDots,leftStimDots,rightStimDots,leftStimDots,rightStimDots,rightStimDots};
+                elseif thisTrialData.WhichQuadrant == 3
+                    order={leftStimDots, leftStimDots,rightStimDots,leftStimDots,rightStimDots,rightStimDots,leftStimDots,rightStimDots};
+                elseif thisTrialData.WhichQuadrant == 4
+                    order={leftStimDots, leftStimDots,leftStimDots,rightStimDots,rightStimDots,rightStimDots,rightStimDots,leftStimDots};
+                end
                                 
                 
                 % What the response should be
-                if thisTrialData.DisparityArcMin > 0
-                    thisTrialData.CorrectResponse = 'F';
-                elseif thisTrialData.DisparityArcMin < 0
-                    thisTrialData.CorrectResponse = 'B';
+                if thisTrialData.WhichQuadrant == 1 || thisTrialData.WhichQuadrant == 3
+                    thisTrialData.CorrectResponse = 'L';
+                elseif thisTrialData.WhichQuadrant == 2 || thisTrialData.WhichQuadrant == 4
+                    thisTrialData.CorrectResponse = 'R';
                 end
                 
                 % For the while loop trial start
@@ -192,10 +196,10 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         
                         % Draw left stim:
-                        Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2-100], 1); % top left
-                        Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2-100], 1); % top right
-                        Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2+100], 1); % bottom left
-                        Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2+100], 1); % bottom right
+                        Screen('DrawDots', this.Graph.window, order{1}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2-100], 1); % top left
+                        Screen('DrawDots', this.Graph.window, order{2}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2-100], 1); % top right
+                        Screen('DrawDots', this.Graph.window, order{3}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2+100], 1); % bottom left
+                        Screen('DrawDots', this.Graph.window, order{4}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2+100], 1); % bottom right
                         Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
                         
@@ -203,10 +207,10 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
                         
                         % Draw right stim:
-                        Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2-100], 1); % top left
-                        Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2-100], 1); % top right
-                        Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2+100], 1); % bottom left
-                        Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2+100], 1); % bottom right
+                        Screen('DrawDots', this.Graph.window, order{5}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2-100], 1); % top left
+                        Screen('DrawDots', this.Graph.window, order{6}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2-100], 1); % top right
+                        Screen('DrawDots', this.Graph.window, order{7}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-100, this.Graph.wRect(4)/2+100], 1); % bottom left
+                        Screen('DrawDots', this.Graph.window, order{8}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+100, this.Graph.wRect(4)/2+100], 1); % bottom right
                         Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
                         
@@ -255,17 +259,9 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                                 KbName(keys(i));
                                 switch(KbName(keys(i)))
                                     case 'RightArrow'
-                                        response = 'F';
-                                        %WaitSecs(.25)
+                                        response = 'R';
                                     case 'LeftArrow'
-                                        response = 'B';
-                                        %WaitSecs(.25)
-                                    case 'DownArrow'
-                                        response = 'F';
-                                       % WaitSecs(.25)
-                                    case 'UpArrow'
-                                        response = 'B';
-                                        %WaitSecs(.25)
+                                        response = 'L';
                                 end
                             end
                             if ( ~isempty(response) ) % if there is a response, break this trial and start the next

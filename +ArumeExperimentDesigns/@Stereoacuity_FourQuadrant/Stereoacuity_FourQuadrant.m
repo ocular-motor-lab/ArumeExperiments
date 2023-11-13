@@ -136,7 +136,10 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                 % finally, figure out how much you need to shift the dots 
                 %y = normpdf(linspace(min(dots(1,:)),max(dots(1,:)),length(dots)),disparityNeeded_pix,1) %std of 1
                 %dots(3,:)=linspace(disparityNeeded_pix,0,length(dots)); % TODO this is not it
-                dots(3, :) = (ones(size(dots,2),1)')*disparityNeeded_pix; % how much the dots will shift by in pixels
+                fullgauss=gausswin(length(dots));
+                halfgauss=flip(fullgauss(1:length(fullgauss)/2));
+                dots(3,:)=interp(halfgauss,2)*disparityNeeded_pix; %ugh this is not great?????
+
 
                 % Right and left shifted dots 
                 leftStimDots = [dots(1,:)+(dots(3,:)/2); dots(2,:)]; %dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; 

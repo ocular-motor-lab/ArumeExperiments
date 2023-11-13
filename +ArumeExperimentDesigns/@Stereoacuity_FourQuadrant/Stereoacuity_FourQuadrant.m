@@ -128,23 +128,23 @@ classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
                 % Figuring out how much to shift the dots by in a guassian
                 % way. first, calculate dist from center of the dots
                 distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
-                
-                % then sort by how far away from center the dots are 
-                [B,I]=sort(distFromCenter);
-                dots=dots(1:2,I); % so now B and dots are sorted the same way 
-                
-                % finally, figure out how much you need to shift the dots 
-                %y = normpdf(linspace(min(dots(1,:)),max(dots(1,:)),length(dots)),disparityNeeded_pix,1) %std of 1
-                %dots(3,:)=linspace(disparityNeeded_pix,0,length(dots)); % TODO this is not it
-                fullgauss=gausswin(length(dots));
-                halfgauss=flip(fullgauss(1:length(fullgauss)/2));
-                dots(3,:)=interp(halfgauss,2)*disparityNeeded_pix; %ugh this is not great?????
+                % 
+                % % then sort by how far away from center the dots are 
+                % [B,I]=sort(distFromCenter);
+                % dots=dots(1:2,I); % so now B and dots are sorted the same way 
+                % 
+                % % finally, figure out how much you need to shift the dots 
+                % %y = normpdf(linspace(min(dots(1,:)),max(dots(1,:)),length(dots)),disparityNeeded_pix,1) %std of 1
+                % %dots(3,:)=linspace(disparityNeeded_pix,0,length(dots)); % TODO this is not it
+                % fullgauss=gausswin(length(dots));
+                % halfgauss=flip(fullgauss(1:length(fullgauss)/2));
+                dots(3,:)= disparityNeeded_pix*exp(-((distFromCenter).^2/(2*(stimWindow_pix/4).^2))); % interp(halfgauss,2)*disparityNeeded_pix; %ugh this is not great?????
 
 
                 % Right and left shifted dots 
                 leftStimDots = [dots(1,:)+(dots(3,:)/2); dots(2,:)]; %dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; 
                 rightStimDots = [dots(1,:)-(dots(3,:)/2); dots(2,:)]; 
-                
+                thisTrialData.RotateDots = thisTrialData.RotateDots*4;
                 % Rotating the dots 
                 leftDistFromCenter = sqrt((leftStimDots(1,:)).^2 + (leftStimDots(2,:)).^2); %dist is measured from the ORIGIN (0,0) which is where the fixation dot is so we're rotating around fixation dot
                 leftThetaDeg = atan2d(leftStimDots(2,:),leftStimDots(1,:));

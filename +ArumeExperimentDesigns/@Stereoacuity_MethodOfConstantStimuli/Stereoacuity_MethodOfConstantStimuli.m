@@ -20,9 +20,9 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            dlg.Number_of_Dots = { 350 '* (num)' [10 10000] };
+            dlg.Number_of_Dots = { 750 '* (num)' [10 10000] };
             dlg.Size_of_Dots = { 1 '* (pix)' [1 100] };
-            dlg.MaxStimDeg = {3 '* (deg)' [1 100] };
+            dlg.MaxStimDeg = {3.5 '* (deg)' [1 100] };
             dlg.MinStimDeg = {2 '* (deg)' [1 100] };
             dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
             dlg.TimeStimOn = { 0.2 '* (sec)' [0 60] }; 
@@ -60,7 +60,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             
             i = i+1;
             conditionVars(i).name   = 'RotateDots';
-            conditionVars(i).values = [0 5 10]; %[0 10 45];
+            conditionVars(i).values = [0 5 10 30]; %[0 10 45];
             
             i = i+1;
             conditionVars(i).name   = 'SignDisparity';

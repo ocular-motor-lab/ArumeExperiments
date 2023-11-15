@@ -1,4 +1,4 @@
-classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracking
+classdef Stereoacuity_FourQuadrant < ArumeExperimentDesigns.EyeTracking
     % DEMO experiment for Arume
     %
     %   1. Copy paste the folder @Demo within +ArumeExperimentDesigns.
@@ -20,12 +20,13 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            dlg.Number_of_Dots = { 350 '* (num)' [10 10000] };
+            dlg.Number_of_Dots = { 2500 '* (deg/s)' [10 10000] };
             dlg.Size_of_Dots = { 1 '* (pix)' [1 100] };
             dlg.MaxStimDeg = {3 '* (deg)' [1 100] };
-            dlg.MinStimDeg = {2 '* (deg)' [1 100] };
+            dlg.MinStimDeg = {0.5 '* (deg)' [0 100] };
             dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
-            dlg.TimeStimOn = { 0.2 '* (sec)' [0 60] }; 
+            dlg.TimeStimOn = { 10 '* (sec)' [0 60] }; 
+            dlg.FixToStimDist = { 2.5 '* (deg)' [0 60] }; 
             dlg.InitFixDuration = { 1 '* (sec)' [0 60] };
             
             dlg.NumberOfRepetitions = {20 '* (N)' [1 200] }; 
@@ -55,7 +56,8 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
              
             i = i+1;
             conditionVars(i).name   = 'Disparities';
-            conditionVars(i).values = [0.1:0.2:0.9];
+            conditionVars(i).values = [0.7:0.2:1.3];
+            %conditionVars(i).values = [0.1:0.2:0.9];
             %conditionVars(i).values = ones(size([0.1:0.2:0.9]))*30;
             
             i = i+1;
@@ -65,6 +67,10 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             i = i+1;
             conditionVars(i).name   = 'SignDisparity';
             conditionVars(i).values = [-1 1]; 
+            
+            i = i+1;
+            conditionVars(i).name   = 'WhichQuadrant';
+            conditionVars(i).values = [1 2 3 4]; % where 1 is top left, 2 is top right, 3 is bottom left, 4 is bottom right
             
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
@@ -92,6 +98,9 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                                 
                 % Get fixation spot size in pix
                 fixSizePix = pixPerDeg * this.ExperimentOptions.FixationSpotSize;
+
+                % Get fixation spot to central stimulus distance in pix
+                fixToStimDist = pixPerDeg * this.ExperimentOptions.FixToStimDist;
                 
                 % How big should the dots stimulus be in pix
                 dots = zeros(3, this.ExperimentOptions.Number_of_Dots);
@@ -115,12 +124,27 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                     dots(2, idxs) = stimWindow_pix*rand(1, length(idxs)) - (stimWindow_pix/2); 
                     distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
                 end
-                dots(3, :) = (ones(size(dots,2),1)')*disparityNeeded_pix; % how much the dots will shift by in pixels
                 
+                % Figuring out how much to shift the dots by in a guassian
+                % way. first, calculate dist from center of the dots
+                distFromCenter = sqrt((dots(1,:)).^2 + (dots(2,:)).^2);
+                % 
+                % % then sort by how far away from center the dots are 
+                % [B,I]=sort(distFromCenter);
+                % dots=dots(1:2,I); % so now B and dots are sorted the same way 
+                % 
+                % % finally, figure out how much you need to shift the dots 
+                % %y = normpdf(linspace(min(dots(1,:)),max(dots(1,:)),length(dots)),disparityNeeded_pix,1) %std of 1
+                % %dots(3,:)=linspace(disparityNeeded_pix,0,length(dots)); % TODO this is not it
+                % fullgauss=gausswin(length(dots));
+                % halfgauss=flip(fullgauss(1:length(fullgauss)/2));
+                dots(3,:)= disparityNeeded_pix*exp(-((distFromCenter).^2/(2*(stimWindow_pix/4).^2))); % interp(halfgauss,2)*disparityNeeded_pix; %ugh this is not great?????
+
+
                 % Right and left shifted dots 
                 leftStimDots = [dots(1,:)+(dots(3,:)/2); dots(2,:)]; %dots(1:2, :) + [dots(3, :)/2; zeros(1, numDots)]; 
                 rightStimDots = [dots(1,:)-(dots(3,:)/2); dots(2,:)]; 
-                
+                thisTrialData.RotateDots = thisTrialData.RotateDots*4;
                 % Rotating the dots 
                 leftDistFromCenter = sqrt((leftStimDots(1,:)).^2 + (leftStimDots(2,:)).^2); %dist is measured from the ORIGIN (0,0) which is where the fixation dot is so we're rotating around fixation dot
                 leftThetaDeg = atan2d(leftStimDots(2,:),leftStimDots(1,:));
@@ -133,11 +157,23 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                 leftStimDots = [leftPolarPtX;leftPolarPtY];
                 rightStimDots = [rightPolarPtX;rightPolarPtY];
                 
+                % Placing the stim
+                if thisTrialData.WhichQuadrant == 1
+                    order={rightStimDots, leftStimDots, leftStimDots,leftStimDots,leftStimDots,rightStimDots,rightStimDots,rightStimDots};
+                elseif thisTrialData.WhichQuadrant == 2
+                    order={leftStimDots, rightStimDots, leftStimDots,leftStimDots,rightStimDots,leftStimDots,rightStimDots,rightStimDots};
+                elseif thisTrialData.WhichQuadrant == 3
+                    order={leftStimDots, leftStimDots,rightStimDots,leftStimDots,rightStimDots,rightStimDots,leftStimDots,rightStimDots};
+                elseif thisTrialData.WhichQuadrant == 4
+                    order={leftStimDots, leftStimDots,leftStimDots,rightStimDots,rightStimDots,rightStimDots,rightStimDots,leftStimDots};
+                end
+                                
+                
                 % What the response should be
-                if thisTrialData.DisparityArcMin > 0
-                    thisTrialData.CorrectResponse = 'F';
-                elseif thisTrialData.DisparityArcMin < 0
-                    thisTrialData.CorrectResponse = 'B';
+                if thisTrialData.WhichQuadrant == 1 || thisTrialData.WhichQuadrant == 3
+                    thisTrialData.CorrectResponse = 'L';
+                elseif thisTrialData.WhichQuadrant == 2 || thisTrialData.WhichQuadrant == 4
+                    thisTrialData.CorrectResponse = 'R';
                 end
                 
                 % For the while loop trial start
@@ -164,7 +200,10 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         
                         % Draw left stim:
-                        Screen('DrawDots', this.Graph.window, leftStimDots, this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1); % the 1 at the end means dot type where 1 2 or 3 is circular
+                        Screen('DrawDots', this.Graph.window, order{1}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-fixToStimDist, this.Graph.wRect(4)/2-fixToStimDist], 1); % top left
+                        Screen('DrawDots', this.Graph.window, order{2}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+fixToStimDist, this.Graph.wRect(4)/2-fixToStimDist], 1); % top right
+                        Screen('DrawDots', this.Graph.window, order{3}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-fixToStimDist, this.Graph.wRect(4)/2+fixToStimDist], 1); % bottom left
+                        Screen('DrawDots', this.Graph.window, order{4}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+fixToStimDist, this.Graph.wRect(4)/2+fixToStimDist], 1); % bottom right
                         Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
                         
@@ -172,7 +211,10 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
                         
                         % Draw right stim:
-                        Screen('DrawDots', this.Graph.window, rightStimDots, this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1);
+                        Screen('DrawDots', this.Graph.window, order{5}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-fixToStimDist, this.Graph.wRect(4)/2-fixToStimDist], 1); % top left
+                        Screen('DrawDots', this.Graph.window, order{6}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+fixToStimDist, this.Graph.wRect(4)/2-fixToStimDist], 1); % top right
+                        Screen('DrawDots', this.Graph.window, order{7}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2-fixToStimDist, this.Graph.wRect(4)/2+fixToStimDist], 1); % bottom left
+                        Screen('DrawDots', this.Graph.window, order{8}, this.ExperimentOptions.Size_of_Dots, [], [this.Graph.wRect(3)/2+fixToStimDist, this.Graph.wRect(4)/2+fixToStimDist], 1); % bottom right
                         Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
                         
@@ -221,13 +263,9 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                                 KbName(keys(i));
                                 switch(KbName(keys(i)))
                                     case 'RightArrow'
-                                        response = 'F';
+                                        response = 'R';
                                     case 'LeftArrow'
-                                        response = 'B';
-                                    case 'DownArrow'
-                                        response = 'F';
-                                    case 'UpArrow'
-                                        response = 'B';
+                                        response = 'L';
                                 end
                             end
                             if ( ~isempty(response) ) % if there is a response, break this trial and start the next

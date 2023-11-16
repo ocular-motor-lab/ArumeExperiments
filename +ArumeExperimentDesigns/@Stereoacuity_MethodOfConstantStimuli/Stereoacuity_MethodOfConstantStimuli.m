@@ -317,7 +317,7 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
                     threshold=(x3-x2)/2;
                   
                     % Plot
-                    subplot(1,3,arotation)
+                    subplot(1,(length(RotateDotsCond)),arotation)
                     plot(a,p) % plot prediction
                     hold on;
                     plot(temp.DisparityArcMin,temp.meanedResp,'o'); hold on

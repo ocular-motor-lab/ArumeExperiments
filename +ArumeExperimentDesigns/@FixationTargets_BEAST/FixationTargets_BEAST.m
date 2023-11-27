@@ -6,6 +6,8 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
         fixRad = 20;
         fixColor = [255 0 0];
         targetPositions =[];
+        newCenter = [0, 0];
+        iftrial1 = 1;
     end
 
     % ---------------------------------------------------------------------
@@ -22,15 +24,20 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
 
             dlg.DisplayOptions.ScreenWidth = { 142.8 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenHeight = { 80 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenDistance = { 85 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenDistance = { 208.5 '* (cm)' [1 3000] };
 
-            dlg.TrialDuration =  { 20 '* (s)' [1 100] };
-            dlg.NumberRepetitions = 10;
+            dlg.TrialDuration =  { 1 '* (s)' [1 100] };
+            dlg.NumberRepetitions = 5;
 
             dlg.TargetSize = 1;
             dlg.Experiment_Type = { {'Center dot' '2 dots - Horizontal' '{2 dots - Vertical}' '4 dots - Square'} };
-            dlg.Calibration_Distance_H = { 20 '* (deg)' [1 3000] };
-            dlg.Calibration_Distance_V = { 15 '* (deg)' [1 3000] };
+            dlg.Calibration_Distance_H = { 2 '* (deg)' [1 3000] };
+            dlg.Calibration_Distance_V = { 2 '* (deg)' [1 3000] };
+
+            dlg.RasterCenter_x = {0 '* (pixel)' [-3000 3000]};
+            dlg.RasterCenter_y = {0 '* (pixel)' [-3000 3000]};
+            
+            dlg.CrossSize = {40 '* (pixel)' [1 3000]};
 
             dlg.BackgroundBrightness = 0;
         end
@@ -48,7 +55,7 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
                 case '2 dots - Vertical'
                     this.targetPositions = {[0,v],[0,-v]};
                 case '4 dots - Square'
-                    this.targetPositions = {[h,0],[-h,0],[0,v],[0,-v]};   
+                    this.targetPositions = {[h,0],[-h,0],[0,v],[0,-v]};
             end
 
             targets = 1:length(this.targetPositions);
@@ -73,9 +80,80 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
             %trialTableOptions.blocks(3)             = struct( 'fromCondition', 1, 'toCondition', 1, 'trialsToRun', 1 );
             trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberRepetitions;
             trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
+
+%             %-- Find the center of Raster ---------------------------------
+%             gamepad = ArumeHardware.GamePad;
+%             right = 0;
+%             this.newCenter = [this.ExperimentOptions.RasterCenter_x, this.ExperimentOptions.RasterCenter_y];
+%             move_newCenter = 5;
+%             this.Graph = ArumeCore.Display( );
+%             this.Graph.Init( this );
+%             
+%             while(right == 0)
+%                 [ ~, ~, right, a, b, x, y] = gamepad.Query;
+%                 if a == 1, this.newCenter(2) = this.newCenter(2) + move_newCenter;
+%                 elseif b == 1, this.newCenter(1) = this.newCenter(1) + move_newCenter;
+%                 elseif x == 1, this.newCenter(1) = this.newCenter(1) - move_newCenter;
+%                 elseif y == 1, this.newCenter(2) = this.newCenter(2) - move_newCenter;
+%                 elseif right == 1, gamepad.Close;
+%                 end
+% 
+%                 drawCross(this)
+%             end
+%             this.ExperimentOptions.RasterCenter_x = this.newCenter(1);
+%             this.ExperimentOptions.RasterCenter_x = this.newCenter(2);
+% 
+%             this.Graph.Clear(this.Graph);
         end
 
+        function drawCross(this)
+            graph = this.Graph;
+            Screen('FillRect', graph.window, this.ExperimentOptions.BackgroundBrightness);
+
+            %-- Draw fixation spot
+            [mx, my] = RectCenter(graph.wRect);
+            mx = mx + this.newCenter(1);
+            my = my + this.newCenter(2);
+
+            Screen('DrawLine', graph.window, [250,250,250], mx-40, my, mx+40, my,5);
+            Screen('DrawLine', graph.window, [250,250,250], mx, my-40, mx, my+40,5);
+            Screen('DrawingFinished', graph.window); % Tell PTB that no further drawing commands will follow before Screen('Flip')
+            this.Graph.Flip();
+        end
+
+
         function [trialResult, thisTrialData] = runTrial( this, thisTrialData )
+
+            %for the first time
+            if this.iftrial1 == 1
+                this.iftrial1 = 0;
+                try
+                    %-- Find the center of Raster ---------------------------------
+                    gamepad = ArumeHardware.GamePad;
+                    right = 0;
+                    this.newCenter = [this.ExperimentOptions.RasterCenter_x, this.ExperimentOptions.RasterCenter_y];
+                    move_newCenter = 5;
+                    this.Graph = ArumeCore.Display( );
+                    this.Graph.Init( this );
+
+                    while(right == 0)
+                        [ ~, ~, right, a, b, x, y] = gamepad.Query;
+                        if a == 1, this.newCenter(2) = this.newCenter(2) + move_newCenter;
+                        elseif b == 1, this.newCenter(1) = this.newCenter(1) + move_newCenter;
+                        elseif x == 1, this.newCenter(1) = this.newCenter(1) - move_newCenter;
+                        elseif y == 1, this.newCenter(2) = this.newCenter(2) - move_newCenter;
+                        %elseif right == 1, gamepad.Close;
+                        end
+
+                        drawCross(this)
+                    end
+                    this.ExperimentOptions.RasterCenter_x = this.newCenter(1);
+                    this.ExperimentOptions.RasterCenter_y = this.newCenter(2);
+
+                    this.Graph.Clear(this.Graph);
+                catch
+                end
+            end
 
             try
 
@@ -105,6 +183,8 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
 
                         %-- Draw fixation spot
                         [mx, my] = RectCenter(this.Graph.wRect);
+                        mx = this.newCenter(1) + mx;
+                        my = this.newCenter(2) + my;
                         % this.Graph.pxWidth
                         % targetHPix
                         targetPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(this.ExperimentOptions.TargetSize);

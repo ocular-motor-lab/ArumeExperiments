@@ -277,8 +277,7 @@ classdef Session < ArumeCore.DataDB
     %% RUNING METHODS
     methods
         function start( this )
-            
-            this.currentRun = this.initialRun;
+            this.currentRun = this.initialRun.Copy();
             
             % Start the experiment
             this.experimentDesign.run();

@@ -330,10 +330,16 @@ classdef ExperimentDesign < handle
                         Select_Conditions.All = { {'0', '{1}'}};
                         for i=1:length(ConditionVars)
                             name = ConditionVars{i};
-                            values = categories(categorical(this.Session.currentRun.pastTrialTable{:,ConditionVars{i}}));
+                            if ( isnumeric(this.Session.currentRun.pastTrialTable{:,ConditionVars{i}}))
+                                values = unique(this.Session.currentRun.pastTrialTable{:,ConditionVars{i}});
+                            else
+                                values = categories(categorical(this.Session.currentRun.pastTrialTable{:,ConditionVars{i}}));
+                            end
                             if ( numel(values) < 10 )
                                 for j=1:numel(values)
-                                    Select_Conditions.(strcat(name, '_', genvarname(string(values(j))))) = { {'{0}', '1'}};
+                                    if (~ismissing(values(j)))
+                                        Select_Conditions.(strcat(name, '_', genvarname(string(values(j))))) = { {'{0}', '1'}};
+                                    end
                                 end
                             end
                         end
@@ -360,8 +366,10 @@ classdef ExperimentDesign < handle
                 end
                 if ( numel(values) < 10 )
                     for j=1:numel(values)
-                        Select_ConditionsFilters.(strcat(name, '_', genvarname(string(values(j))))).VarName = name;
-                        Select_ConditionsFilters.(strcat(name, '_', genvarname(string(values(j))))).VarValue = values(j);
+                        if (~ismissing(values(j)))
+                            Select_ConditionsFilters.(strcat(name, '_', genvarname(string(values(j))))).VarName = name;
+                            Select_ConditionsFilters.(strcat(name, '_', genvarname(string(values(j))))).VarValue = values(j);
+                        end
                     end
                 end
             end

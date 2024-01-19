@@ -18,6 +18,8 @@ classdef ExperimentDesign < handle
         TrialStopCallbacks   % callback functions to be called after a trial ends
         
         Name
+
+        eyeTracker;
     end
         
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -35,20 +37,29 @@ classdef ExperimentDesign < handle
             if ( ~importing)
                 dlg.Debug.DebugMode = { {'{0}','1'} };
                 dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult'; % which variables to display every trial in the command line separated by spaces
-                
-                dlg.DisplayOptions.ForegroundColor      = 0;
-                dlg.DisplayOptions.BackgroundColor      = 128;
-                dlg.DisplayOptions.ScreenWidth          = { 142.8 '* (cm)' [1 3000] };
-                dlg.DisplayOptions.ScreenHeight         = { 80 '* (cm)' [1 3000] };
-                dlg.DisplayOptions.ScreenDistance       = { 85 '* (cm)' [1 3000] };
-                dlg.DisplayOptions.ShowTrialTable       = { {'0','{1}'} };
-                dlg.DisplayOptions.PlaySound            = { {'0','{1}'} };
-                dlg.DisplayOptions.StereoMode           = { 0 '* (mode)' [0 9] }; % SR added, 0 should be the default
-                dlg.DisplayOptions.SelectedScreen       = { 2 '* (screen)' [0 5] }; % SR added, screen 2 should perhaps be the default
-                
-                dlg.HitKeyBeforeTrial = 0;
-                dlg.TrialDuration = 10;
-                dlg.TrialsBeforeBreak = 1000;
+            end
+
+            dlg.DisplayOptions.ForegroundColor      = 0;
+            dlg.DisplayOptions.BackgroundColor      = 128;
+            dlg.DisplayOptions.ScreenWidth          = { 142.8 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenHeight         = { 80 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenDistance       = { 85 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ShowTrialTable       = { {'0','{1}'} };
+            dlg.DisplayOptions.PlaySound            = { {'0','{1}'} };
+            dlg.DisplayOptions.StereoMode           = { 0 '* (mode)' [0 9] }; % SR added, 0 should be the default
+            dlg.DisplayOptions.SelectedScreen       = { 2 '* (screen)' [0 5] }; % SR added, screen 2 should perhaps be the default
+
+            dlg.HitKeyBeforeTrial = 0;
+            dlg.TrialDuration = 10;
+            dlg.TrialsBeforeBreak = 1000;
+
+            dlg.UseEyeTracker   = { {'0' '{1}'} };
+            dlg.EyeTracker      = { {'{OpenIris}' 'Fove'} };
+
+            if ( exist('importing','var') && importing )
+                dlg.DataFiles = { {['uigetfile(''' fullfile(pwd,'*.txt') ''',''MultiSelect'', ''on'')']} };
+                dlg.EventFiles = { {['uigetfile(''' fullfile(pwd,'*.txt') ''',''MultiSelect'', ''on'')']} };
+                dlg.CalibrationFiles = { {['uigetfile(''' fullfile(pwd,'*.cal') ''',''MultiSelect'', ''on'')']} };
             end
         end
         
@@ -120,6 +131,121 @@ classdef ExperimentDesign < handle
         end
         
         function ImportSession( this )
+        end
+    end
+
+    methods(Access=public,Sealed=true)
+
+        function  [samplesDataTable, trialDataTable, sessionTable] = prepareTablesForAnalysis( this, options)
+            Enum = ArumeCore.ExperimentDesign.getEnum();
+            
+            if ( isempty(  this.currentRun ) )
+                return;
+            end
+            
+            %% 0) Create the basic trial data table (without custom experiment stuff)
+            if ( options.Prepare_For_Analysis_And_Plots )
+                
+                trials = this.Session.currentRun.pastTrialTable;
+                
+                % remove errors and aborts for analysis
+                if (~isempty(trials))
+                    % Trial attempt is just a continuos unique number for
+                    % each past trial.
+                    trials.TrialAttempt = (1:height(trials))';
+                    
+                    % just in case for old data. TrialResult used to be
+                    % numeric. Now it is categorical but the categories
+                    % match the old numbers+1;
+                    if ( ~iscategorical(trials.TrialResult) )
+                        trials.TrialResult = Enum.trialResult.PossibleResults(trials.TrialResult+1);
+                    end
+                    % in old files TrialNumber counted all trials not just
+                    % correct trials. So we fix it for code down the line
+                    % it could also be missing
+                    if ( ~any(strcmp(trials.Properties.VariableNames,'TrialNumber')) || ...
+                            sum(trials.TrialResult == Enum.trialResult.CORRECT) < max(trials.TrialNumber) )
+                        % rebuild trial number as a counter of past correct
+                        % trials plus one
+                        trials.TrialNumber = cumsum([1;trials.TrialResult(1:end-1) == Enum.trialResult.CORRECT]);
+                    end
+                    
+                    % keep only correct trials from now on
+                    % TODO: rething this. Depending on how the experiment
+                    % is programmed it may be interesting to look at the
+                    % aborts.
+                    trials(trials.TrialResult ~= Enum.trialResult.CORRECT ,:) = [];
+                    
+                    % merge the columns in trials with the ones already
+                    % present in the trialDataTable.
+                    % It is only necessary to rerun this stage zero if
+                    % this.trialDataTable is not empty because there may be
+                    % changes on the code. Otherwise we could change it to
+                    % get here only if trialDataTable is empty.
+                    if ( ~isempty(this.Session.trialDataTable) )
+                        rightVariables = setdiff(this.Session.trialDataTable.Properties.VariableNames, trials.Properties.VariableNames);
+                        trials =  outerjoin(trials, this.Session.trialDataTable, 'Keys', 'TrialNumber', 'MergeKeys',true, 'RightVariables', rightVariables );
+                    end
+                end
+                
+                trialDataTable = trials;
+                
+                %% 1) Prepare the sample data table
+                if ( isempty(this.Session.samplesDataTable) )
+                    % In most cases this will just be from EyeTracking
+                    % experiment but there could be others that have a
+                    % different way to load sample data.
+                    try
+                        [samples, cleanedData, calibratedData, rawData] = this.PrepareSamplesDataTable(options);
+                        samplesDataTable = samples;
+                        % TODO: I don't like this here. It should be moved
+                        % to session. But may have memory problems at some
+                        % point
+                        this.Session.WriteVariableIfNotEmpty(rawData,'rawDataTable');
+                        this.Session.WriteVariableIfNotEmpty(cleanedData,'cleanedData');
+                        this.Session.WriteVariableIfNotEmpty(calibratedData,'calibratedData');
+                    catch ex
+                        getReport(ex)
+                        cprintf('red', sprintf('++ VOGAnalysis :: ERROR PREPARING SAMPLES. WE WILL TRY TO CONTINUE.\n'));
+                    end
+                end
+                cprintf('blue', '++ ARUME::Done with samplesDataTable.\n');
+                
+                %% 2) Prepare the trial data table
+                trials = this.PrepareTrialDataTable(trials, options);
+                trialDataTable = trials;
+                cprintf('blue', '++ ARUME::Done with trialDataTable.\n');
+                
+                %% 3) Prepare session data table
+                newSessionDataTable = this.Session.GetBasicSessionDataTable();
+                newSessionDataTable = this.PrepareSessionDataTable(newSessionDataTable, options);
+                newSessionDataTable.LastAnalysisDateTime = datestr(now);
+                
+                options = FlattenStructure(options); % eliminate strcuts with the struct so it can be made into a row of a table
+                opts = fieldnames(options);
+                s = this.GetExperimentOptionsDialog(1);
+                for i=1:length(opts)
+                    if ( isempty(options.(opts{i})))
+                        newSessionDataTable.(['AnalysisOption_' opts{i}]) = {''};
+                    elseif ( ~ischar( options.(opts{i})) && numel(options.(opts{i})) <= 1)
+                        newSessionDataTable.(['AnalysisOption_' opts{i}]) = options.(opts{i});
+                    elseif (isfield( s, opts{i}) && iscell(s.(opts{i})) && iscell(s.(opts{i}){1}) && length(s.(opts{i}){1}) >1)
+                        newSessionDataTable.(['AnalysisOption_' opts{i}]) = categorical(cellstr(options.(opts{i})));
+                    elseif (~ischar(options.(opts{i})) && numel(options.(opts{i})) > 1 )
+                        newSessionDataTable.(['AnalysisOption_' opts{i}]) = {options.(opts{i})};
+                    else
+                        newSessionDataTable.(['AnalysisOption_' opts{i}]) = string(options.(opts{i}));
+                    end
+                end
+                
+                sessionTable = newSessionDataTable;
+            end
+        end
+        
+        function [analysisResults, samplesDataTable, trialDataTable, sessionTable] = RunExperimentAnalysis(this, options)
+            [samplesDataTable, trialDataTable, sessionTable]  = this.prepareTablesForAnalysis(options);
+            analysisResults  = struct();
+            [analysisResults, samplesDataTable, trialDataTable, sessionTable]  = this.RunDataAnalyses(analysisResults, samplesDataTable, trialDataTable, sessionTable, options);
         end
     end
     
@@ -544,8 +670,11 @@ classdef ExperimentDesign < handle
                             this.TrialStartCallbacks = [];
                             this.TrialStopCallbacks = [];
                             
-                            shouldContinue = this.initBeforeRunning();
-                            
+                            shouldContinue = this.EyeTrackingInit();
+                            if ( shouldContinue)
+                                shouldContinue = this.initBeforeRunning();
+                            end
+
                             if ( shouldContinue )
                                 state = RUNNING;
                             else
@@ -778,6 +907,7 @@ classdef ExperimentDesign < handle
                             cprintf('blue', '---------------------------------------------------------\n')
                             
                             this.cleanAfterRunning();
+                            this.EyeTrackingStop();
                             
                             state = FINALIZING_HARDWARE;
                             
@@ -842,7 +972,95 @@ classdef ExperimentDesign < handle
             y = sin(2*pi*f*t);
             sound(y, fs);
         end
-    end % methods (Access=private)
+    end
+
+    % --------------------------------------------------------------------
+    %% Eye tracking methods ----------------------------------------------
+    % --------------------------------------------------------------------
+    % to be called only by this class
+    % --------------------------------------------------------------------
+    methods (Access=private)
+
+        function shouldContinue = EyeTrackingInit(this)
+
+            if ( this.ExperimentOptions.UseEyeTracker )
+                this.eyeTracker = ArumeHardware.VOG();
+                result = this.eyeTracker.Connect();
+                if ( result )
+                    this.eyeTracker.SetSessionName(this.Session.name);
+                    this.eyeTracker.StartRecording();
+                    this.AddTrialStartCallback(@this.EyeTrackingTrialStartCallback)
+                    this.AddTrialStopCallback(@this.EyeTrackingTrialStopCallBack)
+                else
+                    shouldContinue = 0;
+                    this.eyeTracker = [];
+                    return;
+                end
+            end
+            
+            shouldContinue = 1;
+        end
+
+
+        function EyeTrackingStop(this)
+            if ( this.ExperimentOptions.UseEyeTracker && ~isempty(this.eyeTracker))
+                this.eyeTracker.StopRecording();
+        
+                disp('Downloading eye tracking files...');
+                files = this.eyeTracker.DownloadFile();
+                
+                if (~isempty( files) )
+                    disp(files{1});
+                    disp(files{2});
+                    if (length(files) > 2 )
+                        disp(files{3});
+                    end
+                    disp('Finished downloading');
+                    
+                    this.Session.addFile('vogDataFile', files{1});
+                    this.Session.addFile('vogCalibrationFile', files{2});
+                    if (length(files) > 2 )
+                        this.Session.addFile('vogEventsFile', files{3});
+                    end
+                else
+                    disp('No eye tracking files downloaded!');
+                end
+            end
+        end
+
+        function variables = EyeTrackingTrialStartCallback(this, variables)
+            if ( isempty(this.eyeTracker))
+                return;
+            end
+            
+            if ( ~this.eyeTracker.IsRecording )
+                ME = MException('ArumeHardware.VOG:NotRecording', 'The eye tracker is not recording.');
+                throw(ME);
+            end
+                
+            variables.EyeTrackerFrameNumberTrialStart = this.eyeTracker.RecordEvent(sprintf('TRIAL_START %d %d', variables.TrialNumber, variables.Condition) );
+            if ( ~isempty( this.Session.currentRun.LinkedFiles) )
+                if ( ischar(this.Session.currentRun.LinkedFiles.vogDataFile) )
+                    variables.FileNumber = 2;
+                else
+                    variables.FileNumber = length(this.Session.currentRun.LinkedFiles.vogDataFile)+1;
+                end
+            else
+                variables.FileNumber = 1;
+            end
+        end
+         
+        function variables = EyeTrackingTrialStopCallBack(this, variables)
+            if ( isempty(this.eyeTracker))
+                return;
+            end
+            if ( ~this.eyeTracker.IsRecording )
+                ME = MException('ArumeHardware.VOG:NotRecording', 'The eye tracker is not recording.');
+                throw(ME);
+            end
+            variables.EyeTrackerFrameNumberTrialStop = this.eyeTracker.RecordEvent(sprintf('TRIAL_STOP %d %d', variables.TrialNumber, variables.Condition) );
+        end
+    end 
     
     
     methods ( Static = true )

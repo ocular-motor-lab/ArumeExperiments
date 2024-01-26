@@ -346,12 +346,7 @@ classdef Session < ArumeCore.DataDB
             
             cprintf('blue', '++ ARUME::Preparing %s for Analysis.\n', this.name);
                         
-            [results, samples, trials, sessionTable]  = this.experimentDesign.RunExperimentAnalysis( ...
-                this.analysisResults, ...
-                this.samplesDataTable, ...
-                this.trialDataTable, ...
-                this.sessionDataTable, ...
-                options);
+            [results, samples, trials, sessionTable]  = this.experimentDesign.RunExperimentAnalysis(options);
         
             this.WriteVariableIfNotEmpty(samples,'samplesDataTable');
             this.WriteVariableIfNotEmpty(trials,'trialDataTable');
@@ -376,7 +371,7 @@ classdef Session < ArumeCore.DataDB
             
             try 
                 newSessionDataTable = table();
-                newSessionDataTable.ArumeVersion = this.ArumeVersionWhenCreated;
+                newSessionDataTable.ArumeVersion = string(this.ArumeVersionWhenCreated);
                 newSessionDataTable.Subject = categorical(cellstr(this.subjectCode));
                 newSessionDataTable.SessionCode = categorical(cellstr(this.sessionCode));
                 newSessionDataTable.Experiment = categorical(cellstr(this.experimentDesign.Name));

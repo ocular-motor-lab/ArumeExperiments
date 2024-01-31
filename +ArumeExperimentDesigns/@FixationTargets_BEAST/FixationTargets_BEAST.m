@@ -38,6 +38,10 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
             dlg.RasterCenter_y = {0 '* (pixel)' [-3000 3000]};
             
             dlg.CrossSize = {40 '* (pixel)' [1 3000]};
+            
+            dlg.CrossColor_R = 255; 
+            dlg.CrossColor_G = 255;
+            dlg.CrossColor_B = 255;
 
             dlg.BackgroundBrightness = 0;
         end
@@ -114,9 +118,11 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
             [mx, my] = RectCenter(graph.wRect);
             mx = mx + this.newCenter(1);
             my = my + this.newCenter(2);
+            
+            crossColor = [this.ExperimentOptions.CrossColor_R,this.ExperimentOptions.CrossColor_G,this.ExperimentOptions.CrossColor_B];
 
-            Screen('DrawLine', graph.window, [250,250,250], mx-40, my, mx+40, my,5);
-            Screen('DrawLine', graph.window, [250,250,250], mx, my-40, mx, my+40,5);
+            Screen('DrawLine', graph.window,crossColor, mx-40, my, mx+40, my,5);
+            Screen('DrawLine', graph.window, crossColor, mx, my-40, mx, my+40,5);
             Screen('DrawingFinished', graph.window); % Tell PTB that no further drawing commands will follow before Screen('Flip')
             this.Graph.Flip();
         end

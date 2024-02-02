@@ -864,6 +864,12 @@ classdef VOGAnalysis < handle
 
             data.Properties.UserData.sampleRate = framerate;
         end
+
+        function [samplesDataTable, cleanedData, calibratedData, rawData] = LoadCleanAndResampleDataEyelink(dataFolder, dataFiles, params)
+        end
+
+        function [data] = LoadEyelinkData(dataFile)
+        end
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

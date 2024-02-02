@@ -53,7 +53,7 @@ classdef ExperimentDesign < handle
             dlg.TrialsBeforeBreak = 1000;
 
             dlg.UseEyeTracker   = { {'0' '{1}'} };
-            dlg.EyeTracker      = { {'{OpenIris}' 'Fove'} };
+            dlg.EyeTracker      = { {'{OpenIris}' 'Fove' 'Eyelink' 'Mouse sim'} };
 
             if ( exist('importing','var') && importing )
                 dlg.DataFiles = { {['uigetfile(''' fullfile(pwd,'*.txt') ''',''MultiSelect'', ''on'')']} };
@@ -421,7 +421,24 @@ classdef ExperimentDesign < handle
                     end
                    
                     [samplesDataTable, cleanedData, rawData] = VOGAnalysis.LoadCleanAndResampleDataFOVE(this.Session.dataPath, dataFiles, options);
+                case 'Eyelink'
                     
+                    samplesDataTable = table();
+                    cleanedData = table();
+                    calibratedData = table();
+                    rawData = table();
+                    
+                    if ( ~isprop(this.Session.currentRun, 'LinkedFiles' ) || ~isfield(this.Session.currentRun.LinkedFiles,  'eyelinkDataFile') )
+                        return;
+                    end
+                    
+                    dataFiles = this.Session.currentRun.LinkedFiles.foveDataFile;
+                    if (~iscell(dataFiles) )
+                        dataFiles = {dataFiles};
+                    end
+                   
+                    [samplesDataTable, cleanedData, rawData] = VOGAnalysis.LoadCleanAndResampleDataEyelink(this.Session.dataPath, dataFiles, options);
+
             end
         end
         
@@ -1573,7 +1590,20 @@ classdef ExperimentDesign < handle
         function shouldContinue = EyeTrackingInit(this)
 
             if ( this.ExperimentOptions.UseEyeTracker )
-                this.eyeTracker = ArumeHardware.VOG();
+
+                if ( isfield(this.ExperimentOptions,'EyeTracker') )
+                    eyeTrackerType = this.ExperimentOptions.EyeTracker;
+                else
+                    eyeTrackerType = 'OpenIris';
+                end
+
+                switch(eyeTrackerType)
+                    case 'OpenIris'
+                        this.eyeTracker = ArumeHardware.VOG();
+                    case 'Eyelink'
+                        % TODO: implement for eyelink
+                end
+
                 result = this.eyeTracker.Connect();
                 if ( result )
                     this.eyeTracker.SetSessionName(this.Session.name);
@@ -1586,7 +1616,7 @@ classdef ExperimentDesign < handle
                     return;
                 end
             end
-            
+
             shouldContinue = 1;
         end
 
@@ -1594,25 +1624,39 @@ classdef ExperimentDesign < handle
         function EyeTrackingStop(this)
             if ( this.ExperimentOptions.UseEyeTracker && ~isempty(this.eyeTracker))
                 this.eyeTracker.StopRecording();
-        
+
                 disp('Downloading eye tracking files...');
                 files = this.eyeTracker.DownloadFile();
-                
-                if (~isempty( files) )
-                    disp(files{1});
-                    disp(files{2});
-                    if (length(files) > 2 )
-                        disp(files{3});
-                    end
-                    disp('Finished downloading');
-                    
-                    this.Session.addFile('vogDataFile', files{1});
-                    this.Session.addFile('vogCalibrationFile', files{2});
-                    if (length(files) > 2 )
-                        this.Session.addFile('vogEventsFile', files{3});
-                    end
+
+
+                if ( isfield(this.ExperimentOptions,'EyeTracker') )
+                    eyeTrackerType = this.ExperimentOptions.EyeTracker;
                 else
-                    disp('No eye tracking files downloaded!');
+                    eyeTrackerType = 'OpenIris';
+                end
+
+                switch(eyeTrackerType)
+                    case 'OpenIris'
+                        this.eyeTracker = ArumeHardware.VOG();
+
+                        if (~isempty( files) )
+                            disp(files{1});
+                            disp(files{2});
+                            if (length(files) > 2 )
+                                disp(files{3});
+                            end
+                            disp('Finished downloading');
+
+                            this.Session.addFile('vogDataFile', files{1});
+                            this.Session.addFile('vogCalibrationFile', files{2});
+                            if (length(files) > 2 )
+                                this.Session.addFile('vogEventsFile', files{3});
+                            end
+                        else
+                            disp('No eye tracking files downloaded!');
+                        end
+                    case 'Eyelink'
+                        % TODO: implement for eyelink
                 end
             end
         end

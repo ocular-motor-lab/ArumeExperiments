@@ -1,7 +1,7 @@
 classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
 
     % OpticFlow_DualTaskexperiment for Arume 
- 
+
     properties
         camera
         uicomponents
@@ -17,25 +17,25 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
 
             %% ADD new options
-            dlg.observerid = {'test'};
-            dlg.Tasktype = {{'Visual Search','Heading','Both','All interleaved'}};
-            dlg.UniformityOptions = {{'Only Uniform' 'Only non-uniform' 'both'}};
-            dlg.num_dots = {2000, 'Number of dots',[1000,100000]};
-            dlg.dotsz = {12, 'dot size (pixels)',[1,100]}; % px - preferable odd
-            dlg.hfov = {66.35, 'horizontal FoV (degrees)',[1,10000]}; % based on view distance of 1.3000 meters
-            dlg.fcp = {60, 'far clipping plane',[1,1000]}; % in meters
-            dlg.observerheight = {1.23, 'Observer Height',[0.1,10]}; % Center of the screen in meters
-            dlg.dotsizecue = {{'0','{1}'}, 'Size Cue?'};
+            dlg.ObserverID = {'test'};
+            dlg.TaskType = {{'Visual Search','Heading','Both','All interleaved'}};
+            dlg.UniformityOptions = {{'Only Uniform' '{Only non-uniform}' 'both'}};
+            dlg.NumDots = {2000, 'Number of dots',[1000,100000]};
+            dlg.DotSz = {12, 'dot size (pixels)',[1,100]}; % px - preferable odd
+            dlg.HFOV = {66.35, 'horizontal FoV (degrees)',[1,10000]}; % based on view distance of 1.3000 meters
+            dlg.FCP = {60, 'far clipping plane',[1,1000]}; % in meters
+            dlg.ObserverHeight = {1.23, 'Observer Height',[0.1,10]}; % Center of the screen in meters
+            dlg.DotSizeCue = {{'0','{1}'}, 'Size Cue?'};
 
             % condition parameters
-            dlg.useeyelink = { {'{0}','1'}, 'Use Eyelink'};
-            dlg.headingchanges = {[-15, -12.5, -10, -7.5, -5, -2.5, 2.5, 5, 7.5, 10, 12.5, 15], 'Heading Deltas (degrees)',[-100,100]}; % in meters per second walking = 1.31, jogging = 3.25, running = 5.76, driving = 13.41
-            dlg.headingchangeDuration = {2, 'Heading change duration',[0,10]};
+            % dlg.useeyelink = { {'{0}','1'}, 'Use Eyelink'};
+            dlg.HeadingChanges = {[-15, -12.5, -10, -7.5, -5, -2.5, 2.5, 5, 7.5, 10, 12.5, 15], 'Heading Deltas (degrees)',[-100,100]}; % in meters per second walking = 1.31, jogging = 3.25, running = 5.76, driving = 13.41
+            dlg.HeadingChangeDuration = {2, 'Heading change duration',[0,10]};
             dlg.Smoothing = {{'Gaussian','Linear','None'}};
-            dlg.walkspeed = {3.25, 'Locomotion Speed (m/sec)',[0,100]}; % in meters per second walking = 1.31, jogging = 3.25, running = 5.76, driving = 13.41
-            dlg.dotlifetime = {8, 'Dot Lifetime (secs)',[0,20]}; % in secs
-            dlg.numbertrials = {20, 'Number of Trials Per Condition',[1,10000]};
-            dlg.auditoryfeedback = {{'0','{1}'}, 'Auditory Feedback?'};
+            dlg.WalkSpeed = {3.25, 'Locomotion Speed (m/sec)',[0,100]}; % in meters per second walking = 1.31, jogging = 3.25, running = 5.76, driving = 13.41
+            dlg.DotLifetime = {8, 'Dot Lifetime (secs)',[0,20]}; % in secs
+            dlg.NumberTrials = {20, 'Number of Trials Per Condition',[1,10000]};
+            dlg.AuditoryFeedback = {{'0','{1}'}, 'Auditory Feedback?'};
 
 
 
@@ -72,7 +72,7 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
 
             i = i+1;
             conditionVars(i).name   = 'Task';
-            switch ( this.ExperimentOptions.Tasktype ) 
+            switch ( this.ExperimentOptions.TaskType ) 
                 case 'Visual Search'
                     conditionVars(i).values = {'Visual Search'};
                 case 'Heading'
@@ -85,11 +85,11 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
 
             i = i+1;
             conditionVars(i).name = 'WalkingSpeed';
-            conditionVars(i).values =  this.ExperimentOptions.walkspeed;
+            conditionVars(i).values =  this.ExperimentOptions.WalkSpeed;
 
             i = i+1;
             conditionVars(i).name = 'HeadingChange';
-            conditionVars(i).values =  this.ExperimentOptions.headingchanges;
+            conditionVars(i).values =  this.ExperimentOptions.HeadingChanges;
 
             i = i+1;
             conditionVars(i).name = 'SearchTarget';
@@ -108,14 +108,14 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             trialTableOptions.trialSequence = 'Random';
             trialTableOptions.trialAbortAction = 'Delay';
             trialTableOptions.trialsPerSession = 1000;
-            trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.numbertrials;
+            trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberTrials;
             trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
 
 
             mintonset = 1; % heading change cannot happen immediately
             mintoffset = 1; % and the trial cannot end immediately after heading change is completed
-            trange = this.ExperimentOptions.TrialDuration-this.ExperimentOptions.headingchangeDuration-mintoffset-mintonset;
-            trialTable.headingchangeonsettime = rand(height(trialTable),1).*trange + mintonset;
+            trange = this.ExperimentOptions.TrialDuration-this.ExperimentOptions.HeadingChangeDuration-mintoffset-mintonset;
+            trialTable.HeadingChangeOnsetTime = rand(height(trialTable),1).*trange + mintonset;
 
         end
         
@@ -132,7 +132,7 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             this = setUpUIVariables(this);
 
             % give feedback in the form of a sound effect?
-            if this.ExperimentOptions.auditoryfeedback
+            if this.ExperimentOptions.AuditoryFeedback
                 this = getAudioFeedbackFiles(this);
             end
             shouldContinue = 1;
@@ -144,17 +144,16 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
 
             % initialize the camera to the starting position every trial
             sca
-            this.camera.pos = [0, this.camera.observerheight, 0, 0];
+            this.camera.pos = [0, this.ExperimentOptions.ObserverHeight, 0, 0];
 
             % precompute the x-z position for every frame in the trial
-            sca
-            this = createLocomotionTrajectory(thisTrialData,this);
+            this = createLocomotionTrajectory(this,thisTrialData);
 
             % create array of randomly positioned distractor locations
-            [this.exptparams,this.dots,this.valididxs,this.xWorldFlatten,this.zWorldFlatten] = initializeDotPlacement(thisTrialData, this.exptparams, this.cam_pos);
+            this = initializeShapePlacement(this,thisTrialData);
 
             % create a smaller array of targets
-            [this.dots,this.fctr,this.dotsorcircles,this.targetornot] = initializeTargetDots(this.dots, this.deltax, this.deltaz, this.exptparams, this.cam_pos, thisTrialData);
+            this = initializeTargetDots(this,thisTrialData);
 
             Enum = ArumeCore.ExperimentDesign.getEnum();
             trialResult = Enum.trialResult.CORRECT;

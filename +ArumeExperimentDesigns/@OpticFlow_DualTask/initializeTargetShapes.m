@@ -1,4 +1,4 @@
-function [dots,fctr,dotsorcircles,targetornot] = initializeTargetDots(dots,deltax,deltaz,exptparams, cam_pos, data)
+function [dots,fctr,dotsorcircles,targetornot] = initializeTargetShapes(this,thisTrialData)
 
     % pre-determine the set of x-z target locations, relative to the camera
     % position, such that when the target appears, it will (i) not appear
@@ -16,7 +16,7 @@ function [dots,fctr,dotsorcircles,targetornot] = initializeTargetDots(dots,delta
     % time of the targets, then look up the total x and z change, based on
     % the above settings. I'll do that!
 
-    if data.targetpresent
+    if thisTrialData.TargetPresent
         % begin by getting the total translation in x and z, from when the
         % targets might appear, to the end of the trial.
 
@@ -27,7 +27,7 @@ function [dots,fctr,dotsorcircles,targetornot] = initializeTargetDots(dots,delta
         % because this means that the targets are more evenly spread
         % vertically, and may draw fixation downward. 
         proportioncontinuousmotion = .5; % Set to 1 if we want the dots to be alive the whole trial
-        startidx = 1; endidx = round(length(deltaz)*proportioncontinuousmotion);
+        startidx = 1; endidx = round(length(this.camera.deltaz)*proportioncontinuousmotion);
 
         totalzdisplacement = sum(deltaz(startidx:endidx));
         totalxdisplacement = sum(deltax(startidx:endidx));

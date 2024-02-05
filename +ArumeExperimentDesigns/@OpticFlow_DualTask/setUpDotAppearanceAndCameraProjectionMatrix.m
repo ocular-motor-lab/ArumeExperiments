@@ -3,7 +3,7 @@ function this = setUpDotAppearanceAndCameraProjectionMatrix(this)
     this.camera.itemcol1 = uint8([1.0000    0.4118    0.1608] * 255);
     this.camera.itemcol2 = uint8([0.3922    0.8314    0.0745] * 255);
     this.camera.fixcol = [255, 255, 255];
-    this.camera.hdotsz = round((this.ExperimentOptions.dotsz)/2);
+    this.camera.hdotsz = round((this.ExperimentOptions.DotSz)/2);
 
     % area of circle versus square
     this.camera.dotarea = pi*(this.camera.hdotsz)^2;
@@ -15,13 +15,13 @@ function this = setUpDotAppearanceAndCameraProjectionMatrix(this)
     
     % Define camera parameters
     this.camera.ar = this.Graph.pxHeight/this.Graph.pxWidth;
-    this.camera.hfov = this.ExperimentOptions.hfov;
+    this.camera.hfov = this.ExperimentOptions.HFOV;
     this.camera.vfov = this.camera.hfov*this.camera.ar;
 
     % Set the max distance of the targets (so they aren't predominantly
     % hidden), and the max possibly frame-delay for the onset of the targets
     % (we do not want them to all appear at once). 
-    this.camera.fcp = this.ExperimentOptions.fcp;
+    this.camera.fcp = this.ExperimentOptions.FCP;
     this.camera.maxtargetzthreshold = min(75,this.camera.fcp); 
     this.camera.ntargets = 10;
 
@@ -48,14 +48,14 @@ function this = setUpDotAppearanceAndCameraProjectionMatrix(this)
     
     % dot lifetime in frames.
     this.camera.fps = this.Graph.frameRate;
-    this.camera.ndotframes = round(this.camera.fps*this.ExperimentOptions.dotlifetime);
+    this.camera.ndotframes = round(this.camera.fps*this.ExperimentOptions.DotLifetime);
     
     % initialize our dots. treat z=depth distribution differently based on desired geometry
     this.camera.maxx = this.camera.fcp*tan(this.camera.rhfov);
 
     % if we are using the size cue, set up the distance-based scaling
     % factor
-    if this.ExperimentOptions.dotsizecue
+    if this.ExperimentOptions.DotSizeCue
         this.camera.mindotszpx = 1;
         this.camera.dotscalfac = 1/this.camera.fcp;
     end

@@ -1,24 +1,12 @@
 classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
-    % OpticFlow_DualTaskexperiment for Arume 
-    %
-    %     
-    properties
 
+    % OpticFlow_DualTaskexperiment for Arume 
+ 
+    properties
         camera
         uicomponents
         audio
-        exptparams
-
-            cam_pos
-            deltax
-            deltaz
-            dots
-            valididxs
-            xWorldFlatten
-            zWorldFlatten
-            fctr
-            dotsorcircles
-            targetornot
+        shapes
     end
     
     % ---------------------------------------------------------------------
@@ -137,38 +125,30 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
         % every single trial
         function shouldContinue = initBeforeRunning( this )
 
-            sca
+            % create camera object with rendering properties
             this = setUpDotAppearanceAndCameraProjectionMatrix(this);
+
+            % UI screen coordinates and shapes
             this = setUpUIVariables(this);
 
             % give feedback in the form of a sound effect?
             if this.ExperimentOptions.auditoryfeedback
                 this = getAudioFeedbackFiles(this);
             end
-
-
             shouldContinue = 1;
         end
-
-        %% EXTERNAL FILES FOR CLASS FUNCTIONS
-        exptparams = setUpUIVariables(exptparams);
-        exptparams = setUpDotAppearanceAndCameraProjectionMatrix(exptparams);
-        [deltax,deltaz] = createLocomotionTrajectory(thisTrialData,exptparams);
-        [exptparams,dots,valididxs,xWorldFlatten,zWorldFlatten] = initializeDotPlacement(thisTrialData, exptparams, cam_pos);
-        [dots,fctr,dotsorcircles,targetornot] = initializeTargetDots(dots, deltax, deltaz, exptparams, cam_pos, thisTrialData);
-
-        %%
-
         
         % runPreTrial
         % use this to prepare things before the trial starts
         function [trialResult, thisTrialData] = runPreTrial(this, thisTrialData )
 
             % initialize the camera to the starting position every trial
-            this.cam_pos = [0, this.exptparams.observerheight, 0, 0];
+            sca
+            this.camera.pos = [0, this.camera.observerheight, 0, 0];
 
             % precompute the x-z position for every frame in the trial
-            [this.deltax,this.deltaz] = createLocomotionTrajectory(thisTrialData,this.exptparams);
+            sca
+            this = createLocomotionTrajectory(thisTrialData,this);
 
             % create array of randomly positioned distractor locations
             [this.exptparams,this.dots,this.valididxs,this.xWorldFlatten,this.zWorldFlatten] = initializeDotPlacement(thisTrialData, this.exptparams, this.cam_pos);

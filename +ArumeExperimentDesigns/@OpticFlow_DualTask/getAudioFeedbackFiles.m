@@ -1,9 +1,14 @@
 function this = getAudioFeedbackFiles(this)
 
-    % InitializePsychSound;
+    InitializePsychSound
 
-    correctsound = 'sounds/success-1-6297.mp3';
-    incorrectsound = 'sounds/failure-drum-sound-effect-2-7184.mp3';
+    % For some reason AudioRead doesn't like the relative path, so we find
+    % the absolute path
+    currpath = mfilename('fullpath');
+    [filepath,~,~] = fileparts(currpath);
+    rootdir = [filepath,'/responseSounds/'];
+    correctsound = [rootdir,'success-1-6297.mp3'];
+    incorrectsound = [rootdir,'failure-drum-sound-effect-2-7184.mp3'];
     % repetitions = 1;
     correctvol = .25;
 

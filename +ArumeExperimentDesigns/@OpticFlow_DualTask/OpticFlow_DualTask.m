@@ -3,6 +3,10 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
     %
     %     
     properties
+
+        camera
+        uicomponents
+        audio
         exptparams
 
             cam_pos
@@ -133,13 +137,13 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
         % every single trial
         function shouldContinue = initBeforeRunning( this )
 
-
-            this.exptparams = setUpDotAppearanceAndCameraProjectionMatrix(this.exptparams);
-            this.exptparams = setUpUIVariables(this.exptparams);
+            sca
+            this = setUpDotAppearanceAndCameraProjectionMatrix(this);
+            this = setUpUIVariables(this);
 
             % give feedback in the form of a sound effect?
-            if this.exptparams.auditoryfeedback
-                this.exptparams = getAudioFeedbackFiles(this.exptparams);
+            if this.ExperimentOptions.auditoryfeedback
+                this = getAudioFeedbackFiles(this);
             end
 
 
@@ -184,7 +188,7 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
 
 
                 Enum = ArumeCore.ExperimentDesign.getEnum();
-                graph = this.Graph;
+                graph = this.Graph; %% object of class ArumeCore.Display with all the psychtoolbox initialization, window handle, and a few more things FLIP
                 trialResult = Enum.trialResult.CORRECT;
 
 
@@ -240,11 +244,14 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
                             end
                         end
                     end
-                    if ( ~isempty( response) )
-                        thisTrialData.Response = response;
-                        thisTrialData.ResponseTime = GetSecs;
 
-                        break;
+                    if ( secondsRemaining > 1 )
+                        if ( ~isempty( response) )
+                            thisTrialData.Response = response;
+                            thisTrialData.ResponseTime = GetSecs;
+    
+                            break;
+                        end
                     end
                     % -----------------------------------------------------------------
                     % --- END Collecting responses  -----------------------------------

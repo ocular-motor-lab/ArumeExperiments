@@ -1,48 +1,48 @@
-function exptparams = setUpUIVariables(exptparams)
+function this = setUpUIVariables(this)
 
     % fixation rect stuff
     hfixwidth = 3;
     hfixlen = 40;
-    fix1 = [exptparams.wwidth/2-hfixwidth;
-        exptparams.wheight/2-hfixlen;
-        exptparams.wwidth/2+hfixwidth;
-        exptparams.wheight/2+hfixlen];
-    fix2 =  [exptparams.wwidth/2-hfixlen;
-        exptparams.wheight/2-hfixwidth;
-        exptparams.wwidth/2+hfixlen;
-        exptparams.wheight/2+hfixwidth];
-    exptparams.fixrects = [fix1,fix2];
+    fix1 = [this.Graph.pxWidth/2-hfixwidth;
+        this.Graph.pxHeight/2-hfixlen;
+        this.Graph.pxWidth/2+hfixwidth;
+        this.Graph.pxHeight/2+hfixlen];
+    fix2 =  [this.Graph.pxWidth/2-hfixlen;
+        this.Graph.pxHeight/2-hfixwidth;
+        this.Graph.pxWidth/2+hfixlen;
+        this.Graph.pxHeight/2+hfixwidth];
+    this.uicomponents.fixrects = [fix1,fix2];
     
     % initialize the anchor point for the response line
-    exptparams.resplinex1 = exptparams.wwidth/2;
-    exptparams.respliney1 =exptparams. wheight/2;
-    exptparams.linelen = exptparams.wheight/8;
-    exptparams.anginc = .01;
+    this.uicomponents.resplinex1 = this.Graph.pxWidth/2;
+    this.uicomponents.respliney1 =this.Graph.pxHeight/2;
+    this.uicomponents.linelen = this.Graph.pxHeight/8;
+    this.uicomponents.anginc = .01;
     
     % angle ticks
     rulerlineangs = linspace(0,pi,5);
-    rulerlinex1 = exptparams.resplinex1+cos(rulerlineangs)*exptparams.linelen*.9;
-    rulerlinex2 = exptparams.resplinex1+cos(rulerlineangs)*exptparams.linelen*1;
-    rulerliney1 = exptparams.respliney1-sin(rulerlineangs)*exptparams.linelen*.9;
-    rulerliney2 = exptparams.respliney1-sin(rulerlineangs)*exptparams.linelen*1;
-    exptparams.rulerlinexy = [reshape([rulerlinex1;rulerlinex2],1,[]);...
+    rulerlinex1 = this.uicomponents.resplinex1+cos(rulerlineangs)*this.uicomponents.linelen*.9;
+    rulerlinex2 = this.uicomponents.resplinex1+cos(rulerlineangs)*this.uicomponents.linelen*1;
+    rulerliney1 = this.uicomponents.respliney1-sin(rulerlineangs)*this.uicomponents.linelen*.9;
+    rulerliney2 = this.uicomponents.respliney1-sin(rulerlineangs)*this.uicomponents.linelen*1;
+    this.uicomponents.rulerlinexy = [reshape([rulerlinex1;rulerlinex2],1,[]);...
         reshape([rulerliney1;rulerliney2],1,[])];
     
     % outside semi-circle
     outsidelineangs = linspace(0,pi,100);
-    outsidelinex = exptparams.resplinex1+cos(outsidelineangs)*exptparams.linelen;
+    outsidelinex = this.uicomponents.resplinex1+cos(outsidelineangs)*this.uicomponents.linelen;
     outsidelinex = [outsidelinex(1),repelem(outsidelinex(2:end),2),outsidelinex(1)];
     
-    outsideliney = exptparams.respliney1-sin(outsidelineangs)*exptparams.linelen;
+    outsideliney = this.uicomponents.respliney1-sin(outsidelineangs)*this.uicomponents.linelen;
     outsideliney = [outsideliney(1),repelem(outsideliney(2:end),2),outsideliney(1)];
     
-    exptparams.outsidelinexy = [outsidelinex;outsideliney];
+    this.uicomponents.outsidelinexy = [outsidelinex;outsideliney];
     
     % location for degree text box response
-    exptparams.texty = exptparams.wheight/2+exptparams.wheight/20;
+    this.uicomponents.texty = this.Graph.pxHeight/2+this.Graph.pxHeight/20;
 
     % text box response for visual search bounting task
-    % exptparams.visualsearchtexty1 = exptparams.wheight/2-exptparams.wheight/20;
-    % exptparams.visualsearchtexty2 = exptparams.wheight/2-exptparams.wheight/20;
+    % this.uicomponents.visualsearchtexty1 = this.Graph.pxHeight/2-this.Graph.pxHeight/20;
+    % this.uicomponents.visualsearchtexty2 = this.Graph.pxHeight/2-this.Graph.pxHeight/20;
 
 end

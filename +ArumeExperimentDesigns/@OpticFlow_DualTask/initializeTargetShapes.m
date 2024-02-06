@@ -1,4 +1,4 @@
-function [dots,fctr,dotsorcircles,targetornot] = initializeTargetShapes(this,thisTrialData)
+function this = initializeTargetShapes(this,thisTrialData)
 
     % pre-determine the set of x-z target locations, relative to the camera
     % position, such that when the target appears, it will (i) not appear
@@ -29,70 +29,71 @@ function [dots,fctr,dotsorcircles,targetornot] = initializeTargetShapes(this,thi
         proportioncontinuousmotion = .5; % Set to 1 if we want the dots to be alive the whole trial
         startidx = 1; endidx = round(length(this.camera.deltaz)*proportioncontinuousmotion);
 
-        totalzdisplacement = sum(deltaz(startidx:endidx));
-        totalxdisplacement = sum(deltax(startidx:endidx));
+        totalzdisplacement = sum(this.camera.deltaz(startidx:endidx));
+        totalxdisplacement = sum(this.camera.deltax(startidx:endidx));
     
         % then turn these into screen coords, and find all of them that stay
         % inside the NDU plane the entire time
     
         % first we add a small increment to the dots array so that our target
         % coordinates are never identical to the distractor coordinates
-        zsamprate = (exptparams.fcp-exptparams.minzWorld)/exptparams.nptsZ;
-        xsamprate = (exptparams.maxx*(exptparams.widthfactor*2))/exptparams.nptsX;
-        candidatedots = dots;
-        candidatedots(:,1) = candidatedots(:,1)+xsamprate/2;
-        candidatedots(:,3) = candidatedots(:,3)+zsamprate/2;
+        zsamprate = (this.camera.fcp-this.camera.minzWorld)/this.camera.nptsZ;
+        xsamprate = (this.camera.maxx*(this.camera.widthfactor*2))/this.camera.nptsX;
+
+        candidateshapes = this.shapes.allValidWorldCoords;
+        candidateshapes(:,1) = candidateshapes(:,1)+xsamprate/2;
+        candidateshapes(:,3) = candidateshapes(:,3)+zsamprate/2;
     
         % then we project to the start and end camera position
-        targetstrans_dots = candidatedots-cam_pos;
-        targetsprojected_dots = targetstrans_dots*exptparams.projection;
-        targetsprojected_dots = targetsprojected_dots ./ targetsprojected_dots(:, 4);
-        targetscoordinbound = sum((targetsprojected_dots(:,1:3) > -1) & (targetsprojected_dots(:,1:3) < 1), 2);
+        targetstrans_shapes = candidateshapes-this.camera.pos;
+        targetsprojected_shapes = targetstrans_shapes*this.camera.projection;
+        targetsprojected_shapes = targetsprojected_shapes ./ targetsprojected_shapes(:, 4);
+        targetscoordinbound = sum((targetsprojected_shapes(:,1:3) > -1) & (targetsprojected_shapes(:,1:3) < 1), 2);
         inboundsidxstart = targetscoordinbound == 3;
     
-        targetstrans_dots = candidatedots - cam_pos - [totalxdisplacement,0,totalzdisplacement,0]; % add total offset at end
-        targetsprojected_dots = targetstrans_dots*exptparams.projection;
-        targetsprojected_dots = targetsprojected_dots ./ targetsprojected_dots(:, 4);
-        targetscoordinbound = sum((targetsprojected_dots(:,1:3) > -1) & (targetsprojected_dots(:,1:3) < 1), 2);
+        targetstrans_shapes = candidateshapes - this.camera.pos - [totalxdisplacement,0,totalzdisplacement,0]; % add total offset at end
+        targetsprojected_shapes = targetstrans_shapes*this.camera.projection;
+        targetsprojected_shapes = targetsprojected_shapes ./ targetsprojected_shapes(:, 4);
+        targetscoordinbound = sum((targetsprojected_shapes(:,1:3) > -1) & (targetsprojected_shapes(:,1:3) < 1), 2);
         inboundsidxend = targetscoordinbound == 3;
     
         % indices of the dots that never disappear, with the added condition
         % that we don't want them too far away?
-        inboundsidxall = find(inboundsidxend & inboundsidxstart & (dots(:,3) < exptparams.maxtargetzthreshold));
+        inboundsidxall = find(inboundsidxend & inboundsidxstart & (this.shapes.allValidWorldCoords(:,3) < this.camera.maxtargetzthreshold));
     
         % randomly sample n points from this grid
         targetidxs = inboundsidxall(randperm(length(inboundsidxall)));
-        targetdots = candidatedots(targetidxs(1:exptparams.ntargets),:);
+        targetshapes = candidateshapes(targetidxs(1:this.camera.ntargets),:);
     
-        % and sub them in
-        dots(1:exptparams.ntargets,:) = targetdots;
+        % and sub them in to a known set of locations
+        this.shapes.currentWorldCoords(1:this.camera.ntargets,:) = targetshapes;
     
         % while we are here, set up our lifetime variables
-        fctr = randi(exptparams.dotlifetime*exptparams.fps, exptparams.num_dots, 1);
-        fctr(1:exptparams.ntargets) = 0;
+        this.shapes.lifetime = randi(this.ExperimentOptions.DotLifetime*this.camera.fps, this.ExperimentOptions.NumDots, 1);
+        this.shapes.lifetime(1:this.camera.ntargets) = 0;
         
         % draw dots or draw circles
-        dotsorcircles = rand(exptparams.num_dots, 1)>.5;
+        this.shapes.shapetype = rand(this.ExperimentOptions.NumDots, 1)>.5;
     
         % set up a vector which encodes which shapes are the targets
         % (initialized to zero because no targets are presented until a minimum
         % temporal delay
-        targetornot = false(exptparams.num_dots,1);
-        targetornot(1:exptparams.ntargets) = true;
+        this.shapes.targetornot = false(this.ExperimentOptions.NumDots,1);
+        this.shapes.targetornot(1:this.camera.ntargets) = true;
 
     else
 
         % all distractors!
-        fctr = randi(exptparams.dotlifetime*exptparams.fps, exptparams.num_dots, 1);
-        fctr(1:exptparams.ntargets) = 0;
+        this.shapes.lifetime = randi(this.ExperimentOptions.DotLifetime*this.camera.fps, this.ExperimentOptions.NumDots, 1);
+        this.shapes.lifetime(1:this.camera.ntargets) = 0;
         
         % draw dots or draw circles
-        dotsorcircles = rand(exptparams.num_dots, 1)>.5;
+        this.shapes.shapetype = rand(this.ExperimentOptions.NumDots, 1)>.5;
     
         % set up a vector which encodes which shapes are the targets
         % (initialized to zero because no targets are presented until a minimum
         % temporal delay
-        targetornot = false(exptparams.num_dots,1);
+        this.shapes.targetornot = false(this.ExperimentOptions.NumDots,1);
 
     end
 

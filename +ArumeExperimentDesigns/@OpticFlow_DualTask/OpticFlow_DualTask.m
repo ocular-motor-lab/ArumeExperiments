@@ -37,8 +37,6 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             dlg.NumberTrials = {20, 'Number of Trials Per Condition',[1,10000]};
             dlg.AuditoryFeedback = {{'0','{1}'}, 'Auditory Feedback?'};
 
-
-
             %% CHANGE DEFAULTS values for existing options
 
             dlg.UseEyeTracker = 0;
@@ -103,7 +101,10 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             conditionVars(i).name = 'ResponseOrder';
             conditionVars(i).values =  {'HeadingFirst' 'SearchFirst'};
 
-            
+
+            % remember - we only really want the heading-change condition
+            % to be the IV here. We do not care that there are n trials per
+            % searchtarget condition, and/or task order condition. 
             trialTableOptions = this.GetDefaultTrialTableOptions();
             trialTableOptions.trialSequence = 'Random';
             trialTableOptions.trialAbortAction = 'Delay';
@@ -143,7 +144,6 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
         function [trialResult, thisTrialData] = runPreTrial(this, thisTrialData )
 
             % initialize the camera to the starting position every trial
-            sca
             this.camera.pos = [0, this.ExperimentOptions.ObserverHeight, 0, 0];
 
             % precompute the x-z position for every frame in the trial
@@ -153,7 +153,7 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             this = initializeShapePlacement(this,thisTrialData);
 
             % create a smaller array of targets
-            this = initializeTargetDots(this,thisTrialData);
+            this = initializeTargetShapes(this,thisTrialData);
 
             Enum = ArumeCore.ExperimentDesign.getEnum();
             trialResult = Enum.trialResult.CORRECT;
@@ -165,7 +165,7 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
 
             try
 
-
+                sca
                 Enum = ArumeCore.ExperimentDesign.getEnum();
                 graph = this.Graph; %% object of class ArumeCore.Display with all the psychtoolbox initialization, window handle, and a few more things FLIP
                 trialResult = Enum.trialResult.CORRECT;
@@ -192,7 +192,7 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
 
                     fixRect = [0 0 10 10];
                     fixRect = CenterRectOnPointd( fixRect, mx, my );
-                    Screen('FillOval', graph.window,  this.fixColor, fixRect);
+                    % Screen('FillOval', graph.window,  this.fixColor, fixRect);
 
 
                     % -----------------------------------------------------------------

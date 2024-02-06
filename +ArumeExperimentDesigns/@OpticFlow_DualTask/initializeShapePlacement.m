@@ -23,4 +23,7 @@ function this = initializeShapePlacement(this, thisTrialData)
     yWorldFlatten = zeros(size(xWorldFlatten));
     this.shapes.allValidWorldCoords = [xWorldFlatten',yWorldFlatten',zWorldFlatten',ones(size(yWorldFlatten))'];
 
+    sampleidxs = randi(size(this.shapes.allValidWorldCoords,1), 1, this.ExperimentOptions.NumDots);
+    this.shapes.currentWorldCoords = this.shapes.allValidWorldCoords(sampleidxs,:);
+
 end

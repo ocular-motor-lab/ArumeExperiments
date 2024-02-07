@@ -165,7 +165,6 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
 
             try
 
-                sca
                 Enum = ArumeCore.ExperimentDesign.getEnum();
                 graph = this.Graph; %% object of class ArumeCore.Display with all the psychtoolbox initialization, window handle, and a few more things FLIP
                 trialResult = Enum.trialResult.CORRECT;
@@ -174,6 +173,50 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
                 lastFlipTime        = GetSecs;
                 secondsRemaining    = this.ExperimentOptions.TrialDuration;
                 thisTrialData.TimeStartLoop = lastFlipTime;
+
+                [this,thisTrialData,exitedEarly] = presentStimulus(this,thisTrialData);
+                % if exitedEarly; break; end
+
+                % request response from observer
+                switch thisTrialData.Task
+                    case 'Visual Search'
+                        [this, thisTrialData, exitedEarly]  = getVisualSearchResponse(this, thisTrialData);
+            
+                    case 'Heading'
+                        [this, thisTrialData,  exitedEarly]  = getHeadingResponse(this, thisTrialData);
+            
+                    case 'Both'
+                        % randomly choose which one goes first though. 
+                        switch thisTrialData.ResponseOrder
+                            case 'HeadingFirst'
+                                [this, thisTrialData, exitedEarly]  = getVisualSearchResponse(this, thisTrialData);
+                                if ~exitedEarly
+                                    [this, thisTrialData, exitedEarly]  = getHeadingResponse(this, thisTrialData);
+                                end
+                            case 'SearchFirst'
+                                [this, thisTrialData, exitedEarly]  = getHeadingResponse(this, thisTrialData);
+                                if ~exitedEarly
+                                    [this, thisTrialData, exitedEarly]  = getVisualSearchResponse(this, thisTrialData); %#ok<*ASGLU>
+                                end
+                        end
+                end
+
+
+
+                
+                % if exitedEarly; break; end
+                
+                % save data each trial
+                data.completed(i) = 1;
+                if exptparams.savedata
+                    save(exptparams.filepath,'data','exptparams')
+                end
+            
+                % and show the end-of-trial sequence
+                exitedEarly = endOfTrialSequence(exptparams,i,data);
+                % if exitedEarly; break; end
+
+
 
 
                 while secondsRemaining > 0

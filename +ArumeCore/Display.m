@@ -129,11 +129,11 @@ classdef Display < handle
             
             
             % draw a fixation spot in the center;
-            [mx, my] = RectCenter(graph.wRect);
-            fixRect = [0 0 10 10];
-            fixRect = CenterRectOnPointd( fixRect, mx, my );
-            Screen('FillOval', graph.window,  255, fixRect);
-            fliptime = Screen('Flip', graph.window);
+            % [mx, my] = RectCenter(graph.wRect);
+            % fixRect = [0 0 10 10];
+            % fixRect = CenterRectOnPointd( fixRect, mx, my );
+            % Screen('FillOval', graph.window,  255, fixRect);
+            % fliptime = Screen('Flip', graph.window);
         end
         
         function Clear(graph)
@@ -543,6 +543,7 @@ classdef Display < handle
             selection = 0;
             DrawFormattedText( this.window, text, varargin{:} );
             Screen('Flip', this.window);
+            
             
             cprintf('blue','\n---------------------------------------------------------\n');
             cprintf('blue','---------------------------------------------------------\n');

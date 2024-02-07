@@ -49,6 +49,9 @@ function this = setUpDotAppearanceAndCameraProjectionMatrix(this)
     % dot lifetime in frames.
     this.camera.fps = this.Graph.frameRate;
     this.camera.ndotframes = round(this.camera.fps*this.ExperimentOptions.DotLifetime);
+
+    % trial duration in frames
+    this.camera.ntrialframes = round(this.camera.fps*this.ExperimentOptions.TrialDuration);
     
     % initialize our dots. treat z=depth distribution differently based on desired geometry
     this.camera.maxx = this.camera.fcp*tan(this.camera.rhfov);

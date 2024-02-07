@@ -1260,6 +1260,7 @@ classdef ExperimentDesign < handle
             state = INITIALIZNG_HARDWARE;
             
             trialsSinceBreak = 0;
+            trialsSinceCalibration = 0;
             
             while(1)
                 try
@@ -1282,7 +1283,7 @@ classdef ExperimentDesign < handle
                             end
 
                             if ( shouldContinue )
-                                state = RUNNING;
+                                state = CALIBRATING;
                             else
                                 state = FINILIZING_EXPERIMENT;
                             end
@@ -1290,18 +1291,29 @@ classdef ExperimentDesign < handle
                         case IDLE
                             result = this.Graph.DlgSelect( ...
                                 'Choose an option:', ...
-                                { 'n' 'q'}, ...
-                                { 'Next trial'  'Quit'} , [],[]);
+                                { 'n' 'c' 'q'}, ...
+                                { 'Next trial'  'Calibrate' 'Quit'} , [],[]);
                             
                             switch( result )
                                 case 'n'
                                     state = RUNNING;
+                                case 'c'
+                                    state = CALIBRATING;
                                 case {'q' 0}
                                     dlgResult = this.Graph.DlgYesNo( 'Are you sure you want to exit?',[],[],20,20);
                                     if( dlgResult )
                                         state = FINILIZING_EXPERIMENT;
                                     end
                             end
+                        case CALIBRATING
+                                state = RUNNING;
+                                success = true;
+                                if ( success )
+                                    trialsSinceCalibration = 0;
+                                    state = RUNNING;
+                                else
+                                    state = IDLE;
+                                end
                             
                         case BREAK
 
@@ -1488,6 +1500,10 @@ classdef ExperimentDesign < handle
                             if ( trialsSinceBreak >= this.ExperimentOptions.TrialsBeforeBreak )
                                 state = BREAK;
                             end
+                            if ( trialsSinceCalibration > 1000000000 )
+                                state = CALIBRATING;
+                            end
+                            
                             if ( ~isempty(this.Session.currentRun.futureTrialTable) && ~isempty(this.Session.currentRun.pastTrialTable) )
                                 if ( this.Session.currentRun.pastTrialTable.Session(end) ~= this.Session.currentRun.futureTrialTable.Session(1) )
                                     state = SESSIONFINISHED;

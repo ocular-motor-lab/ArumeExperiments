@@ -25,5 +25,6 @@ function this = initializeShapePlacement(this, thisTrialData)
 
     sampleidxs = randi(size(this.shapes.allValidWorldCoords,1), 1, this.ExperimentOptions.NumDots);
     this.shapes.currentWorldCoords = this.shapes.allValidWorldCoords(sampleidxs,:);
+    this.shapes.nValidLocations = size(this.shapes.allValidWorldCoords,1);
 
 end

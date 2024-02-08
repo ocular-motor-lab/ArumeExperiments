@@ -19,8 +19,8 @@ function [this, thisTrialData,  exitedEarly]  = getHeadingResponse(this, thisTri
             ,[resplinex2;respliney2]], 3, [255,255,255], [], 2);
     
         % we flip the heading so that the labels are more intuitive
-        DrawFormattedText(this.Graph.window, num2str(-round(rad2deg(respang)-90)), 'center', this.uicomponents.texty, [255,255,255])
-        this.Graph.Flip(this, thisTrialData)
+        DrawFormattedText(this.Graph.window, num2str(-round(rad2deg(respang)-90)), 'center', this.uicomponents.texty, [255,255,255]);
+        this.Graph.Flip(this, thisTrialData);
     
         % enter accepts the user's response
         [keyIsDown, ~, keyCode, ~] = KbCheck();
@@ -30,7 +30,7 @@ function [this, thisTrialData,  exitedEarly]  = getHeadingResponse(this, thisTri
                 KbName(keys(i));
     
                 switch(KbName(keys(i)))
-                    case 'Return'
+                    case 'y'
                         noresp = false;
     
                     case 'LeftArrow'
@@ -49,6 +49,11 @@ function [this, thisTrialData,  exitedEarly]  = getHeadingResponse(this, thisTri
     
     end
 
+    % only end trial once key is up
+    while keyIsDown
+        [keyIsDown, ~, ~, ~] = KbCheck();
+    end
+
     % note that we do not negate the headings when saving responses, because
     % the raw angles and heading directions are already aligned (we negate them
     % only for showing the angle in text to observers). Negative = right,
@@ -59,7 +64,7 @@ function [this, thisTrialData,  exitedEarly]  = getHeadingResponse(this, thisTri
     if this.ExperimentOptions.AuditoryFeedback
         
         % set some sort of threshold error in degrees?
-        if abs(thisTrialData.HeadingResponse - thisTrialData.HeadingChange) < 5
+        if abs(thisTrialData.HeadingResponse - thisTrialData.HeadingChange) < 10
             PsychPortAudio('Start', this.audio.pahandlecorrect, 1, 0, 1);
         else
             PsychPortAudio('Start', this.audio.pahandleincorrect, 1, 0, 1);

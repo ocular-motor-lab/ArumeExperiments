@@ -9,8 +9,8 @@ function [this, thisTrialData, exitedEarly]  = getVisualSearchResponse(this, thi
     
         % we flip the heading so that the labels are more intuitive
         msg = sprintf( 'Were there any %s?',thisTrialData.SearchTarget);
-        DrawFormattedText(this.Graph.window, msg, 'center', 'center', [255,255,255])
-        this.Graph.Flip(this, thisTrialData)
+        DrawFormattedText(this.Graph.window, msg, 'center', 'center', [255,255,255]);
+        this.Graph.Flip(this, thisTrialData);
     
         % enter accepts the user's response
         [keyIsDown, ~, keyCode, ~] = KbCheck();
@@ -21,11 +21,11 @@ function [this, thisTrialData, exitedEarly]  = getVisualSearchResponse(this, thi
     
                 switch(KbName(keys(i)))
                     case 'y'
-                        resp = true;
+                        resp = 1;
                         noresp = false;
     
                     case 'n'
-                        resp = false;
+                        resp = 0;
                         noresp = false;
 
                     case 'ESCAPE'
@@ -36,6 +36,12 @@ function [this, thisTrialData, exitedEarly]  = getVisualSearchResponse(this, thi
         end
     
     end
+
+    % only end trial once key is up
+    while keyIsDown
+        [keyIsDown, ~, ~, ~] = KbCheck();
+    end
+
 
     thisTrialData.SearchResp = resp;
     thisTrialData.ResponseTime = GetSecs - startt;

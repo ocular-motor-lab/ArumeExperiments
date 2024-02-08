@@ -69,7 +69,7 @@ function this = initializeTargetShapes(this,thisTrialData)
         this.shapes.currentWorldCoords(1:this.camera.ntargets,:) = targetshapes;
     
         % while we are here, set up our lifetime variables
-        this.shapes.lifetime = randi(this.ExperimentOptions.DotLifetime*this.camera.fps, this.ExperimentOptions.NumDots, 1);
+        this.shapes.lifetime = randi(round(this.ExperimentOptions.DotLifetime*this.camera.fps), this.ExperimentOptions.NumDots, 1);
         this.shapes.lifetime(1:this.camera.ntargets) = 0;
         
         % draw dots or draw circles
@@ -84,7 +84,7 @@ function this = initializeTargetShapes(this,thisTrialData)
     else
 
         % all distractors!
-        this.shapes.lifetime = randi(this.ExperimentOptions.DotLifetime*this.camera.fps, this.ExperimentOptions.NumDots, 1);
+        this.shapes.lifetime = randi(round(this.ExperimentOptions.DotLifetime*this.camera.fps), this.ExperimentOptions.NumDots, 1);
         this.shapes.lifetime(1:this.camera.ntargets) = 0;
         
         % draw dots or draw circles

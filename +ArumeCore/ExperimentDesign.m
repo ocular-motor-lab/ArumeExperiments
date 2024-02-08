@@ -1256,6 +1256,8 @@ classdef ExperimentDesign < handle
             SESSIONFINISHED = 5;
             BREAK = 6;
             FINALIZING_HARDWARE = 7;
+
+            CALIBRATING = 8;
             
             state = INITIALIZNG_HARDWARE;
             

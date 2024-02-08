@@ -3,33 +3,34 @@ function [this,thisTrialData, exitedEarly] = presentStimulus(this,thisTrialData)
     exitedEarly = false;
 
     % add a half-second trial buffer
-    this.Graph.Flip(this, thisTrialData)
-    WaitSecs(.5)
+    startt = GetSecs;
+    while (GetSecs-startt) < .5
+        this.Graph.Flip(this, thisTrialData);
+    end
 
     % add a response prompt
     switch thisTrialData.Task
         case 'Visual Search'
             msg = sprintf( 'Search for the %s',thisTrialData.SearchTarget);
-            DrawFormattedText(this.Graph.window, msg, 'center', 'center', [255,255,255])
-
         case 'Heading'
             msg = 'Estimate the heading';
-            DrawFormattedText(this.Graph.window, msg, 'center', 'center', [255,255,255])
-            
         case 'Both'
             msg = sprintf( 'Search for the %s, and estimate the heading',thisTrialData.SearchTarget);
-            DrawFormattedText(this.Graph.window, msg, 'center', 'center', [255,255,255])
     end
-    this.Graph.Flip(this, thisTrialData)
-    WaitSecs(2)
 
-    % show fixation until any button press
-    Screen('FillRect', this.Graph.window, this.camera.fixcol, this.uicomponents.fixrects)
-    this.Graph.Flip(this, thisTrialData)
+    startt = GetSecs;
+    while (GetSecs-startt) < 2
+        DrawFormattedText(this.Graph.window, msg, 'center', 'center', [255,255,255]);
+        this.Graph.Flip(this, thisTrialData);
+    end
 
     % check for response
     keyIsDown = false;
     while ~keyIsDown
+
+        % show fixation until any button press
+        Screen('FillRect', this.Graph.window, this.camera.fixcol, this.uicomponents.fixrects)
+        this.Graph.Flip(this, thisTrialData);
 
         [keyIsDown, ~, keyCode, ~] = KbCheck();
         keys = find(keyCode);
@@ -46,7 +47,6 @@ function [this,thisTrialData, exitedEarly] = presentStimulus(this,thisTrialData)
                     if this.ExperimentOptions.UseEyeTracker
                         EyelinkDoDriftCorrection(this.el);
                     end
-
             end
         end
     end
@@ -98,7 +98,6 @@ function [this,thisTrialData, exitedEarly] = presentStimulus(this,thisTrialData)
     % now we prepare for looping over the frames for a single trial
     nframesctr = 1;
     
-
     while (nframesctr <= this.camera.ntrialframes) 
 
         % check eyelink still connected
@@ -208,7 +207,7 @@ function [this,thisTrialData, exitedEarly] = presentStimulus(this,thisTrialData)
             Screen(targetdrawtype, this.Graph.window, targetcol, targetrects)
         end
 
-        this.Graph.Flip(this, thisTrialData)
+        this.Graph.Flip(this, thisTrialData);
         
         % increment dot lifetime
         this.shapes.lifetime = this.shapes.lifetime + 1;

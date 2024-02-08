@@ -42,9 +42,9 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             dlg.UseEyeTracker = 0;
             dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult Speed Stimulus'; % which variables to display every trial in the command line separated by spaces
 
-            dlg.DisplayOptions.ScreenWidth = { 121 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenHeight = { 68 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenDistance = { 60 '* (cm)' [1 3000] };
+            dlg.DisplayOptions.ScreenWidth = { 121 '* (cm)' [1 3000]};
+            dlg.DisplayOptions.ScreenHeight = { 68 '* (cm)' [1 3000]};
+            dlg.DisplayOptions.ScreenDistance = { 60 '* (cm)' [1 3000]};
             
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = {8, 'Trial duration',[1,100]}; % in secs
@@ -89,18 +89,6 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             conditionVars(i).name = 'HeadingChange';
             conditionVars(i).values =  this.ExperimentOptions.HeadingChanges;
 
-            i = i+1;
-            conditionVars(i).name = 'SearchTarget';
-            conditionVars(i).values =  {'red squares' 'red circles' 'green squares' 'green circles'};
-
-            i = i+1;
-            conditionVars(i).name = 'TargetPresent';
-            conditionVars(i).values =  [0 1];
-
-            i = i+1;
-            conditionVars(i).name = 'ResponseOrder';
-            conditionVars(i).values =  {'HeadingFirst' 'SearchFirst'};
-
 
             % remember - we only really want the heading-change condition
             % to be the IV here. We do not care that there are n trials per
@@ -112,11 +100,31 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberTrials;
             trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
 
+            this.ExperimentOptions.nTrialsTotal = height(trialTable);
 
+            % set up delta-onset time
             mintonset = 1; % heading change cannot happen immediately
             mintoffset = 1; % and the trial cannot end immediately after heading change is completed
             trange = this.ExperimentOptions.TrialDuration-this.ExperimentOptions.HeadingChangeDuration-mintoffset-mintonset;
             trialTable.HeadingChangeOnsetTime = rand(height(trialTable),1).*trange + mintonset;
+
+            % set up target type
+            targetTypes = categorical({'red squares' 'red circles' 'green squares' 'green circles'});
+            trialTable.SearchTarget = targetTypes(randi(length(targetTypes),this.ExperimentOptions.nTrialsTotal,1))';
+
+            % set up target present/absent. Arume hates logicals so use doubles
+            trialTable.TargetPresent = double(rand(this.ExperimentOptions.nTrialsTotal,1)>.5);
+
+            % set up target present/absent
+            responseOrder = categorical({'HeadingFirst' 'SearchFirst'});
+            trialTable.ResponseOrder = responseOrder(randi(length(responseOrder),this.ExperimentOptions.nTrialsTotal,1))';
+
+            % and trial number
+            trialTable.Trial = (1:this.ExperimentOptions.nTrialsTotal)';
+
+            % and block derivative (block change)
+            trialTable.BlockChange = double([diff(trialTable.BlockNumber);0]);
+
 
         end
         
@@ -166,12 +174,11 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             try
 
                 Enum = ArumeCore.ExperimentDesign.getEnum();
-                graph = this.Graph; %% object of class ArumeCore.Display with all the psychtoolbox initialization, window handle, and a few more things FLIP
+                % graph = this.Graph; %% object of class ArumeCore.Display with all the psychtoolbox initialization, window handle, and a few more things FLIP
                 trialResult = Enum.trialResult.CORRECT;
 
-
                 lastFlipTime        = GetSecs;
-                secondsRemaining    = this.ExperimentOptions.TrialDuration;
+                % secondsRemaining    = this.ExperimentOptions.TrialDuration;
                 thisTrialData.TimeStartLoop = lastFlipTime;
 
                 [this,thisTrialData,exitedEarly] = presentStimulus(this,thisTrialData);
@@ -201,87 +208,8 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
                         end
                 end
 
-
-
+            catch exq
                 
-                % if exitedEarly; break; end
-                
-                % save data each trial
-                data.completed(i) = 1;
-                if exptparams.savedata
-                    save(exptparams.filepath,'data','exptparams')
-                end
-            
-                % and show the end-of-trial sequence
-                exitedEarly = endOfTrialSequence(exptparams,i,data);
-                % if exitedEarly; break; end
-
-
-
-
-                while secondsRemaining > 0
-
-                    secondsElapsed      = GetSecs - thisTrialData.TimeStartLoop;
-                    secondsRemaining    = this.ExperimentOptions.TrialDuration - secondsElapsed;
-
-
-                    % -----------------------------------------------------------------
-                    % --- Drawing of stimulus -----------------------------------------
-                    % -----------------------------------------------------------------
-
-
-                    %-- Find the center of the screen
-                    [mx, my] = RectCenter(graph.wRect);
-
-                    fixRect = [0 0 10 10];
-                    fixRect = CenterRectOnPointd( fixRect, mx, my );
-                    % Screen('FillOval', graph.window,  this.fixColor, fixRect);
-
-
-                    % -----------------------------------------------------------------
-                    % --- END Drawing of stimulus -------------------------------------
-                    % -----------------------------------------------------------------
-                    
-                    % -----------------------------------------------------------------
-                    % -- Flip buffers to refresh screen -------------------------------
-                    % -----------------------------------------------------------------
-                    this.Graph.Flip(this, thisTrialData, secondsRemaining);
-                    % -----------------------------------------------------------------
-
-
-                    % -----------------------------------------------------------------
-                    % --- Collecting responses  ---------------------------------------
-                    % -----------------------------------------------------------------
-
-                    [keyIsDown, secs, keyCode, deltaSecs] = KbCheck();
-                    if ( keyIsDown )
-                        keys = find(keyCode);
-                        for i=1:length(keys)
-                            KbName(keys(i));
-                            switch(KbName(keys(i)))
-                                case 'RightArrow'
-                                    response = 'R';
-                                case 'LeftArrow'
-                                    response = 'L';
-                            end
-                        end
-                    end
-
-                    if ( secondsRemaining > 1 )
-                        if ( ~isempty( response) )
-                            thisTrialData.Response = response;
-                            thisTrialData.ResponseTime = GetSecs;
-    
-                            break;
-                        end
-                    end
-                    % -----------------------------------------------------------------
-                    % --- END Collecting responses  -----------------------------------
-                    % -----------------------------------------------------------------
-
-
-                end
-            catch ex
                 rethrow(ex)
             end
             
@@ -292,6 +220,8 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
         function [trialResult, thisTrialData] = runPostTrial(this, thisTrialData)
             Enum = ArumeCore.ExperimentDesign.getEnum();
             trialResult = Enum.trialResult.CORRECT;
+
+            exitedEarly = endOfTrialSequence(this,thisTrialData);
         end
         
         % run cleaning up after the session is completed or interrupted

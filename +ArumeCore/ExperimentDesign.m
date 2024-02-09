@@ -13,9 +13,6 @@ classdef ExperimentDesign < handle
         Session = [];       % The session that is currently running this experiment design
         ExperimentOptions   = [];  % Options of this specific experiment design
         TrialTable          = [];
-        
-        TrialStartCallbacks  % callback functions to be called before a trial starts
-        TrialStopCallbacks   % callback functions to be called after a trial ends
 
         Graph               = [];   % Display handle (usually psychtoolbox).
         eyeTracker          = [];   % Eye tracker handle
@@ -864,26 +861,6 @@ classdef ExperimentDesign < handle
         end
     end
     
-    methods(Access=protected,Sealed=true)
-        
-        function AddTrialStartCallback(this, fun)
-            if ( isempty(this.TrialStartCallbacks) )
-                this.TrialStartCallbacks = {fun};
-            else
-                this.TrialStartCallbacks{end+1} = fun;
-            end
-        end
-        
-        function AddTrialStopCallback(this, fun)
-            if ( isempty(this.TrialStopCallbacks) )
-                this.TrialStopCallbacks = {fun};
-            else
-                this.TrialStopCallbacks{end+1} = fun;
-            end
-        end
-        
-    end
-    
     methods (Access = public)
         function trialTable = GetTrialTable(this)
             trialTable = this.TrialTable;
@@ -1242,27 +1219,36 @@ classdef ExperimentDesign < handle
         
         
         function run(this)
+
+            % --------------------------------------------------------------------
+            % -- EXPERIMENT LOOP -------------------------------------------------
+            % --------------------------------------------------------------------
+            % This is the main method that controls the flow of the
+            % experiment. It functions as a finite state matchine
+
             Enum = ArumeCore.ExperimentDesign.getEnum();
             
-            % --------------------------------------------------------------------
-            %% -- EXPERIMENT LOOP -------------------------------------------------
-            % --------------------------------------------------------------------
             
+            % --------------------------------------------------------------------
             % possible states of the loop
+            % --------------------------------------------------------------------
             INITIALIZNG_HARDWARE = 0;
             INITIALIZNG_EXPERIMENT = 1;
             IDLE = 2;
             CALIBRATING = 3;
             VALIDATING = 4;
             STARTING_RECORDING = 5;
-            RUNNING = 6;
+            RUNNING_TRIALS = 6;
             FINILIZING_EXPERIMENT = 7;
             SESSIONFINISHED = 8;
             BREAK = 9;
             FINALIZING_HARDWARE = 10;
+            % --------------------------------------------------------------------
+            % end possible states
+            % --------------------------------------------------------------------
             
+            % initialize variables
             state = INITIALIZNG_HARDWARE;
-            
             trialsSinceBreak = 0;
             trialsSinceCalibration = 0;
             
@@ -1278,10 +1264,8 @@ classdef ExperimentDesign < handle
                             
                         case INITIALIZNG_EXPERIMENT
                             
-                            this.TrialStartCallbacks = [];
-                            this.TrialStopCallbacks = [];
-                            
                             shouldContinue = this.EyeTrackingInit();
+                            
                             if ( shouldContinue)
                                 shouldContinue = this.initBeforeRunning();
                             end
@@ -1300,7 +1284,7 @@ classdef ExperimentDesign < handle
                             
                             switch( result )
                                 case 'n'
-                                    state = RUNNING;
+                                    state = RUNNING_TRIALS;
                                 case 'c'
                                     state = CALIBRATING;
                                 case {'q' 0}
@@ -1340,7 +1324,7 @@ classdef ExperimentDesign < handle
                             end
 
 
-                            state = RUNNING;
+                            state = RUNNING_TRIALS;
                             
                         case BREAK
                             trialsSinceBreak = 0;
@@ -1352,7 +1336,7 @@ classdef ExperimentDesign < handle
                             
                             switch( result )
                                 case 'n'
-                                    state = RUNNING;
+                                    state = RUNNING_TRIALS;
                                 case 'c'
                                     state = CALIBRATING;
                                 case {'q' 0}
@@ -1362,7 +1346,7 @@ classdef ExperimentDesign < handle
                                     end
                             end
                             
-                        case RUNNING
+                        case RUNNING_TRIALS
                             % force to hit a key to continue if the
                             % previous trial was an abort or if the
                             % experiment is set to ask for hit key before
@@ -1407,9 +1391,8 @@ classdef ExperimentDesign < handle
                                     % -- TRIAL --------------------------------------------------
                                     %------------------------------------------------------------
                                     thisTrialData.TimeTrialStart = GetSecs;
-                                    for i=1:length(this.TrialStartCallbacks)
-                                        thisTrialData = feval(this.TrialStartCallbacks{i}, thisTrialData);
-                                    end
+
+                                    this.EyeTrackingTrialStart(thisTrialData);
                                     
                                     if ( ~isempty(this.Graph) )
                                         this.Graph.ResetFlipTimes();
@@ -1423,9 +1406,8 @@ classdef ExperimentDesign < handle
                                     end
                                     
                                     thisTrialData.TimeTrialStop = GetSecs;
-                                    for i=1:length(this.TrialStopCallbacks)
-                                        thisTrialData = feval(this.TrialStopCallbacks{i}, thisTrialData);
-                                    end
+                                    
+                                    this.EyeTrackingTrialStop(thisTrialData);
                                     
                                     if ( trialResult == Enum.trialResult.CORRECT )
                                         
@@ -1494,7 +1476,7 @@ classdef ExperimentDesign < handle
                                 trialsSinceBreak = trialsSinceBreak + 1;
                             else
                                 %-- what to do in case of abort
-                                switch(this.TrialTable.Properties.UserData.trialTableOptions.trialAbortAction)
+                                switch(this.TrialTable.Properties.UserData.trialTableOptions.trialAbortAction) % TODO: save the trial abort action somehwere else
                                     case 'Repeat'
                                         % do nothing
                                     case 'Delay'
@@ -1544,48 +1526,49 @@ classdef ExperimentDesign < handle
                         case SESSIONFINISHED
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', '---------------------------------------------------------\n')
-                            cprintf('blue', 'Session part finished! closing down and saving data ...\n');
+                            cprintf('*blue', 'Session part finished! closing down and saving data ...\n');
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', '---------------------------------------------------------\n')
-                            state = FINILIZING_EXPERIMENT;
+
+                            state = FINALIZING_HARDWARE;
                             
                         case FINILIZING_EXPERIMENT
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', '---------------------------------------------------------\n')
-                            cprintf('blue', 'Session finished! closing down and saving data ...\n');
+                            cprintf('*blue', 'Session finished! closing down and saving data ...\n');
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', '---------------------------------------------------------\n')
-                            
-                            this.cleanAfterRunning();
-                            this.EyeTrackingStop();
                             
                             state = FINALIZING_HARDWARE;
                             
                         case FINALIZING_HARDWARE
+
+                            this.cleanAfterRunning();
+
+                            this.EyeTrackingClose();
                             
                             this.Graph.Clear();
                             
                             this.Graph = [];
-                            disp('ARUME:: Done closing display and connections!');
+                            %disp('ARUME:: Done closing display and connections!');
+
                             break; % finish loop
                             
                     end
                 catch lastError
                     beep
-                    cprintf('red', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
-                    cprintf('red', '!!!!!!!!!!!!! ARUME ERROR: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
-                    cprintf('red', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
+                    cprintf('*red', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
+                    cprintf('*red', '!!!!!!!!!!!!! ARUME ERROR: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
+                    cprintf('*red', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
                     disp(lastError.getReport);
-                    cprintf('red', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
-                    cprintf('red', '!!!!!!!!!!!!! END ARUME ERROR: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
-                    cprintf('red', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
+                    cprintf('*red', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
+                    cprintf('*red', '!!!!!!!!!!!!! END ARUME ERROR: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
+                    cprintf('*red', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
                     
-                    if ( state == FINILIZING_EXPERIMENT )
-                        state = FINALIZING_HARDWARE;
-                    elseif ( state == FINALIZING_HARDWARE )
+                    if ( state == FINALIZING_HARDWARE )
                         break;
                     else
-                        state = FINILIZING_EXPERIMENT;
+                        state = FINALIZING_HARDWARE;
                     end
                 end
             end
@@ -1651,8 +1634,8 @@ classdef ExperimentDesign < handle
                 result = this.eyeTracker.Connect(this.Graph);
                 if ( result )
                     this.eyeTracker.SetSessionName(this.Session.name);
-                    this.AddTrialStartCallback(@this.EyeTrackingTrialStartCallback)
-                    this.AddTrialStopCallback(@this.EyeTrackingTrialStopCallBack)
+                    this.AddTrialStartCallback(@this.EyeTrackingTrialStart)
+                    this.AddTrialStopCallback(@this.EyeTrackingTrialStop)
                 else
                     shouldContinue = 0;
                     this.eyeTracker = [];
@@ -1663,8 +1646,7 @@ classdef ExperimentDesign < handle
             shouldContinue = 1;
         end
 
-
-        function EyeTrackingStop(this)
+        function EyeTrackingClose(this)
             if ( this.ExperimentOptions.UseEyeTracker && ~isempty(this.eyeTracker))
                 this.eyeTracker.StopRecording();
 
@@ -1706,7 +1688,7 @@ classdef ExperimentDesign < handle
             end
         end
 
-        function variables = EyeTrackingTrialStartCallback(this, variables)
+        function thisTrialData = EyeTrackingTrialStart(this, thisTrialData)
             if ( isempty(this.eyeTracker))
                 return;
             end
@@ -1716,19 +1698,23 @@ classdef ExperimentDesign < handle
                 throw(ME);
             end
                 
-            variables.EyeTrackerFrameNumberTrialStart = this.eyeTracker.RecordEvent(sprintf('TRIAL_START [trial=%d, condition=%d, PTBtime=%d, ', variables.TrialNumber, variables.Condition, variables.TimeTrialStart) );
-            if ( ~isempty( this.Session.currentRun.LinkedFiles) )
-                if ( ischar(this.Session.currentRun.LinkedFiles.vogDataFile) )
-                    variables.FileNumber = 2;
-                else
-                    variables.FileNumber = length(this.Session.currentRun.LinkedFiles.vogDataFile)+1;
-                end
+            thisTrialData.EyeTrackerFrameNumberTrialStart = this.eyeTracker.RecordEvent(sprintf('TRIAL_START [trial=%d, condition=%d, PTBtime=%d, ', thisTrialData.TrialNumber, thisTrialData.Condition, thisTrialData.TimeTrialStart) );
+
+            % Keep track of how many eye tracking files this session is
+            % split in and mark this trial with the correct file number
+            % from the linked files list
+            if ( isempty( this.Session.currentRun.LinkedFiles) )
+                thisTrialData.FileNumber = 1;
             else
-                variables.FileNumber = 1;
+                if ( ischar(this.Session.currentRun.LinkedFiles.vogDataFile) )
+                    thisTrialData.FileNumber = 2;
+                else
+                    thisTrialData.FileNumber = length(this.Session.currentRun.LinkedFiles.vogDataFile)+1;
+                end
             end
         end
          
-        function variables = EyeTrackingTrialStopCallBack(this, variables)
+        function thisTrialData = EyeTrackingTrialStop(this, thisTrialData)
             if ( isempty(this.eyeTracker))
                 return;
             end
@@ -1736,7 +1722,7 @@ classdef ExperimentDesign < handle
                 ME = MException('ArumeHardware.VOG:NotRecording', 'The eye tracker is not recording.');
                 throw(ME);
             end
-            variables.EyeTrackerFrameNumberTrialStop = this.eyeTracker.RecordEvent(sprintf('TRIAL_STOP [trial=%d, condition=%d, PTBtime=%d, ', variables.TrialNumber, variables.Condition, variables.TimeTrialStart) );
+            thisTrialData.EyeTrackerFrameNumberTrialStop = this.eyeTracker.RecordEvent(sprintf('TRIAL_STOP [trial=%d, condition=%d, PTBtime=%d, ', thisTrialData.TrialNumber, thisTrialData.Condition, thisTrialData.TimeTrialStart) );
         end
     end 
     

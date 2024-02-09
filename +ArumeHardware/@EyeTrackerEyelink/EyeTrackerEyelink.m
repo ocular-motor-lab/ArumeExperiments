@@ -5,8 +5,6 @@ classdef EyeTrackerEyelink  < handle
     properties
         graph
         el
-
-        
     end
     
     methods

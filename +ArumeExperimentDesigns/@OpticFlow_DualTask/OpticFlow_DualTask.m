@@ -7,6 +7,7 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
         uicomponents
         audio
         shapes
+        el
     end
     
     % ---------------------------------------------------------------------
@@ -20,12 +21,13 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             dlg.ObserverID = {'test'};
             dlg.TaskType = {{'Visual Search','Heading','Both','All interleaved'}};
             dlg.UniformityOptions = {{'Only Uniform' '{Only non-uniform}' 'both'}};
-            dlg.NumDots = {2000, 'Number of dots',[1000,100000]};
-            dlg.DotSz = {12, 'dot size (pixels)',[1,100]}; % px - preferable odd
+            dlg.NumShapes = {2000, 'Number of Shapes',[1000,100000]};
+            dlg.ShapeSz = {12, 'Shape size (circle diam in px)',[1,100]}; % px - preferable odd
             dlg.HFOV = {66.35, 'horizontal FoV (degrees)',[1,10000]}; % based on view distance of 1.3000 meters
             dlg.FCP = {60, 'far clipping plane',[1,1000]}; % in meters
             dlg.ObserverHeight = {1.23, 'Observer Height',[0.1,10]}; % Center of the screen in meters
-            dlg.DotSizeCue = {{'0','{1}'}, 'Size Cue?'};
+            dlg.ShapeSizeCue = {{'0','{1}'}, 'Size Cue?'};
+            dlg.NumberTargets = {20, 'Number of Target Shapes'};
 
             % condition parameters
             % dlg.useeyelink = { {'{0}','1'}, 'Use Eyelink'};
@@ -33,13 +35,14 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             dlg.HeadingChangeDuration = {2, 'Heading change duration',[0,10]};
             dlg.Smoothing = {{'Gaussian','Linear','None'}};
             dlg.WalkSpeed = {3.25, 'Locomotion Speed (m/sec)',[0,100]}; % in meters per second walking = 1.31, jogging = 3.25, running = 5.76, driving = 13.41
-            dlg.DotLifetime = {8, 'Dot Lifetime (secs)',[0,20]}; % in secs
+            dlg.ShapeLifetime = {8, 'Shape Lifetime (secs)',[0,20]}; % in secs
             dlg.NumberTrials = {20, 'Number of Trials Per Condition',[1,10000]};
             dlg.AuditoryFeedback = {{'0','{1}'}, 'Auditory Feedback?'};
 
             %% CHANGE DEFAULTS values for existing options
 
             dlg.UseEyeTracker = 0;
+            dlg.UseEyelinkEyeTracker = 1;
             dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult Speed Stimulus'; % which variables to display every trial in the command line separated by spaces
 
             dlg.DisplayOptions.ScreenWidth = { 121 '* (cm)' [1 3000]};
@@ -70,7 +73,7 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
 
             i = i+1;
             conditionVars(i).name   = 'Task';
-            switch ( this.ExperimentOptions.TaskType ) 
+            switch (this.ExperimentOptions.TaskType) 
                 case 'Visual Search'
                     conditionVars(i).values = {'Visual Search'};
                 case 'Heading'
@@ -134,8 +137,14 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
         % every single trial
         function shouldContinue = initBeforeRunning( this )
 
+            if this.ExperimentOptions.UseEyelinkEyeTracker
+                % set up eyelink
+                this = eyelinkSetupCustomCalib(this);
+            end
+            this.el.justStarted = true;
+
             % create camera object with rendering properties
-            this = setUpDotAppearanceAndCameraProjectionMatrix(this);
+            this = setUpShapeAppearanceAndCameraProjectionMatrix(this);
 
             % UI screen coordinates and shapes
             this = setUpUIVariables(this);
@@ -174,42 +183,38 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             try
 
                 Enum = ArumeCore.ExperimentDesign.getEnum();
-                % graph = this.Graph; %% object of class ArumeCore.Display with all the psychtoolbox initialization, window handle, and a few more things FLIP
                 trialResult = Enum.trialResult.CORRECT;
-
                 lastFlipTime        = GetSecs;
-                % secondsRemaining    = this.ExperimentOptions.TrialDuration;
                 thisTrialData.TimeStartLoop = lastFlipTime;
 
-                [this,thisTrialData,exitedEarly] = presentStimulus(this,thisTrialData);
-                % if exitedEarly; break; end
+                % present optic flow stimulus. No response recorded during
+                % movie presentation
+                [this,thisTrialData] = presentStimulus(this,thisTrialData);
 
                 % request response from observer
                 switch thisTrialData.Task
                     case 'Visual Search'
-                        [this, thisTrialData, exitedEarly]  = getVisualSearchResponse(this, thisTrialData);
+                        [this, thisTrialData]  = getVisualSearchResponse(this, thisTrialData);
             
                     case 'Heading'
-                        [this, thisTrialData,  exitedEarly]  = getHeadingResponse(this, thisTrialData);
+                        [this, thisTrialData]  = getHeadingResponse(this, thisTrialData);
             
                     case 'Both'
                         % randomly choose which one goes first though. 
                         switch thisTrialData.ResponseOrder
-                            case 'HeadingFirst'
-                                [this, thisTrialData, exitedEarly]  = getVisualSearchResponse(this, thisTrialData);
-                                if ~exitedEarly
-                                    [this, thisTrialData, exitedEarly]  = getHeadingResponse(this, thisTrialData);
-                                end
                             case 'SearchFirst'
-                                [this, thisTrialData, exitedEarly]  = getHeadingResponse(this, thisTrialData);
-                                if ~exitedEarly
-                                    [this, thisTrialData, exitedEarly]  = getVisualSearchResponse(this, thisTrialData); %#ok<*ASGLU>
-                                end
+                                [this, thisTrialData]  = getVisualSearchResponse(this, thisTrialData);
+                                [this, thisTrialData]  = getHeadingResponse(this, thisTrialData);
+
+                            case 'HeadingFirst'
+                                [this, thisTrialData]  = getHeadingResponse(this, thisTrialData);
+                                [this, thisTrialData]  = getVisualSearchResponse(this, thisTrialData); %#ok<*ASGLU>
                         end
                 end
 
+                this.el.justStarted = false;
+
             catch exq
-                
                 rethrow(ex)
             end
             
@@ -221,11 +226,22 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             Enum = ArumeCore.ExperimentDesign.getEnum();
             trialResult = Enum.trialResult.CORRECT;
 
-            exitedEarly = endOfTrialSequence(this,thisTrialData);
+            endOfTrialSequence(this,thisTrialData);
         end
         
         % run cleaning up after the session is completed or interrupted
         function cleanAfterRunning(this)
+
+            % close audio buffers
+            if this.ExperimentOptions.AuditoryFeedback
+                PsychPortAudio('Close', this.audio.pahandlecorrect);
+                PsychPortAudio('Close', this.audio.pahandleincorrect);
+            end
+
+            if this.ExperimentOptions.UseEyelinkEyeTracker
+                % close eyelink and copy file over to some directory
+                closeEyelinkCopyData(this);
+            end
         end
         
     end

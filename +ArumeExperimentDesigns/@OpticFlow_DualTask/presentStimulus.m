@@ -1,11 +1,15 @@
-function [this,thisTrialData, exitedEarly] = presentStimulus(this,thisTrialData)
-
-    exitedEarly = false;
+function [this,thisTrialData] = presentStimulus(this,thisTrialData)
 
     % add a half-second trial buffer
     startt = GetSecs;
     while (GetSecs-startt) < .5
         this.Graph.Flip(this, thisTrialData);
+    end
+
+    if this.el.justStarted
+        if this.ExperimentOptions.UseEyelinkEyeTracker
+            EyelinkDoTrackerSetup(this.el);
+        end
     end
 
     % add a response prompt
@@ -32,23 +36,8 @@ function [this,thisTrialData, exitedEarly] = presentStimulus(this,thisTrialData)
         Screen('FillRect', this.Graph.window, this.camera.fixcol, this.uicomponents.fixrects)
         this.Graph.Flip(this, thisTrialData);
 
-        [keyIsDown, ~, keyCode, ~] = KbCheck();
-        keys = find(keyCode);
-
-        for i=1:length(keys)
-            KbName(keys(i));
-
-            switch(KbName(keys(i)))
-                case 'ESCAPE'
-                    exitedEarly = true;
-                    return
-
-                case 'c'
-                    if this.ExperimentOptions.UseEyeTracker
-                        EyelinkDoDriftCorrection(this.el);
-                    end
-            end
-        end
+        [keyIsDown, ~, ~, ~] = KbCheck();
+        
     end
 
     % check what shape of stimulus, and what color, the targets and
@@ -89,8 +78,8 @@ function [this,thisTrialData, exitedEarly] = presentStimulus(this,thisTrialData)
     shapesz(~this.shapes.shapetype) = 1;
 
     % start recording
-    if this.ExperimentOptions.UseEyeTracker
-        trialmsg = sprintf('Trial %i',i);
+    if this.ExperimentOptions.UseEyelinkEyeTracker
+        trialmsg = sprintf('Trial %i',thisTrialData.TrialNumber);
         Eyelink('Message',trialmsg)
         Eyelink('StartRecording');
     end
@@ -101,7 +90,7 @@ function [this,thisTrialData, exitedEarly] = presentStimulus(this,thisTrialData)
     while (nframesctr <= this.camera.ntrialframes) 
 
         % check eyelink still connected
-        if this.ExperimentOptions.UseEyeTracker
+        if this.ExperimentOptions.UseEyelinkEyeTracker
             error=Eyelink('CheckRecording');
             if(error~=0)
                 break;
@@ -109,7 +98,7 @@ function [this,thisTrialData, exitedEarly] = presentStimulus(this,thisTrialData)
         end
     
         % check if any dots have reached their lifetime
-        ltidxs = this.shapes.lifetime > this.camera.ndotframes;
+        ltidxs = this.shapes.lifetime > this.camera.nshapeframes;
     
         % create new dot locations for these replacement locations
         nreplace = sum(ltidxs);
@@ -156,7 +145,7 @@ function [this,thisTrialData, exitedEarly] = presentStimulus(this,thisTrialData)
         
         % If any coordinate falls outta bounds, redraw it at a new location on the next iteration
         outboundsidx = coordinbound < 2;
-        this.shapes.lifetime(outboundsidx) = this.camera.ndotframes; % on next iteration, this will be replaced
+        this.shapes.lifetime(outboundsidx) = this.camera.nshapeframes; % on next iteration, this will be replaced
         
         % only draw inbounds dots
         inboundsidx = find(coordinbound == 2);
@@ -167,11 +156,11 @@ function [this,thisTrialData, exitedEarly] = presentStimulus(this,thisTrialData)
         squareidxs = ~this.shapes.shapetype(inboundsidx) & ~this.shapes.targetornot(inboundsidx);
         targetidxs = this.shapes.targetornot(inboundsidx);
         
-        if this.ExperimentOptions.DotSizeCue
+        if this.ExperimentOptions.ShapeSizeCue
             
             % sizes will vary based on z-distance AND the shape (with a
             % min rendering size of 1 pixel).
-            szs =  ((1./(transshapes(inboundsidx,3) .* this.camera.dotscalfac)) .* this.camera.mindotszpx .* shapesz(inboundsidx))';
+            szs =  ((1./(transshapes(inboundsidx,3) .* this.camera.shapescalfac)) .* this.camera.minshapeszpx .* shapesz(inboundsidx))';
 
             circlerects = [projectedshapesscreen(circleidxs,:)'-szs(circleidxs);...
                 projectedshapesscreen(circleidxs,:)'+szs(circleidxs)];
@@ -212,25 +201,11 @@ function [this,thisTrialData, exitedEarly] = presentStimulus(this,thisTrialData)
         % increment dot lifetime
         this.shapes.lifetime = this.shapes.lifetime + 1;
         nframesctr = nframesctr + 1;
-
-        % close experiment if requested
-        % check for response
-        [keyIsDown, ~, keyCode, ~] = KbCheck();
-        if keyIsDown
-            keys = find(keyCode);
-            for i=1:length(keys)
-                KbName(keys(i));
-                switch(KbName(keys(i)))
-                    case 'ESCAPE'
-                        exitedEarly = true;
-                        return
-                end
-            end
-        end
+        
     end
 
      % stop recording at end of trial
-    if this.ExperimentOptions.UseEyeTracker
+    if this.ExperimentOptions.UseEyelinkEyeTracker
         Eyelink('StopRecording');
     end
 

@@ -1,6 +1,5 @@
-function [this, thisTrialData, exitedEarly]  = getVisualSearchResponse(this, thisTrialData)
+function [this, thisTrialData]  = getVisualSearchResponse(this, thisTrialData)
 
-    exitedEarly = false;
     noresp = true;
     startt = GetSecs;
     resp = nan;
@@ -28,9 +27,6 @@ function [this, thisTrialData, exitedEarly]  = getVisualSearchResponse(this, thi
                         resp = 0;
                         noresp = false;
 
-                    case 'ESCAPE'
-                        exitedEarly = true;
-                        noresp = false;
                 end
             end
         end

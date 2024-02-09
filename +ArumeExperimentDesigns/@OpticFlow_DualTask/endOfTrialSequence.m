@@ -1,6 +1,4 @@
-function exitedEarly = endOfTrialSequence(this,thisTrialData)
-
-    exitedEarly = false;
+function endOfTrialSequence(this,thisTrialData)
 
     % just exit if end of experiment
     if thisTrialData.Trial ~= this.ExperimentOptions.nTrialsTotal
@@ -19,23 +17,17 @@ function exitedEarly = endOfTrialSequence(this,thisTrialData)
                 this.Graph.Flip(this, thisTrialData);
 
                 % enter accepts the user's response
-                [keyIsDown, ~, keyCode, ~] = KbCheck();
+                [keyIsDown, ~, ~, ~] = KbCheck();
                 if keyIsDown
-                    keys = find(keyCode);
-                    for i=1:length(keys)
-                        KbName(keys(i));
-            
-                        switch(KbName(keys(i)))
-                            case 'ESCAPE'
-                                exitedEarly = true;
-                                noresp = false;
-                            otherwise 
-                                % just start next block
-                                noresp = false;
-                        end
-                    end
+                    % just start next block
+                    noresp = false;
                 end
             end
+
+            if exptparams.UseEyelinkEyeTracker
+                EyelinkDoTrackerSetup(el);
+            end
+
         end
     end
 end

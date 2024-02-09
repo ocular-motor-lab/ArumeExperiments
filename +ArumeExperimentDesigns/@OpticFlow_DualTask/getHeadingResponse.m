@@ -1,11 +1,10 @@
-function [this, thisTrialData,  exitedEarly]  = getHeadingResponse(this, thisTrialData)
+function [this, thisTrialData]  = getHeadingResponse(this, thisTrialData)
 
     % random angle starting position
     respang = (rand(1))*pi;
     startt = GetSecs;
     
     noresp = true;
-    exitedEarly = false;
     
     while noresp
     
@@ -39,10 +38,6 @@ function [this, thisTrialData,  exitedEarly]  = getHeadingResponse(this, thisTri
                     case 'RightArrow'
                         respang = max(respang-this.uicomponents.anginc,0);
 
-                    case 'ESCAPE'
-                        exitedEarly = true;
-                        noresp = false;
-    
                 end
             end
         end

@@ -69,31 +69,31 @@ function this = initializeTargetShapes(this,thisTrialData)
         this.shapes.currentWorldCoords(1:this.camera.ntargets,:) = targetshapes;
     
         % while we are here, set up our lifetime variables
-        this.shapes.lifetime = randi(round(this.ExperimentOptions.DotLifetime*this.camera.fps), this.ExperimentOptions.NumDots, 1);
+        this.shapes.lifetime = randi(round(this.ExperimentOptions.ShapeLifetime*this.camera.fps), this.ExperimentOptions.NumShapes, 1);
         this.shapes.lifetime(1:this.camera.ntargets) = 0;
         
         % draw dots or draw circles
-        this.shapes.shapetype = rand(this.ExperimentOptions.NumDots, 1)>.5;
+        this.shapes.shapetype = rand(this.ExperimentOptions.NumShapes, 1)>.5;
     
         % set up a vector which encodes which shapes are the targets
         % (initialized to zero because no targets are presented until a minimum
         % temporal delay
-        this.shapes.targetornot = false(this.ExperimentOptions.NumDots,1);
+        this.shapes.targetornot = false(this.ExperimentOptions.NumShapes,1);
         this.shapes.targetornot(1:this.camera.ntargets) = true;
 
     else
 
         % all distractors!
-        this.shapes.lifetime = randi(round(this.ExperimentOptions.DotLifetime*this.camera.fps), this.ExperimentOptions.NumDots, 1);
+        this.shapes.lifetime = randi(round(this.ExperimentOptions.ShapeLifetime*this.camera.fps), this.ExperimentOptions.NumShapes, 1);
         this.shapes.lifetime(1:this.camera.ntargets) = 0;
         
         % draw dots or draw circles
-        this.shapes.shapetype = rand(this.ExperimentOptions.NumDots, 1)>.5;
+        this.shapes.shapetype = rand(this.ExperimentOptions.NumShapes, 1)>.5;
     
         % set up a vector which encodes which shapes are the targets
         % (initialized to zero because no targets are presented until a minimum
         % temporal delay
-        this.shapes.targetornot = false(this.ExperimentOptions.NumDots,1);
+        this.shapes.targetornot = false(this.ExperimentOptions.NumShapes,1);
 
     end
 

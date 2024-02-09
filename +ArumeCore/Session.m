@@ -35,7 +35,9 @@ classdef Session < ArumeCore.DataDB
         currentRun      = [];       % current data for this session
         
         pastRuns        = [];       % data from every time experiment was started, resumed, or restarted
-        
+    end
+    
+    properties(SetAccess = public)
         dataPath        = [];       % path of the folder containing the session files
     end
     
@@ -253,6 +255,27 @@ classdef Session < ArumeCore.DataDB
                 counter = counter + 1;
             end
             copyfile(filePath, fullfile(this.dataPath, [fileName ext] ));
+                
+            if ( ~isfield(this.currentRun.LinkedFiles, fileTag) )
+                this.currentRun.LinkedFiles.(fileTag) = [fileName ext];
+            else
+                if ~iscell(this.currentRun.LinkedFiles.(fileTag))
+                    this.currentRun.LinkedFiles.(fileTag) = {this.currentRun.LinkedFiles.(fileTag)};
+                end
+                this.currentRun.LinkedFiles.(fileTag) = vertcat( this.currentRun.LinkedFiles.(fileTag), [fileName ext] );
+            end               
+        end
+
+        function addExistingFile(this, fileTag, filePath)
+            
+            [~,fileName, ext] = fileparts(filePath);
+            % counter = 1;
+            % fileNameOrig = fileName;
+            % while ( exist(fullfile(this.dataPath, [fileName ext] ),'file') )
+            %     fileName = sprintf([fileNameOrig '_%02d'], counter);
+            %     counter = counter + 1;
+            % end
+            % copyfile(filePath, fullfile(this.dataPath, [fileName ext] ));
                 
             if ( ~isfield(this.currentRun.LinkedFiles, fileTag) )
                 this.currentRun.LinkedFiles.(fileTag) = [fileName ext];

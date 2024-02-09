@@ -45,8 +45,13 @@ classdef Display < handle
 %%
             Graph = ArumeCore.Display( );
             Graph.Init( [] );
-            
+
             Graph.DlgHitKey( 'Hit a key to continue',[],[]);
+
+            result = Graph.DlgSelect( ...
+                'Choose an option:', ...
+                { 'n' 'c' 'q'}, ...
+                { 'Choose n' 'Choose c' 'quit'} , [],[]);
 
             Graph.Clear();
         end

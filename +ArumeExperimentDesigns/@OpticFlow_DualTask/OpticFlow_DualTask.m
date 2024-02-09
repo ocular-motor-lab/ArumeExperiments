@@ -7,7 +7,6 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
         uicomponents
         audio
         shapes
-        el
     end
     
     % ---------------------------------------------------------------------
@@ -41,17 +40,17 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
 
             %% CHANGE DEFAULTS values for existing options
 
-            dlg.UseEyeTracker = 0;
-            dlg.UseEyelinkEyeTracker = 1;
+            dlg.UseEyeTracker = { {'0','{1}' }};
             dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult Speed Stimulus'; % which variables to display every trial in the command line separated by spaces
 
             dlg.DisplayOptions.ScreenWidth = { 121 '* (cm)' [1 3000]};
             dlg.DisplayOptions.ScreenHeight = { 68 '* (cm)' [1 3000]};
             dlg.DisplayOptions.ScreenDistance = { 60 '* (cm)' [1 3000]};
             
-            dlg.HitKeyBeforeTrial = 0;
+            dlg.HitKeyBeforeTrial = { {'{0}','1'} };
             dlg.TrialDuration = {8, 'Trial duration',[1,100]}; % in secs
             dlg.TrialsBeforeBreak = 500; %             dlg.numberblocks = {5, 'Number of Blocks', [1,1000]};
+            dlg.TrialsBeforeCalibration = 500; %             dlg.numberblocks = {5, 'Number of Blocks', [1,1000]};
             dlg.TrialAbortAction = 'Repeat';
         end
         
@@ -137,11 +136,11 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
         % every single trial
         function shouldContinue = initBeforeRunning( this )
 
-            if this.ExperimentOptions.UseEyelinkEyeTracker
-                % set up eyelink
-                this = eyelinkSetupCustomCalib(this);
-            end
-            this.el.justStarted = true;
+            % % % % % % % % % % % % % if this.ExperimentOptions.UseEyelinkEyeTracker
+            % % % % % % % % % % % % %     % set up eyelink
+            % % % % % % % % % % % % %     this = eyelinkSetupCustomCalib(this);
+            % % % % % % % % % % % % % end
+            % % % % % % % % % % % % % this.el.justStarted = true;
 
             % create camera object with rendering properties
             this = setUpShapeAppearanceAndCameraProjectionMatrix(this);
@@ -171,6 +170,9 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
 
             % create a smaller array of targets
             this = initializeTargetShapes(this,thisTrialData);
+
+            % and show pre-trial fixation
+            showFixationCross(this, thisTrialData)
 
             Enum = ArumeCore.ExperimentDesign.getEnum();
             trialResult = Enum.trialResult.CORRECT;
@@ -212,9 +214,9 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
                         end
                 end
 
-                this.el.justStarted = false;
+                % % % % % % % % % % % % % % % % % % this.el.justStarted = false;
 
-            catch exq
+            catch ex
                 rethrow(ex)
             end
             
@@ -226,7 +228,7 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             Enum = ArumeCore.ExperimentDesign.getEnum();
             trialResult = Enum.trialResult.CORRECT;
 
-            endOfTrialSequence(this,thisTrialData);
+            % % % % % % % % % % % % % % % % % % % % endOfTrialSequence(this,thisTrialData);
         end
         
         % run cleaning up after the session is completed or interrupted
@@ -234,14 +236,19 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
 
             % close audio buffers
             if this.ExperimentOptions.AuditoryFeedback
-                PsychPortAudio('Close', this.audio.pahandlecorrect);
-                PsychPortAudio('Close', this.audio.pahandleincorrect);
+                if ( ~isempty(this.audio))
+                    try
+                        PsychPortAudio('Close', this.audio.pahandlecorrect);
+                        PsychPortAudio('Close', this.audio.pahandleincorrect);
+                    catch
+                    end
+                end
             end
 
-            if this.ExperimentOptions.UseEyelinkEyeTracker
-                % close eyelink and copy file over to some directory
-                closeEyelinkCopyData(this);
-            end
+            % % % % % % % % % % % % % % % % % % if this.ExperimentOptions.UseEyelinkEyeTracker
+            % % % % % % % % % % % % % % % % % %     % close eyelink and copy file over to some directory
+            % % % % % % % % % % % % % % % % % %     closeEyelinkCopyData(this);
+            % % % % % % % % % % % % % % % % % % end
         end
         
     end

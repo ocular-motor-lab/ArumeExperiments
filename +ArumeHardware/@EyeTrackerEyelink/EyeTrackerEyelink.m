@@ -3,62 +3,156 @@ classdef EyeTrackerEyelink  < handle
     %   Detailed explanation goes here
     
     properties
-        eyeTracker
+        graph
+        el
+
         
     end
     
     methods
-        function result = Connect(this, ip, port, openirispath)
+        function result = Connect(this, graph, ip, port, openirispath)
+
+            result = 0;
+
+            % do some basic eyelink setup
+            this.el = EyelinkInitDefaults(graph.window);
+
+            % change the calibration point properties
+            this.el.calibrationtargetsize = 1;
+            this.el.calibrationtargetwidth = .25;
+            this.el.backgroundcolour = 0;
+            this.el.imgtitlecolour = 1;
+            this.el.foregroundcolour = 1;
+            this.el.msgfontcolour = 255;
+            this.el.calibrationtargetcolour = [255,255,255];
+            EyelinkUpdateDefaults(this.el);
+
+            % Initialization of the connection with the Eyelink Gazetracker.
+            % exit program if this fails.
+            if ~EyelinkInit()
+                fprintf('Eyelink Init aborted.\n');
+                Eyelink('Shutdown');  % cleanup function
+                return;
+            end
+
+            % set up some basic calibration stuff after we initialize the eyelink
+            % (we cannot do this before EyelinkInit)
+            Eyelink('Command','calibration_area_proportion = 0.4 0.4'); % should be about 32 deg across!!!
+            Eyelink('Command','validation_area_proportion = 0.4 0.4');
+
+            % make sure that we get gaze data from the Eyelink
+            Eyelink('command', 'link_sample_data = LEFT,RIGHT,GAZE,AREA,INPUT');
+            Eyelink('command', 'file_sample_data = LEFT,RIGHT,GAZE,AREA,INPUT');
+
+            % we can also extract event data if we like
+            Eyelink('command', 'link_event_filter = LEFT,RIGHT,FIXATION,SACCADE,BLINK,MESSAGE,BUTTON,FIXUPDATE,INPUT');
+            Eyelink('command', 'file_event_filter = LEFT,RIGHT,FIXATION,SACCADE,BLINK,MESSAGE,BUTTON,FIXUPDATE,INPUT');
+
+            % open file to record data to
+            this.el.edfFile = sprintf('ArumeTmp.edf'); % TODO: maybe change this
+            Eyelink('openfile', this.el.edfFile);
+
+
             result = 1;
         end
         
         function result = IsRecording(this)
-
+            result = 0;
+            if ( ~isempty( this.el) )
+                error=Eyelink('CheckRecording');
+                if(error==0)
+                    result = 1;
+                end
+            end
         end
         
         function SetSessionName(this, sessionName)
-            if ( ~isempty( this.eyeTracker) )
-                this.eyeTracker.ChangeSetting('SessionName',sessionName);
+            if ( ~isempty( this.el) )
             end
         end
         
         function StartRecording(this)
-            if ( ~isempty( this.eyeTracker) )
-                this.eyeTracker.StartRecording();
+            if ( ~isempty( this.el) )
+                Eyelink('StartRecording');
             end
         end
         
         function StopRecording(this)
-            if ( ~isempty( this.eyeTracker) )
-                this.eyeTracker.StopRecording();
+            if ( ~isempty( this.el) )
+                Eyelink('StopRecording');
             end
         end
         
         function frameNumber = RecordEvent(this, message)
             frameNumber = [];
-            if ( ~isempty( this.eyeTracker) )
-                frameNumber = this.eyeTracker.RecordEvent([num2str(GetSecs) ' ' message]);
-                frameNumber = double(frameNumber);
+            if ( ~isempty( this.el) )
+                frameNumber=EyelinkGetTime(this.el); % [, maxwait]) % TODO: this will be a timestamp not a frame number
+                Eyelink('Message',[num2str(GetSecs) ' ' message])
             end
         end
         
         function data = GetCurrentData(this, message)
             data =[];
-            if ( ~isempty( this.eyeTracker) )
-                data = this.eyeTracker.GetCurrentData();
+            if ( ~isempty( this.el) )
+                data = this.el.GetCurrentData();
             end
         end
+
+        function calibrationSuccessful = Calibrate(this)
+            result = EyelinkDoTrackerSetup(this.el);
+
+            if ( result == 0 )
+                calibrationSuccessful = 1;
+            end
+        end
+
+        function Disconnect(this)
+
+            
+            Eyelink('Shutdown');
+        end
         
-        
-        function [files]= DownloadFile(this, path)
-            files = [];
-            if ( ~isempty( this.eyeTracker) )
-                try
-                    files = this.eyeTracker.DownloadFile();
-                catch ex
-                    ex
+        function [files]= DownloadFile(this, path, newFileName)
+            files = {};
+            if ( isempty( this.el) )
+                return;
+            end
+            if (~exist('path','var'))
+                path = '';
+            end
+
+            if (~exist('newFileName','var'))
+                newFileName = this.el.edfFile;
+            end
+
+            % download data file
+            try
+                % close EL file and copy file over to local directory
+                Eyelink('CloseFile');
+
+                fprintf('Receiving data file ''%s''\n', newFileName);
+
+                % do not overwrite existing file
+                [~,name,ext] = fileparts(newFileName);
+                ctr = 1;
+                while exist(fullfile(path, newFileName),'file')
+                    ctr = ctr+1;
+                    newFileName = [name, sprintf('%02d',ctr), ext];
                 end
-                files = cell(files.ToArray)';
+
+                % send that data over boi!
+                status=Eyelink('ReceiveFile',this.el.edfFile, ...
+                    convertStringsToChars(fullfile(path, newFileName)));
+                if status > 0
+                    fprintf('ReceiveFile status %d\n', status);
+                end
+                
+                files = {newFileName};
+
+            catch ex
+                getReport(ex)
+                cprintf('red', sprintf('++ EYELINK :: Problem receiving data file ''%s''\n', this.el.edfFile));
+                files = {};
             end
         end
     end

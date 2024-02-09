@@ -1,45 +1,5 @@
 function [this,thisTrialData] = presentStimulus(this,thisTrialData)
 
-    % add a half-second trial buffer
-    startt = GetSecs;
-    while (GetSecs-startt) < .5
-        this.Graph.Flip(this, thisTrialData);
-    end
-
-    if this.el.justStarted
-        if this.ExperimentOptions.UseEyelinkEyeTracker
-            EyelinkDoTrackerSetup(this.el);
-        end
-    end
-
-    % add a response prompt
-    switch thisTrialData.Task
-        case 'Visual Search'
-            msg = sprintf( 'Search for the %s',thisTrialData.SearchTarget);
-        case 'Heading'
-            msg = 'Estimate the heading';
-        case 'Both'
-            msg = sprintf( 'Search for the %s, and estimate the heading',thisTrialData.SearchTarget);
-    end
-
-    startt = GetSecs;
-    while (GetSecs-startt) < 2
-        DrawFormattedText(this.Graph.window, msg, 'center', 'center', [255,255,255]);
-        this.Graph.Flip(this, thisTrialData);
-    end
-
-    % check for response
-    keyIsDown = false;
-    while ~keyIsDown
-
-        % show fixation until any button press
-        Screen('FillRect', this.Graph.window, this.camera.fixcol, this.uicomponents.fixrects)
-        this.Graph.Flip(this, thisTrialData);
-
-        [keyIsDown, ~, ~, ~] = KbCheck();
-        
-    end
-
     % check what shape of stimulus, and what color, the targets and
     % distractors should be... 
     switch thisTrialData.SearchTarget
@@ -77,26 +37,26 @@ function [this,thisTrialData] = presentStimulus(this,thisTrialData)
     shapesz(this.shapes.shapetype) = 2/sqrt(pi);
     shapesz(~this.shapes.shapetype) = 1;
 
-    % start recording
-    if this.ExperimentOptions.UseEyelinkEyeTracker
-        trialmsg = sprintf('Trial %i',thisTrialData.TrialNumber);
-        Eyelink('Message',trialmsg)
-        Eyelink('StartRecording');
-    end
+    % % % % % % % % % % % % % % % % % % % % % start recording
+    % % % % % % % % % % % % % % % % % % % % if this.ExperimentOptions.UseEyelinkEyeTracker
+    % % % % % % % % % % % % % % % % % % % %     trialmsg = sprintf('Trial %i',thisTrialData.TrialNumber);
+    % % % % % % % % % % % % % % % % % % % %     Eyelink('Message',trialmsg)
+    % % % % % % % % % % % % % % % % % % % %     Eyelink('StartRecording');
+    % % % % % % % % % % % % % % % % % % % % end
 
     % now we prepare for looping over the frames for a single trial
     nframesctr = 1;
     
     while (nframesctr <= this.camera.ntrialframes) 
-
-        % check eyelink still connected
-        if this.ExperimentOptions.UseEyelinkEyeTracker
-            error=Eyelink('CheckRecording');
-            if(error~=0)
-                break;
-            end
-        end
-    
+        % % % % % % % % % % % % % % % % % % % % % % % % % 
+        % % % % % % % % % % % % % % % % % % % % % % % % % % check eyelink still connected
+        % % % % % % % % % % % % % % % % % % % % % % % % % if this.ExperimentOptions.UseEyelinkEyeTracker
+        % % % % % % % % % % % % % % % % % % % % % % % % %     error=Eyelink('CheckRecording');
+        % % % % % % % % % % % % % % % % % % % % % % % % %     if(error~=0)
+        % % % % % % % % % % % % % % % % % % % % % % % % %         break;
+        % % % % % % % % % % % % % % % % % % % % % % % % %     end
+        % % % % % % % % % % % % % % % % % % % % % % % % % end
+        % % % % % % % % % % % % % % % % % % % % % % % % % 
         % check if any dots have reached their lifetime
         ltidxs = this.shapes.lifetime > this.camera.nshapeframes;
     
@@ -204,9 +164,9 @@ function [this,thisTrialData] = presentStimulus(this,thisTrialData)
         
     end
 
-     % stop recording at end of trial
-    if this.ExperimentOptions.UseEyelinkEyeTracker
-        Eyelink('StopRecording');
-    end
+    % % % % % % % % % % % % % % % % % % % % % % % % % %  % stop recording at end of trial
+    % % % % % % % % % % % % % % % % % % % % % % % % % % if this.ExperimentOptions.UseEyelinkEyeTracker
+    % % % % % % % % % % % % % % % % % % % % % % % % % %     Eyelink('StopRecording');
+    % % % % % % % % % % % % % % % % % % % % % % % % % % end
 
 end

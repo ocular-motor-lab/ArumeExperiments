@@ -48,7 +48,7 @@ classdef ExperimentDesign < handle
             dlg.DisplayOptions.StereoMode           = { 0 '* (mode)' [0 9] }; % SR added, 0 should be the default
             dlg.DisplayOptions.SelectedScreen       = { 2 '* (screen)' [0 5] }; % SR added, screen 2 should perhaps be the default
 
-            dlg.HitKeyBeforeTrial = 0;
+            dlg.HitKeyBeforeTrial = { {'{0}','1'} };
             dlg.TrialDuration = 10;
             dlg.TrialsBeforeBreak = 1000;
             dlg.TrialsBeforeCalibration = 1000;
@@ -1254,11 +1254,12 @@ classdef ExperimentDesign < handle
             IDLE = 2;
             CALIBRATING = 3;
             VALIDATING = 4;
-            RUNNING = 5;
-            FINILIZING_EXPERIMENT = 6;
-            SESSIONFINISHED = 7;
-            BREAK = 8;
-            FINALIZING_HARDWARE = 9;
+            STARTING_RECORDING = 5;
+            RUNNING = 6;
+            FINILIZING_EXPERIMENT = 7;
+            SESSIONFINISHED = 8;
+            BREAK = 9;
+            FINALIZING_HARDWARE = 10;
             
             state = INITIALIZNG_HARDWARE;
             
@@ -1312,8 +1313,13 @@ classdef ExperimentDesign < handle
                         case CALIBRATING
                             shouldCalibrate = 0;
                             calibrationSuccessful = 1;
+
+                            if ( ~isempty(this.eyeTracker))
+                                shouldCalibrate = 1;
+                            end
+
                             if ( shouldCalibrate)
-                                % Run calibration
+                                calibrationSuccessful =  this.eyeTracker.Calibrate();
                             end
 
                             if ( calibrationSuccessful)
@@ -1324,6 +1330,16 @@ classdef ExperimentDesign < handle
                             end
 
                         case VALIDATING
+                            state = STARTING_RECORDING;
+
+                        case STARTING_RECORDING
+
+
+                            if ( ~isempty(this.eyeTracker))
+                                this.eyeTracker.StartRecording();
+                            end
+
+
                             state = RUNNING;
                             
                         case BREAK
@@ -1510,19 +1526,19 @@ classdef ExperimentDesign < handle
                             end
                             
                             % -- Experiment or session finished ?
-                            if ( isempty(this.Session.currentRun.futureTrialTable) )
-                                state = FINILIZING_EXPERIMENT;
+                            if ( trialsSinceCalibration >= this.ExperimentOptions.TrialsBeforeCalibration )
+                                state = CALIBRATING;
+                            end
+                            if ( trialsSinceBreak >= this.ExperimentOptions.TrialsBeforeBreak )
+                                state = BREAK;
                             end
                             if ( ~isempty(this.Session.currentRun.futureTrialTable) && ~isempty(this.Session.currentRun.pastTrialTable) )
                                 if ( this.Session.currentRun.pastTrialTable.Session(end) ~= this.Session.currentRun.futureTrialTable.Session(1) )
                                     state = SESSIONFINISHED;
                                 end
                             end
-                            if ( trialsSinceBreak >= this.ExperimentOptions.TrialsBeforeBreak )
-                                state = BREAK;
-                            end
-                            if ( trialsSinceCalibration >= this.ExperimentOptions.TrialsBeforeCalibration )
-                                state = CALIBRATING;
+                            if ( isempty(this.Session.currentRun.futureTrialTable) )
+                                state = FINILIZING_EXPERIMENT;
                             end
                             
                         case SESSIONFINISHED
@@ -1629,13 +1645,12 @@ classdef ExperimentDesign < handle
                     case 'OpenIris'
                         this.eyeTracker = ArumeHardware.VOG();
                     case 'Eyelink'
-                        % TODO: implement for eyelink
+                        this.eyeTracker = ArumeHardware.EyeTrackerEyelink();
                 end
 
-                result = this.eyeTracker.Connect();
+                result = this.eyeTracker.Connect(this.Graph);
                 if ( result )
                     this.eyeTracker.SetSessionName(this.Session.name);
-                    this.eyeTracker.StartRecording();
                     this.AddTrialStartCallback(@this.EyeTrackingTrialStartCallback)
                     this.AddTrialStopCallback(@this.EyeTrackingTrialStopCallBack)
                 else
@@ -1654,8 +1669,10 @@ classdef ExperimentDesign < handle
                 this.eyeTracker.StopRecording();
 
                 disp('Downloading eye tracking files...');
-                files = this.eyeTracker.DownloadFile();
-
+                now = datetime;
+                now.Format = 'uuuuMMdd_HHmmss';
+                datestr = string(now);
+                files = this.eyeTracker.DownloadFile( this.Session.dataPath, strcat(this.Session.name, "_", datestr, ".edf"));
 
                 if ( isfield(this.ExperimentOptions,'EyeTracker') )
                     eyeTrackerType = this.ExperimentOptions.EyeTracker;
@@ -1684,7 +1701,7 @@ classdef ExperimentDesign < handle
                             disp('No eye tracking files downloaded!');
                         end
                     case 'Eyelink'
-                        % TODO: implement for eyelink
+                        this.Session.addExistingFile('vogDataFile', files{1});
                 end
             end
         end
@@ -1699,7 +1716,7 @@ classdef ExperimentDesign < handle
                 throw(ME);
             end
                 
-            variables.EyeTrackerFrameNumberTrialStart = this.eyeTracker.RecordEvent(sprintf('TRIAL_START %d %d', variables.TrialNumber, variables.Condition) );
+            variables.EyeTrackerFrameNumberTrialStart = this.eyeTracker.RecordEvent(sprintf('TRIAL_START [trial=%d, condition=%d, PTBtime=%d, ', variables.TrialNumber, variables.Condition, variables.TimeTrialStart) );
             if ( ~isempty( this.Session.currentRun.LinkedFiles) )
                 if ( ischar(this.Session.currentRun.LinkedFiles.vogDataFile) )
                     variables.FileNumber = 2;
@@ -1719,7 +1736,7 @@ classdef ExperimentDesign < handle
                 ME = MException('ArumeHardware.VOG:NotRecording', 'The eye tracker is not recording.');
                 throw(ME);
             end
-            variables.EyeTrackerFrameNumberTrialStop = this.eyeTracker.RecordEvent(sprintf('TRIAL_STOP %d %d', variables.TrialNumber, variables.Condition) );
+            variables.EyeTrackerFrameNumberTrialStop = this.eyeTracker.RecordEvent(sprintf('TRIAL_STOP [trial=%d, condition=%d, PTBtime=%d, ', variables.TrialNumber, variables.Condition, variables.TimeTrialStart) );
         end
     end 
     

@@ -1,5 +1,5 @@
-classdef Display < handle
-    %DISPLAY Summary of this class goes here
+classdef PTB < handle
+    %PTB Summary of this class goes here
     %   Detailed explanation goes here
     properties
         screens = [];
@@ -60,7 +60,7 @@ classdef Display < handle
     methods
         
         %% Display
-        function graph = Display( )
+        function graph = PTB( )
         end
         
         function Init( graph, exper)

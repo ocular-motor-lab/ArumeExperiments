@@ -51,6 +51,7 @@ classdef ExperimentDesign < handle
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 10;
             dlg.TrialsBeforeBreak = 1000;
+            dlg.TrialsBeforeCalibration = 1000;
 
             dlg.UseEyeTracker   = { {'0' '{1}'} };
             dlg.EyeTracker      = { {'{OpenIris}' 'Fove' 'Eyelink' 'Mouse sim'} };
@@ -1251,13 +1252,13 @@ classdef ExperimentDesign < handle
             INITIALIZNG_HARDWARE = 0;
             INITIALIZNG_EXPERIMENT = 1;
             IDLE = 2;
-            RUNNING = 3;
-            FINILIZING_EXPERIMENT = 4;
-            SESSIONFINISHED = 5;
-            BREAK = 6;
-            FINALIZING_HARDWARE = 7;
-
-            CALIBRATING = 8;
+            CALIBRATING = 3;
+            VALIDATING = 4;
+            RUNNING = 5;
+            FINILIZING_EXPERIMENT = 6;
+            SESSIONFINISHED = 7;
+            BREAK = 8;
+            FINALIZING_HARDWARE = 9;
             
             state = INITIALIZNG_HARDWARE;
             
@@ -1294,7 +1295,7 @@ classdef ExperimentDesign < handle
                             result = this.Graph.DlgSelect( ...
                                 'Choose an option:', ...
                                 { 'n' 'c' 'q'}, ...
-                                { 'Next trial'  'Calibrate' 'Quit'} , [],[]);
+                                { 'Next trial' 'Calibrate' 'Quit'} , [],[]);
                             
                             switch( result )
                                 case 'n'
@@ -1307,27 +1308,37 @@ classdef ExperimentDesign < handle
                                         state = FINILIZING_EXPERIMENT;
                                     end
                             end
+
                         case CALIBRATING
-                                state = RUNNING;
-                                success = true;
-                                if ( success )
-                                    trialsSinceCalibration = 0;
-                                    state = RUNNING;
-                                else
-                                    state = IDLE;
-                                end
+                            shouldCalibrate = 0;
+                            calibrationSuccessful = 1;
+                            if ( shouldCalibrate)
+                                % Run calibration
+                            end
+
+                            if ( calibrationSuccessful)
+                                trialsSinceCalibration = 0; 
+                                state = VALIDATING;
+                            else
+                                state = IDLE;
+                            end
+
+                        case VALIDATING
+                            state = RUNNING;
                             
                         case BREAK
+                            trialsSinceBreak = 0;
 
                             result = this.Graph.DlgSelect( ...
                                 'Break: Want to continue?:', ...
-                                { 'c' 'q'}, ...
-                                { 'Continue to next trial'  'Quit'} , [],[]);
+                                { 'n' 'c' 'q'}, ...
+                                { 'Continue to next trial' 'Calibrate' 'Quit'} , [],[]);
                             
                             switch( result )
-                                case 'c'
-                                    trialsSinceBreak=0; %SR addition 9/22/2023
+                                case 'n'
                                     state = RUNNING;
+                                case 'c'
+                                    state = CALIBRATING;
                                 case {'q' 0}
                                     dlgResult = this.Graph.DlgYesNo( 'Are you sure you want to exit?',[],[],20,20);
                                     if( dlgResult )
@@ -1499,20 +1510,19 @@ classdef ExperimentDesign < handle
                             end
                             
                             % -- Experiment or session finished ?
-                            if ( trialsSinceBreak >= this.ExperimentOptions.TrialsBeforeBreak )
-                                state = BREAK;
+                            if ( isempty(this.Session.currentRun.futureTrialTable) )
+                                state = FINILIZING_EXPERIMENT;
                             end
-                            if ( trialsSinceCalibration > 1000000000 )
-                                state = CALIBRATING;
-                            end
-                            
                             if ( ~isempty(this.Session.currentRun.futureTrialTable) && ~isempty(this.Session.currentRun.pastTrialTable) )
                                 if ( this.Session.currentRun.pastTrialTable.Session(end) ~= this.Session.currentRun.futureTrialTable.Session(1) )
                                     state = SESSIONFINISHED;
                                 end
                             end
-                            if ( isempty(this.Session.currentRun.futureTrialTable) )
-                                state = FINILIZING_EXPERIMENT;
+                            if ( trialsSinceBreak >= this.ExperimentOptions.TrialsBeforeBreak )
+                                state = BREAK;
+                            end
+                            if ( trialsSinceCalibration >= this.ExperimentOptions.TrialsBeforeCalibration )
+                                state = CALIBRATING;
                             end
                             
                         case SESSIONFINISHED

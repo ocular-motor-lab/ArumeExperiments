@@ -35,15 +35,7 @@ classdef ExperimentDesign < handle
                 dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult'; % which variables to display every trial in the command line separated by spaces
             end
 
-            dlg.DisplayOptions.ForegroundColor      = 0;
-            dlg.DisplayOptions.BackgroundColor      = 128;
-            dlg.DisplayOptions.ScreenWidth          = { 142.8 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenHeight         = { 80 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ScreenDistance       = { 85 '* (cm)' [1 3000] };
-            dlg.DisplayOptions.ShowTrialTable       = { {'0','{1}'} };
-            dlg.DisplayOptions.PlaySound            = { {'0','{1}'} };
-            dlg.DisplayOptions.StereoMode           = { 0 '* (mode)' [0 9] }; % SR added, 0 should be the default
-            dlg.DisplayOptions.SelectedScreen       = { 2 '* (screen)' [0 5] }; % SR added, screen 2 should perhaps be the default
+            dlg.DisplayOptions = ArumeCore.PTB.GetDisplayOptions();
 
             dlg.HitKeyBeforeTrial = { {'{0}','1'} };
             dlg.TrialDuration = 10;
@@ -1236,13 +1228,14 @@ classdef ExperimentDesign < handle
             INITIALIZNG_EXPERIMENT = 1;
             IDLE = 2;
             CALIBRATING = 3;
-            VALIDATING = 4;
-            STARTING_RECORDING = 5;
-            RUNNING_TRIALS = 6;
-            FINILIZING_EXPERIMENT = 7;
-            SESSIONFINISHED = 8;
-            BREAK = 9;
+            STARTING_RECORDING = 4;
+            RUNNING_TRIALS = 5;
+            FINILIZING_EXPERIMENT = 6;
+            SESSIONFINISHED = 7;
+            BREAK = 8;
+            DOWNLOADING_DATA = 9;
             FINALIZING_HARDWARE = 10;
+            TRY_FINALIZING_AFTER_ERROR = 11;
             % --------------------------------------------------------------------
             % end possible states
             % --------------------------------------------------------------------
@@ -1257,18 +1250,38 @@ classdef ExperimentDesign < handle
                     switch( state )
                         case INITIALIZNG_HARDWARE
                             
-                            this.Graph = ArumeCore.Display( );
-                            this.Graph.Init( this );
+                            % initialize psychtoolbox
+                            this.Graph = ArumeCore.PTB(this.ExperimentOptions.Debug.DebugMode, this.ExperimentOptions.DisplayOptions);
                             
-                            state = INITIALIZNG_EXPERIMENT;
+                            shouldContinue = 1;
+
+                            % initialize eye tracker
+                            if ( this.ExperimentOptions.UseEyeTracker )
+
+                                switch(this.ExperimentOptions.EyeTracker)
+                                    case 'OpenIris'
+                                        this.eyeTracker = ArumeHardware.VOG();
+                                    case 'Eyelink'
+                                        this.eyeTracker = ArumeHardware.EyeTrackerEyelink();
+                                end
+
+                                shouldContinue = this.eyeTracker.Connect(this.Graph);
+
+                                if ( shouldContinue )
+                                    this.eyeTracker.SetSessionName(this.Session.name);
+                                else
+                                    this.eyeTracker = [];
+                                end
+                            end
+
+                            if ( shouldContinue )
+                                state = INITIALIZNG_EXPERIMENT;
+                            else
+                                state = FINILIZING_EXPERIMENT;
+                            end
                             
                         case INITIALIZNG_EXPERIMENT
-                            
-                            shouldContinue = this.EyeTrackingInit();
-                            
-                            if ( shouldContinue)
-                                shouldContinue = this.initBeforeRunning();
-                            end
+                            shouldContinue = this.initBeforeRunning();
 
                             if ( shouldContinue )
                                 state = CALIBRATING;
@@ -1278,9 +1291,9 @@ classdef ExperimentDesign < handle
                             
                         case IDLE
                             result = this.Graph.DlgSelect( ...
-                                'Choose an option:', ...
+                                'What do you want to do next:', ...
                                 { 'n' 'c' 'q'}, ...
-                                { 'Next trial' 'Calibrate' 'Quit'} , [],[]);
+                                { 'Continue with next trial' 'Calibrate' 'Quit'} , [],[]);
                             
                             switch( result )
                                 case 'n'
@@ -1295,56 +1308,48 @@ classdef ExperimentDesign < handle
                             end
 
                         case CALIBRATING
-                            shouldCalibrate = 0;
+                            
                             calibrationSuccessful = 1;
-
                             if ( ~isempty(this.eyeTracker))
-                                shouldCalibrate = 1;
-                            end
-
-                            if ( shouldCalibrate)
                                 calibrationSuccessful =  this.eyeTracker.Calibrate();
                             end
 
                             if ( calibrationSuccessful)
-                                trialsSinceCalibration = 0; 
-                                state = VALIDATING;
+                                trialsSinceCalibration = 0;
+                                state = STARTING_RECORDING;
                             else
-                                state = IDLE;
+                                result = this.Graph.DlgSelect( ...
+                                    'Calibration was not successful what do you want to do?', ...
+                                    { 'n' 'c' 'q'}, ...
+                                    { 'Continue with next trial anyway' 'Try to calibrate again' 'Quit experiment'} , [],[]);
+
+                                switch( result )
+                                    case 'n'
+                                        state = STARTING_RECORDING;
+                                    case 'c'
+                                        state = CALIBRATING;
+                                    case 'q'
+                                        dlgResult = this.Graph.DlgYesNo( 'Are you sure you want to exit?',[],[],20,20);
+                                        if( dlgResult )
+                                            state = FINILIZING_EXPERIMENT;
+                                        else
+                                            state = IDLE;
+                                        end
+                                end
                             end
 
-                        case VALIDATING
-                            state = STARTING_RECORDING;
-
                         case STARTING_RECORDING
-
 
                             if ( ~isempty(this.eyeTracker))
                                 this.eyeTracker.StartRecording();
                             end
 
-
                             state = RUNNING_TRIALS;
                             
                         case BREAK
+                            this.Graph.DlgHitKey( 'Time for a break! hit a key to continue',[],[]);
                             trialsSinceBreak = 0;
-
-                            result = this.Graph.DlgSelect( ...
-                                'Break: Want to continue?:', ...
-                                { 'n' 'c' 'q'}, ...
-                                { 'Continue to next trial' 'Calibrate' 'Quit'} , [],[]);
-                            
-                            switch( result )
-                                case 'n'
-                                    state = RUNNING_TRIALS;
-                                case 'c'
-                                    state = CALIBRATING;
-                                case {'q' 0}
-                                    dlgResult = this.Graph.DlgYesNo( 'Are you sure you want to exit?',[],[],20,20);
-                                    if( dlgResult )
-                                        state = FINILIZING_EXPERIMENT;
-                                    end
-                            end
+                            state = IDLE;
                             
                         case RUNNING_TRIALS
                             % force to hit a key to continue if the
@@ -1371,7 +1376,7 @@ classdef ExperimentDesign < handle
                                 %-- find which condition to run and the variable values for that condition
                                 thisTrialData = table();
                                 thisTrialData.TrialNumber  = nCorrectTrials+1;
-                                thisTrialData.DateTimeTrialStart = string(datestr(now));
+                                thisTrialData.DateTimeTrialStart = string(datetime);
                                 thisTrialData = [thisTrialData this.Session.currentRun.futureTrialTable(1,:)];
                                 
                                 fprintf('\nARUME :: TRIAL %d START (%d TOTAL) ...\n', nCorrectTrials+1, height(this.Session.currentRun.originalFutureTrialTable));
@@ -1392,8 +1397,33 @@ classdef ExperimentDesign < handle
                                     %------------------------------------------------------------
                                     thisTrialData.TimeTrialStart = GetSecs;
 
-                                    this.EyeTrackingTrialStart(thisTrialData);
-                                    
+                                    if ( ~isempty(this.eyeTracker))
+
+                                        if ( ~this.eyeTracker.IsRecording )
+                                            ME = MException('ArumeHardware.VOG:NotRecording', 'The eye tracker is not recording.');
+                                            throw(ME);
+                                        end
+
+                                        thisTrialData.EyeTrackerFrameNumberTrialStart = this.eyeTracker.RecordEvent( ...
+                                            sprintf('TRIAL_START [trial=%d, condition=%d, PTBtime=%d, ', ...
+                                            thisTrialData.TrialNumber, thisTrialData.Condition, thisTrialData.TimeTrialStart) );
+
+                                        % Keep track of how many eye tracking files this session is
+                                        % split in and mark this trial with the correct file number
+                                        % from the linked files list
+                                        % TODO: a bit ugly. It would be
+                                        % good to clean this up.
+                                        if ( isempty( this.Session.currentRun.LinkedFiles) )
+                                            thisTrialData.FileNumber = 1;
+                                        else
+                                            if ( ischar(this.Session.currentRun.LinkedFiles.vogDataFile) )
+                                                thisTrialData.FileNumber = 2;
+                                            else
+                                                thisTrialData.FileNumber = length(this.Session.currentRun.LinkedFiles.vogDataFile)+1;
+                                            end
+                                        end
+                                    end
+
                                     if ( ~isempty(this.Graph) )
                                         this.Graph.ResetFlipTimes();
                                     end
@@ -1407,8 +1437,17 @@ classdef ExperimentDesign < handle
                                     
                                     thisTrialData.TimeTrialStop = GetSecs;
                                     
-                                    this.EyeTrackingTrialStop(thisTrialData);
-                                    
+                                    if (~isempty(this.eyeTracker) )
+                                        thisTrialData.EyeTrackerFrameNumberTrialStop = this.eyeTracker.RecordEvent(....
+                                            sprintf('TRIAL_STOP [trial=%d, condition=%d, PTBtime=%d, ', ...
+                                            thisTrialData.TrialNumber, thisTrialData.Condition, thisTrialData.TimeTrialStart) );
+
+                                        if ( ~this.eyeTracker.IsRecording )
+                                            ME = MException('ArumeHardware.VOG:NotRecording', 'The eye tracker is not recording.');
+                                            throw(ME);
+                                        end
+                                    end
+
                                     if ( trialResult == Enum.trialResult.CORRECT )
                                         
                                         %------------------------------------------------------------
@@ -1530,29 +1569,90 @@ classdef ExperimentDesign < handle
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', '---------------------------------------------------------\n')
 
-                            state = FINALIZING_HARDWARE;
+                            state = DOWNLOADING_DATA;
                             
                         case FINILIZING_EXPERIMENT
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', '---------------------------------------------------------\n')
-                            cprintf('*blue', 'Session finished! closing down and saving data ...\n');
+                            cprintf('*blue', 'Experimental session finished! closing down and saving data ...\n');
                             cprintf('blue', '---------------------------------------------------------\n')
                             cprintf('blue', '---------------------------------------------------------\n')
-                            
+
+                            state = DOWNLOADING_DATA;
+
+                        case DOWNLOADING_DATA
+
+                            if (~isempty(this.eyeTracker))
+                                this.eyeTracker.StopRecording();
+
+                                disp('Downloading eye tracking files...');
+                                now = datetime;
+                                now.Format = 'uuuuMMdd_HHmmss';
+                                files = this.eyeTracker.DownloadFile( this.Session.dataPath, strcat(this.Session.name, "_", string(now), ".edf"));
+
+                                if (~isempty( files) )
+                                    switch(this.ExperimentOptions.EyeTracker)
+                                        case 'OpenIris'
+                                            disp(files{1});
+                                            disp(files{2});
+                                            if (length(files) > 2 )
+                                                disp(files{3});
+                                            end
+                                            disp('Finished downloading');
+
+                                            this.Session.addFile('vogDataFile', files{1});
+                                            this.Session.addFile('vogCalibrationFile', files{2});
+                                            if (length(files) > 2 )
+                                                this.Session.addFile('vogEventsFile', files{3});
+                                            end
+                                        case 'Eyelink'
+                                            this.Session.addExistingFile('vogDataFile', files{1});
+                                    end
+                                else
+                                    disp('No eye tracking files downloaded!');
+                                end
+                            end
+
                             state = FINALIZING_HARDWARE;
-                            
+
                         case FINALIZING_HARDWARE
 
                             this.cleanAfterRunning();
 
-                            this.EyeTrackingClose();
+                            if ( ~isempty(this.eyeTracker))
+                                this.eyeTracker.Disconnect();
+                            end
                             
                             this.Graph.Clear();
                             
                             this.Graph = [];
-                            %disp('ARUME:: Done closing display and connections!');
+                            disp('ARUME:: Done closing display and connections!');
 
                             break; % finish loop
+
+                        case TRY_FINALIZING_AFTER_ERROR
+                            % This state is to try to finalize whatever we
+                            % can but to not make them depend on each other
+                            % so much. Specially we want to make sure
+                            % psytoolbox closes and frees the screen
+
+                            try
+                                this.cleanAfterRunning();
+                            catch
+                            end
+
+                            try
+                                if ( ~isempty(this.eyeTracker))
+                                    this.eyeTracker.Disconnect();
+                                end
+                            catch
+                            end
+
+                            try
+                                this.Graph.Clear();
+                            catch
+                            end
+
                             
                     end
                 catch lastError
@@ -1566,7 +1666,7 @@ classdef ExperimentDesign < handle
                     cprintf('*red', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
                     
                     if ( state == FINALIZING_HARDWARE )
-                        break;
+                        state = TRY_FINALIZING_AFTER_ERROR;
                     else
                         state = FINALIZING_HARDWARE;
                     end
@@ -1606,126 +1706,6 @@ classdef ExperimentDesign < handle
             sound(y, fs);
         end
     end
-
-    % --------------------------------------------------------------------
-    %% Eye tracking methods ----------------------------------------------
-    % --------------------------------------------------------------------
-    % to be called only by this class
-    % --------------------------------------------------------------------
-    methods (Access=private)
-
-        function shouldContinue = EyeTrackingInit(this)
-
-            if ( this.ExperimentOptions.UseEyeTracker )
-
-                if ( isfield(this.ExperimentOptions,'EyeTracker') )
-                    eyeTrackerType = this.ExperimentOptions.EyeTracker;
-                else
-                    eyeTrackerType = 'OpenIris';
-                end
-
-                switch(eyeTrackerType)
-                    case 'OpenIris'
-                        this.eyeTracker = ArumeHardware.VOG();
-                    case 'Eyelink'
-                        this.eyeTracker = ArumeHardware.EyeTrackerEyelink();
-                end
-
-                result = this.eyeTracker.Connect(this.Graph);
-                if ( result )
-                    this.eyeTracker.SetSessionName(this.Session.name);
-                    this.AddTrialStartCallback(@this.EyeTrackingTrialStart)
-                    this.AddTrialStopCallback(@this.EyeTrackingTrialStop)
-                else
-                    shouldContinue = 0;
-                    this.eyeTracker = [];
-                    return;
-                end
-            end
-
-            shouldContinue = 1;
-        end
-
-        function EyeTrackingClose(this)
-            if ( this.ExperimentOptions.UseEyeTracker && ~isempty(this.eyeTracker))
-                this.eyeTracker.StopRecording();
-
-                disp('Downloading eye tracking files...');
-                now = datetime;
-                now.Format = 'uuuuMMdd_HHmmss';
-                datestr = string(now);
-                files = this.eyeTracker.DownloadFile( this.Session.dataPath, strcat(this.Session.name, "_", datestr, ".edf"));
-
-                if ( isfield(this.ExperimentOptions,'EyeTracker') )
-                    eyeTrackerType = this.ExperimentOptions.EyeTracker;
-                else
-                    eyeTrackerType = 'OpenIris';
-                end
-
-                switch(eyeTrackerType)
-                    case 'OpenIris'
-                        this.eyeTracker = ArumeHardware.VOG();
-
-                        if (~isempty( files) )
-                            disp(files{1});
-                            disp(files{2});
-                            if (length(files) > 2 )
-                                disp(files{3});
-                            end
-                            disp('Finished downloading');
-
-                            this.Session.addFile('vogDataFile', files{1});
-                            this.Session.addFile('vogCalibrationFile', files{2});
-                            if (length(files) > 2 )
-                                this.Session.addFile('vogEventsFile', files{3});
-                            end
-                        else
-                            disp('No eye tracking files downloaded!');
-                        end
-                    case 'Eyelink'
-                        this.Session.addExistingFile('vogDataFile', files{1});
-                end
-            end
-        end
-
-        function thisTrialData = EyeTrackingTrialStart(this, thisTrialData)
-            if ( isempty(this.eyeTracker))
-                return;
-            end
-            
-            if ( ~this.eyeTracker.IsRecording )
-                ME = MException('ArumeHardware.VOG:NotRecording', 'The eye tracker is not recording.');
-                throw(ME);
-            end
-                
-            thisTrialData.EyeTrackerFrameNumberTrialStart = this.eyeTracker.RecordEvent(sprintf('TRIAL_START [trial=%d, condition=%d, PTBtime=%d, ', thisTrialData.TrialNumber, thisTrialData.Condition, thisTrialData.TimeTrialStart) );
-
-            % Keep track of how many eye tracking files this session is
-            % split in and mark this trial with the correct file number
-            % from the linked files list
-            if ( isempty( this.Session.currentRun.LinkedFiles) )
-                thisTrialData.FileNumber = 1;
-            else
-                if ( ischar(this.Session.currentRun.LinkedFiles.vogDataFile) )
-                    thisTrialData.FileNumber = 2;
-                else
-                    thisTrialData.FileNumber = length(this.Session.currentRun.LinkedFiles.vogDataFile)+1;
-                end
-            end
-        end
-         
-        function thisTrialData = EyeTrackingTrialStop(this, thisTrialData)
-            if ( isempty(this.eyeTracker))
-                return;
-            end
-            if ( ~this.eyeTracker.IsRecording )
-                ME = MException('ArumeHardware.VOG:NotRecording', 'The eye tracker is not recording.');
-                throw(ME);
-            end
-            thisTrialData.EyeTrackerFrameNumberTrialStop = this.eyeTracker.RecordEvent(sprintf('TRIAL_STOP [trial=%d, condition=%d, PTBtime=%d, ', thisTrialData.TrialNumber, thisTrialData.Condition, thisTrialData.TimeTrialStart) );
-        end
-    end 
-    
     
     % ---------------------------------------------------------------------
     % Eye tracking Plot methods

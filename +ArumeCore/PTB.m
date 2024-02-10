@@ -1,6 +1,5 @@
 classdef PTB < handle
-    %PTB Summary of this class goes here
-    %   Detailed explanation goes here
+    %PTB this class is a wrapper of psychtoolbox for Arume
     properties
         screens = [];
         selectedScreen = 1;
@@ -41,10 +40,13 @@ classdef PTB < handle
     end
 
     methods (Static=true)
-        function Test()
-%%
-            Graph = ArumeCore.Display( );
-            Graph.Init( [] );
+        function Test( debugMode)
+
+            if ( ~exist('debugMode','var'))
+                debugMode = 1;
+            end
+
+            Graph = ArumeCore.PTB(debugMode );
 
             Graph.DlgHitKey( 'Hit a key to continue',[],[]);
 
@@ -55,18 +57,32 @@ classdef PTB < handle
 
             Graph.Clear();
         end
+
+        % Gets the options for 
+        function displayOptions = GetDisplayOptions()
+            displayOptions.ForegroundColor      = 0;
+            displayOptions.BackgroundColor      = 128;
+            displayOptions.ScreenWidth          = { 142.8 '* (cm)' [1 3000] };
+            displayOptions.ScreenHeight         = { 80 '* (cm)' [1 3000] };
+            displayOptions.ScreenDistance       = { 85 '* (cm)' [1 3000] };
+            displayOptions.ShowTrialTable       = { {'0','{1}'} };
+            displayOptions.PlaySound            = { {'0','{1}'} };
+            displayOptions.StereoMode           = { 0 '* (mode)' [0 9] }; % SR added, 0 should be the default
+            displayOptions.SelectedScreen       = { 2 '* (screen)' [0 5] }; % SR added, screen 2 should perhaps be the default
+        end
+
+        function displayOptions = GetDisplayOptionsDefault()
+            displayOptions = ArumeCore.PTB.GetOptions();
+            displayOptions = StructDlg(displayOptions,'',[],[],'off');
+        end
     end
     
     methods
         
         %% Display
-        function graph = PTB( )
-        end
-        
-        function Init( graph, exper)
+        function graph = PTB( debugMode, displayOptions)
             
             if ( ~exist('expert','var') )
-                debugMode = 1;
                 selectedScreenFromOptions = 200;
                 stereoMode = 0;
 
@@ -76,15 +92,14 @@ classdef PTB < handle
                 mmHeightOptions   = 80*10;
                 distanceToMonitorOptions = 85;
             else
-                debugMode = exper.ExperimentOptions.Debug.DebugMode;
-                selectedScreenFromOptions = exper.ExperimentOptions.DisplayOptions.SelectedScreen;
-                stereoMode = exper.ExperimentOptions.DisplayOptions.StereoMode;
+                selectedScreenFromOptions = displayOptions.SelectedScreen;
+                stereoMode = displayOptions.StereoMode;
 
-                foregroundColor = exper.ExperimentOptions.DisplayOptions.ForegroundColor;
-                backgroundColor = exper.ExperimentOptions.DisplayOptions.BackgroundColor;
-                mmWidthOptions    = exper.ExperimentOptions.DisplayOptions.ScreenWidth;
-                mmHeightOptions          = exper.ExperimentOptions.DisplayOptions.ScreenHeight;
-                distanceToMonitorOptions = exper.ExperimentOptions.DisplayOptions.ScreenDistance;
+                foregroundColor = displayOptions.ForegroundColor;
+                backgroundColor = displayOptions.BackgroundColor;
+                mmWidthOptions    = displayOptions.ScreenWidth;
+                mmHeightOptions          = displayOptions.ScreenHeight;
+                distanceToMonitorOptions = displayOptions.ScreenDistance;
             end
 
 

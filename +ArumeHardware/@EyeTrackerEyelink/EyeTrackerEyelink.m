@@ -8,7 +8,11 @@ classdef EyeTrackerEyelink  < handle
     end
     
     methods
-        function result = Connect(this, graph, ip, port, openirispath)
+        function result = Connect(this, graph)
+
+            if( ~exist('graph','var') || isempty(graph))
+                graph = ArumeCore.PTB();
+            end
 
             result = 0;
 
@@ -105,8 +109,6 @@ classdef EyeTrackerEyelink  < handle
         end
 
         function Disconnect(this)
-
-            
             Eyelink('Shutdown');
         end
         

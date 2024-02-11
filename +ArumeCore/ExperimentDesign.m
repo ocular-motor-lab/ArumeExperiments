@@ -54,12 +54,8 @@ classdef ExperimentDesign < handle
         
         % Set up the trial table when a new session is created
         function trialTable = SetUpTrialTable( this )
-            trialTable = table();
-            trialTable.Condition = 1;
-            trialTable.BlockNumber = 1;
-            trialTable.BlockSequenceNumber = 1;
-            trialTable.BlockSequenceRepeat = 1;
-            trialTable.Session = 1;
+            t = ArumeCore.TrialTableBuilder();
+            trialTable = t.GenerateTrialTable();
         end
         
         % run initialization before the first trial is run
@@ -843,17 +839,12 @@ classdef ExperimentDesign < handle
             analysisResults  = struct();
             [analysisResults, samplesDataTable, trialDataTable, sessionTable]  = this.RunDataAnalyses(analysisResults, samplesDataTable, trialDataTable, sessionTable, options);
         end
-    end
-    
-    methods(Access=public,Sealed=true)
         
         function this = ExperimentDesign()
             className = class(this);
             this.Name = className(find(className=='.',1, 'last')+1:end);
         end
-    end
-    
-    methods (Access = public)
+
         function trialTable = GetTrialTable(this)
             trialTable = this.TrialTable;
         end
@@ -873,7 +864,8 @@ classdef ExperimentDesign < handle
         end
             
         function trialTable = GetTrialTableFromConditions(this, conditionVars, trialTableOptions)
-            
+            % OBSOLETE!!! USE TrialTableBuilderInstead
+            %
             % Create the matrix with all the possible combinations of
             % condition variables. Each combination is a condition
             % total number of conditions is the product of the number of

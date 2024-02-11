@@ -29,7 +29,7 @@ classdef TrialTableBuilder < handle
     end
 
     methods (Static)
-        function Demo()
+        function trialTable = Demo()
             %%
 
             t = ArumeCore.TrialTableBuilder();
@@ -139,13 +139,13 @@ classdef TrialTableBuilder < handle
             % Initializes a new TrialTableBuilder
             %
 
-            % I don't know how to initialize an empty table with the right columns
-            % So I add a row and then remove it
-            this.ConditionVariables = table("hello",{["one" "two" "three"]}, 'VariableNames',{'Name' 'Values'});
-            this.ConditionVariables(:,:) = []; 
+            this.ConditionVariables = table( 'Size', [0 2],  ...
+                'VariableNames', {'Name' 'Values'}, ...
+                'VariableTypes', {'string', 'cell'});
 
-            this.Blocks = table({1},1, 'VariableNames',{'ConditionsIncluded' 'TrialsPerCondition'});
-            this.Blocks(:,:) = [];
+            this.Blocks = table( 'Size', [0 2],  ...
+                'VariableNames', {'ConditionsIncluded' 'TrialsPerCondition'}, ...
+                'VariableTypes', {'cell', 'double'});
         end
 
         function AddConditionVariable(this, name, values)
@@ -225,7 +225,7 @@ classdef TrialTableBuilder < handle
             % Generates the trial table after configuring the condition
             % variables and the blocks
             %
-            %   GenerateTrialTable(trialSequence, blockSequence, numberOfTimesRepeatBlockSequence, trialAbortAction, trialsPerSession)
+            %   GenerateTrialTable(this, trialSequence, blockSequence, numberOfTimesRepeatBlockSequence, trialAbortAction, trialsPerSession)
             %
             % Params
             %       trialSequence: Sequencing (randomization) of trials within a
@@ -240,10 +240,7 @@ classdef TrialTableBuilder < handle
             %           Possible values:
             %               'Sequential': Conditions run in sequential
             %                   order
-            %               'Random': Ensures balanced number of trials per
-            %                   condition
-            %               'Random with repetition': Just a random
-            %                   selection of the conditions
+            %               'Random': Shuffles the order of the blocks
             %       numberOfTimesRepeatBlockSequence: number of times the
             %           entire block sequence is repeated
             %       trialAbortAction: what to do when a trial is aborted. 
@@ -273,7 +270,7 @@ classdef TrialTableBuilder < handle
             conditionTable = this.ConditionTable;
             if ( isempty(conditionTable))
                 vars = this.ConditionVariables;
-                vars(end+1, ["Name" "Values"]) = table("Var1",{[1]});
+                vars(end+1, ["Name" "Values"]) = table("Var1",{1});
                 conditionTable = ArumeCore.TrialTableBuilder.MakeConditionTable(vars);
             end
             blocks = this.Blocks;
@@ -292,8 +289,6 @@ classdef TrialTableBuilder < handle
                 blockSequence = 'Sequential';
             end
 
-            blocksToRun = height(blocks);
-
             if (~exist('numberOfTimesRepeatBlockSequence','var'))
                 numberOfTimesRepeatBlockSequence = 1;
             end
@@ -306,26 +301,24 @@ classdef TrialTableBuilder < handle
 
             trialTableOptions.trialSequence = trialSequence;
             trialTableOptions.blockSequence = blockSequence;
-            trialTableOptions.blocksToRun = blocksToRun;
             trialTableOptions.numberOfTimesRepeatBlockSequence = numberOfTimesRepeatBlockSequence;
             trialTableOptions.trialsPerSession = 10000;
             trialTableOptions.trialAbortAction = trialAbortAction;     % Repeat, Delay, Drop
             trialTableOptions.trialsPerSession = trialsPerSession; 
-
 
             trialTable = ArumeCore.TrialTableBuilder.MakeTrialTable(conditionTable, blocks, trialTableOptions);
         end
     end
 
     methods(Static)
-        function conditionTable = MakeConditionTable(ConditionVariables)
+        function conditionTable = MakeConditionTable(conditionVariables)
             % Create the matrix with all the possible combinations of
             % condition variables. Each combination is a condition
             % total number of conditions is the product of the number of
             % values of each condition variable
             nConditions = 1;
-            for iVar = 1:height(ConditionVariables)
-                nConditions = nConditions * length(ConditionVariables{iVar, 'Values'}{1});
+            for iVar = 1:height(conditionVariables)
+                nConditions = nConditions * length(conditionVariables{iVar, 'Values'}{1});
             end
 
             conditionTable = table();
@@ -348,18 +341,18 @@ classdef TrialTableBuilder < handle
             %                    b e ;
             %                    b f ;
             %                    b g ];
-            nValues = ones(height(ConditionVariables),1);
-            for iVar = 1:height(ConditionVariables)
+            nValues = ones(height(conditionVariables),1);
+            for iVar = 1:height(conditionVariables)
                 % index of the variables starting from the last
-                iVarRev = height(ConditionVariables) - iVar + 1;
-                values = ConditionVariables{iVarRev, 'Values'}{1};
+                iVarRev = height(conditionVariables) - iVar + 1;
+                values = conditionVariables{iVarRev, 'Values'}{1};
                 if (isstring(values) || iscellstr(values))
                     % make string and cell char variables to be
                     % categoricals
                     values = categorical(values);
                 end
                 nValues(iVar) = length(values);
-                newVariable = table( values(ceil((1:prod(nValues(1:iVar)))/prod(nValues(1:iVar-1))))', 'VariableNames', ConditionVariables.Name(iVarRev));
+                newVariable = table( values(ceil((1:prod(nValues(1:iVar)))/prod(nValues(1:iVar-1))))', 'VariableNames', conditionVariables.Name(iVarRev));
                 conditionTable = horzcat( newVariable, repmat(conditionTable, nValues(iVar),1) );
             end
 
@@ -372,27 +365,26 @@ classdef TrialTableBuilder < handle
     
         function trialTable = MakeTrialTable(conditionTable, blocks, trialTableOptions)
 
+            % first create the block sequence
             blockSeqWithRepeats = [];
             for iRepeatBlockSequence = 1:trialTableOptions.numberOfTimesRepeatBlockSequence
 
-                % generate the sequence of blocks, a total of
-                % parameters.blocksToRun blocks will be run
+                % generate the sequence of blocks
                 nBlocks = height(blocks);
                 blockSeq = [];
                 switch(trialTableOptions.blockSequence)
                     case 'Sequential'
-                        blockSeq = mod( (1:trialTableOptions.blocksToRun)-1,  nBlocks ) + 1;
+                        blockSeq = 1:nBlocks;
                     case 'Random'
-                        [~, theBlocks] = sort( rand(1,trialTableOptions.blocksToRun) ); % get a random shuffle of 1 ... blocks to run
+                        [~, theBlocks] = sort( rand(1,nBlocks) ); % get a random shuffle of 1 ... nBlocks
                         blockSeq = mod( theBlocks-1,  nBlocks ) + 1; % limit the random sequence to 1 ... nBlocks
-                    case 'Random with repetition'
-                        blockSeq = ceil( rand(1,trialTableOptions.blocksToRun) * nBlocks ); % just get random block numbers
                 end
                 blockSeq = [blockSeq;ones(size(blockSeq))*iRepeatBlockSequence];
                 blockSeqWithRepeats = [blockSeqWithRepeats blockSeq];
             end
             blockSeq = blockSeqWithRepeats;
 
+            % then create the sequence of conditions going block by block
             futureConditions = [];
             for iblock=1:size(blockSeq,2)
                 i = blockSeq(1,iblock);
@@ -413,6 +405,9 @@ classdef TrialTableBuilder < handle
                 futureConditions = cat(1,futureConditions, [trialSeq' ones(size(trialSeq'))*iblock  ones(size(trialSeq'))*i ones(size(trialSeq'))*blockSeq(2,iblock)] );
             end
 
+            % finally use the sequence of conditions to build the trial
+            % table with the values of all the conditions
+
             trialTable = table();
             trialTable.Condition = futureConditions(:,1);
             trialTable.BlockNumber = futureConditions(:,2);
@@ -426,6 +421,12 @@ classdef TrialTableBuilder < handle
             trialTable.Properties.UserData.Blocks = blocks;
             trialTable.Properties.UserData.ConditionTable = conditionTable;
             trialTable.Properties.UserData.trialTableOptions = trialTableOptions;
+
+            trialTable.Properties.VariableDescriptions("Condition") = "Condition number corresponding with the row in the condition table with the particular values of the condition variables.";
+            trialTable.Properties.VariableDescriptions("BlockNumber") = "Block number, just counting how many blocks are in the trial table starting at 1 and going up sequentially.";
+            trialTable.Properties.VariableDescriptions("BlockSequenceNumber") = "Block sequence number corresponding with the row number in the blocks table used in Trial Table Builder.";
+            trialTable.Properties.VariableDescriptions("BlockSequenceRepeat") = "Number of block sequence repeat this trial belongs to.";
+            trialTable.Properties.VariableDescriptions("Session") = "Session number.";
         end
     end
 end

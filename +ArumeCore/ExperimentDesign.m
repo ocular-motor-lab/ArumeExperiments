@@ -22,7 +22,7 @@ classdef ExperimentDesign < handle
     % THESE ARE THE METHODS THAT SHOULD BE IMPLEMENTED BY NEW EXPERIMENT
     % DESIGNS
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods (Access=protected)
+    methods (Access=protected) % Methods to be overriden in experiments
         
         % Gets the options that be set in the UI when creating a new
         % session of this experiment (in structdlg format)
@@ -832,7 +832,7 @@ classdef ExperimentDesign < handle
         end
     end
 
-    methods(Access=public,Sealed=true)
+    methods(Access=public,Sealed=true) % 
 
         function [analysisResults, samplesDataTable, trialDataTable, sessionTable] = RunExperimentAnalysis(this, options)
             [samplesDataTable, trialDataTable, sessionTable]  = this.prepareTablesForAnalysis(options);
@@ -850,6 +850,8 @@ classdef ExperimentDesign < handle
         end
         
         function trialTableOptions = GetDefaultTrialTableOptions(this)
+            % OBSOLTE METHOD use TrialTableBuilder
+
             % Trial sequence and blocking
             trialTableOptions = [];
             trialTableOptions.trialSequence       = 'Sequential';	% Sequential, Random, Random with repetition, ...
@@ -1151,7 +1153,7 @@ classdef ExperimentDesign < handle
     % --------------------------------------------------------------------
     % to be called from gui or command line
     % --------------------------------------------------------------------
-    methods(Sealed = true)
+    methods(Sealed = true) % MAIN public methods
         
         %
         % Options to set at runtime, this options will appear as a dialog
@@ -1196,11 +1198,10 @@ classdef ExperimentDesign < handle
             
             newTrialTable = this.SetUpTrialTable();
             
-            % Check trialTable
+            % TODO: Check trialTable
             
             this.TrialTable = newTrialTable;
         end
-        
         
         function run(this)
 
@@ -1381,12 +1382,12 @@ classdef ExperimentDesign < handle
                                 [trialResult, thisTrialData] = this.runPreTrial( thisTrialData );
                                 thisTrialData.TrialResult = trialResult;
                                 thisTrialData.TimePreTrialStop = GetSecs;
-                                
+
+                                %------------------------------------------------------------
+                                % -- TRIAL --------------------------------------------------
+                                %------------------------------------------------------------
                                 if ( trialResult == Enum.trialResult.CORRECT )
                                     
-                                    %------------------------------------------------------------
-                                    % -- TRIAL --------------------------------------------------
-                                    %------------------------------------------------------------
                                     thisTrialData.TimeTrialStart = GetSecs;
 
                                     if ( ~isempty(this.eyeTracker))
@@ -1439,24 +1440,23 @@ classdef ExperimentDesign < handle
                                             throw(ME);
                                         end
                                     end
+                                end
 
-                                    if ( trialResult == Enum.trialResult.CORRECT )
-                                        
-                                        %------------------------------------------------------------
-                                        % -- POST TRIAL ---------------------------------------------
-                                        %------------------------------------------------------------
-                                        
-                                        if ( this.ExperimentOptions.DisplayOptions.PlaySound)
-                                            this.PlaySound(thisTrialData.TrialResult);
-                                        end
-                                        
-                                        thisTrialData.TimePostTrialStart = GetSecs;
-                                        
-                                        [trialResult, thisTrialData] = this.runPostTrial( thisTrialData );
-                                        thisTrialData.TrialResult = trialResult;
-                                        
-                                        thisTrialData.TimePostTrialStop = GetSecs;
+                                %------------------------------------------------------------
+                                % -- POST TRIAL ---------------------------------------------
+                                %------------------------------------------------------------
+                                if ( trialResult == Enum.trialResult.CORRECT )
+
+                                    if ( this.ExperimentOptions.DisplayOptions.PlaySound)
+                                        this.PlaySound(thisTrialData.TrialResult);
                                     end
+
+                                    thisTrialData.TimePostTrialStart = GetSecs;
+
+                                    [trialResult, thisTrialData] = this.runPostTrial( thisTrialData );
+                                    thisTrialData.TrialResult = trialResult;
+
+                                    thisTrialData.TimePostTrialStop = GetSecs;
                                 end
                                 
                             
@@ -1674,12 +1674,7 @@ classdef ExperimentDesign < handle
         end
     end
         
-    % --------------------------------------------------------------------
-    %% Private methods ----------------------------------------------------
-    % --------------------------------------------------------------------
-    % to be called only by this class
-    % --------------------------------------------------------------------
-    methods (Access=private)
+    methods (Access=private) % Private methods
         
         function PlaySound(this,trialResult)
             
@@ -1699,10 +1694,7 @@ classdef ExperimentDesign < handle
         end
     end
     
-    % ---------------------------------------------------------------------
-    % Eye tracking Plot methods
-    % ---------------------------------------------------------------------
-    methods ( Access = public )
+    methods ( Access = public ) % Eye tracking Plot methods
         
         function Plot_VOG_RawData(this)
             switch(this.ExperimentOptions.EyeTracker) 
@@ -2206,7 +2198,8 @@ classdef ExperimentDesign < handle
             
         end
     end
-    methods ( Static = true )
+    
+    methods ( Static = true ) % Static methods
         
         function options = GetDefaultExperimentOptions(experiment, importing)
             if ( ~exist('importing','var') )

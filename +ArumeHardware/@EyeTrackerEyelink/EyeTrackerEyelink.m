@@ -5,7 +5,6 @@ classdef EyeTrackerEyelink  < handle
     properties
         graph
         el
-
         
     end
     
@@ -87,14 +86,42 @@ classdef EyeTrackerEyelink  < handle
             frameNumber = [];
             if ( ~isempty( this.el) )
                 frameNumber=EyelinkGetTime(this.el); % [, maxwait]) % TODO: this will be a timestamp not a frame number
-                Eyelink('Message',[num2str(GetSecs) ' ' message])
+                Eyelink('Message',sprintf('ELtime=%d    %s',frameNumber, message))
             end
         end
         
-        function data = GetCurrentData(this, message)
-            data =[];
+        function evt = GetCurrentData(this, message)
+            % data =[];
             if ( ~isempty( this.el) )
-                data = this.el.GetCurrentData();
+
+                eye_used = Eyelink('EyeAvailable'); % get eye that's tracked
+                if eye_used == this.el.BINOCULAR % if both eyes are tracked
+                    eye_used = this.el.LEFT_EYE; % use left eye?
+                end
+                
+                % get all gaze pos and pupil data 
+                if Eyelink('NewFloatSampleAvailable') > 0
+
+                    % get the sample in the form of an event structure
+                    evt = Eyelink('NewestFloatSample');
+
+                    if eye_used ~= -1 % do we know which eye to use yet?
+
+                        % if we do, get current gaze position from sample
+                        x = evt.gx(eye_used+1); % +1 as we're accessing MATLAB array
+                        y = evt.gy(eye_used+1);
+                        % do we have valid data and is the pupil visible?
+                        if x~=this.el.MISSING_DATA && y~=this.el.MISSING_DATA && evt.pa(eye_used+1) > 0
+                            evt.mx=x;
+                            evt.my=y;
+                        end
+                    end
+                end
+
+                if exist('message','var')
+                    Eyelink('Message',message);
+                end
+                % data = this.el.GetCurrentData();
             end
         end
 
@@ -108,7 +135,6 @@ classdef EyeTrackerEyelink  < handle
 
         function Disconnect(this)
 
-            
             Eyelink('Shutdown');
         end
         

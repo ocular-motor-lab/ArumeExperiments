@@ -46,7 +46,7 @@ function [this,thisTrialData] = presentStimulus(this,thisTrialData)
 
     % now we prepare for looping over the frames for a single trial
     nframesctr = 1;
-    
+    Eyelink('Message', 'Started Stimulus Presentation');
     while (nframesctr <= this.camera.ntrialframes) 
         % % % % % % % % % % % % % % % % % % % % % % % % % 
         % % % % % % % % % % % % % % % % % % % % % % % % % % check eyelink still connected
@@ -163,6 +163,8 @@ function [this,thisTrialData] = presentStimulus(this,thisTrialData)
         nframesctr = nframesctr + 1;
         
     end
+
+    Eyelink('Message', 'Ended Stimulus Presentation');
 
     % % % % % % % % % % % % % % % % % % % % % % % % % %  % stop recording at end of trial
     % % % % % % % % % % % % % % % % % % % % % % % % % % if this.ExperimentOptions.UseEyelinkEyeTracker

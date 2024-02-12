@@ -65,7 +65,7 @@ classdef Display < handle
         
         function Init( graph, exper)
             
-            if ( ~exist('expert','var') )
+            if ( ~exist('exper','var') )
                 debugMode = 1;
                 selectedScreenFromOptions = 200;
                 stereoMode = 0;

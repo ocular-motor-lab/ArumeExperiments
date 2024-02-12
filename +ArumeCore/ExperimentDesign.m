@@ -1716,9 +1716,9 @@ classdef ExperimentDesign < handle
                 throw(ME);
             end
                 
-            variables.EyeTrackerFrameNumberTrialStart = this.eyeTracker.RecordEvent(sprintf('TRIAL_START [trial=%d, condition=%d, PTBtime=%d, ', variables.TrialNumber, variables.Condition, variables.TimeTrialStart) );
+            variables.EyeTrackerFrameNumberTrialStart = this.eyeTracker.RecordEvent(sprintf('TRIAL_START [trial=%d, condition=%d, PTBtime=%d]', variables.TrialNumber, variables.Condition, variables.TimeTrialStart) );
             if ( ~isempty( this.Session.currentRun.LinkedFiles) )
-                if ( ischar(this.Session.currentRun.LinkedFiles.vogDataFile) )
+                if ( ischar(this.Session.currentRun.LinkedFiles.vogDataFile))
                     variables.FileNumber = 2;
                 else
                     variables.FileNumber = length(this.Session.currentRun.LinkedFiles.vogDataFile)+1;
@@ -1736,7 +1736,7 @@ classdef ExperimentDesign < handle
                 ME = MException('ArumeHardware.VOG:NotRecording', 'The eye tracker is not recording.');
                 throw(ME);
             end
-            variables.EyeTrackerFrameNumberTrialStop = this.eyeTracker.RecordEvent(sprintf('TRIAL_STOP [trial=%d, condition=%d, PTBtime=%d, ', variables.TrialNumber, variables.Condition, variables.TimeTrialStart) );
+            variables.EyeTrackerFrameNumberTrialStop = this.eyeTracker.RecordEvent(sprintf('TRIAL_STOP [trial=%d, condition=%d, PTBtime=%d]', variables.TrialNumber, variables.Condition, variables.TimeTrialStart) );
         end
     end 
     

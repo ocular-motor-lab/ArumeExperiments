@@ -41,6 +41,7 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             %% CHANGE DEFAULTS values for existing options
 
             dlg.UseEyeTracker = { {'0','{1}' }};
+            dlg.EyeTracker      = { {'OpenIris' 'Fove' '{Eyelink}' 'Mouse sim'} };
             dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult Speed Stimulus'; % which variables to display every trial in the command line separated by spaces
 
             dlg.DisplayOptions.ScreenWidth = { 121 '* (cm)' [1 3000]};
@@ -193,29 +194,8 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
                 % movie presentation
                 [this,thisTrialData] = presentStimulus(this,thisTrialData);
 
-                % request response from observer
-                switch thisTrialData.Task
-                    case 'Visual Search'
-                        [this, thisTrialData]  = getVisualSearchResponse(this, thisTrialData);
-            
-                    case 'Heading'
-                        [this, thisTrialData]  = getHeadingResponse(this, thisTrialData);
-            
-                    case 'Both'
-                        % randomly choose which one goes first though. 
-                        switch thisTrialData.ResponseOrder
-                            case 'SearchFirst'
-                                [this, thisTrialData]  = getVisualSearchResponse(this, thisTrialData);
-                                [this, thisTrialData]  = getHeadingResponse(this, thisTrialData);
-
-                            case 'HeadingFirst'
-                                [this, thisTrialData]  = getHeadingResponse(this, thisTrialData);
-                                [this, thisTrialData]  = getVisualSearchResponse(this, thisTrialData); %#ok<*ASGLU>
-                        end
-                end
-
-                % % % % % % % % % % % % % % % % % % this.el.justStarted = false;
-
+                % gdata = this.eyeTracker.GetCurrentData();
+                
             catch ex
                 rethrow(ex)
             end
@@ -225,6 +205,28 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
 
         % runPostTrial
         function [trialResult, thisTrialData] = runPostTrial(this, thisTrialData)
+
+            % request response from observer
+            switch thisTrialData.Task
+                case 'Visual Search'
+                    [this, thisTrialData]  = getVisualSearchResponse(this, thisTrialData);
+        
+                case 'Heading'
+                    [this, thisTrialData]  = getHeadingResponse(this, thisTrialData);
+        
+                case 'Both'
+                    % randomly choose which one goes first though. 
+                    switch thisTrialData.ResponseOrder
+                        case 'SearchFirst'
+                            [this, thisTrialData]  = getVisualSearchResponse(this, thisTrialData);
+                            [this, thisTrialData]  = getHeadingResponse(this, thisTrialData);
+
+                        case 'HeadingFirst'
+                            [this, thisTrialData]  = getHeadingResponse(this, thisTrialData);
+                            [this, thisTrialData]  = getVisualSearchResponse(this, thisTrialData); %#ok<*ASGLU>
+                    end
+            end
+
             Enum = ArumeCore.ExperimentDesign.getEnum();
             trialResult = Enum.trialResult.CORRECT;
 

@@ -86,7 +86,7 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
 %             right = 0;
 %             this.newCenter = [this.ExperimentOptions.RasterCenter_x, this.ExperimentOptions.RasterCenter_y];
 %             move_newCenter = 5;
-%             this.Graph = ArumeCore.Display( );
+%             this.Graph = ArumeCore.PTB( );
 %             this.Graph.Init( this );
 %             
 %             while(right == 0)
@@ -133,7 +133,7 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
                     right = 0;
                     this.newCenter = [this.ExperimentOptions.RasterCenter_x, this.ExperimentOptions.RasterCenter_y];
                     move_newCenter = 5;
-                    this.Graph = ArumeCore.Display( );
+                    this.Graph = ArumeCore.PTB( );
                     this.Graph.Init( this );
 
                     while(right == 0)

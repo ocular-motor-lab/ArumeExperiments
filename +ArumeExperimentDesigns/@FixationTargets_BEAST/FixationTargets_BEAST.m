@@ -423,7 +423,9 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
 
                             targetPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(this.ExperimentOptions.TargetSize);
                             fixRect = [0 0 targetPix/2 targetPix/2];
-                            for target_i =1:length(r)
+                            targetLocHPix(1,1) = 0;
+                            targetLocVPix(1,1) = 0;
+                            for target_i =2:1+length(r)
                                 targetLocHPix(1,target_i) = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(dotsLoc(target_i,1));
                                 targetLocVPix(1,target_i) = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(dotsLoc(target_i,2));
 

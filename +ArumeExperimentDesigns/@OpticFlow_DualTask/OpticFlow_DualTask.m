@@ -50,58 +50,63 @@ classdef OpticFlow_DualTask < ArumeExperimentDesigns.EyeTracking
             
             dlg.HitKeyBeforeTrial = { {'{0}','1'} };
             dlg.TrialDuration = {8, 'Trial duration',[1,100]}; % in secs
-            dlg.TrialsBeforeBreak = 500; %             dlg.numberblocks = {5, 'Number of Blocks', [1,1000]};
-            dlg.TrialsBeforeCalibration = 500; %             dlg.numberblocks = {5, 'Number of Blocks', [1,1000]};
+            dlg.TrialsBeforeBreak = 10; %             dlg.numberblocks = {5, 'Number of Blocks', [1,1000]};
+            dlg.TrialsBeforeCalibration = 10; %             dlg.numberblocks = {5, 'Number of Blocks', [1,1000]};
             dlg.TrialAbortAction = 'Repeat';
         end
         
         function trialTable = SetUpTrialTable(this)
             
             %-- condition variables ---------------------------------------
-            i= 0;
-            
-            i = i+1;
-            conditionVars(i).name   = 'Density';
+            t = ArumeCore.TrialTableBuilder();
+
+            % t.AddConditionVariable( 'Distance', ["near" "far"]);
+            % t.AddConditionVariable( 'Direction', {'Left' 'Right' });
+            % t.AddConditionVariable( 'Tilt', [-30 0 30]);
+            %
+            % Add three blocks. One with all the upright trials, one with the rest,
+            % and another one with upright trials. Running only one repeatition of
+            % each upright trial and 3 repeatitions of the other trials,
+            % t.AddBlock(find(t.ConditionTable.Tilt==0), 1);
+            % t.AddBlock(find(t.ConditionTable.Tilt~=0), 3);
+            % t.AddBlock(find(t.ConditionTable.Tilt==0), 1);
+            %
+            % trialSequence = 'Random';
+            % blockSequence =  'Sequential';
+            % blockSequenceRepeatitions = 2;
+            % abortAction = 'Repeat';
+            % trialsPerSession = 10;
+            % trialTable = t.GenerateTrialTable(trialSequence, blockSequence, blockSequenceRepeatitions, abortAction,trialsPerSession);
+
             switch(this.ExperimentOptions.UniformityOptions)
                 case 'Only Uniform'
-                    conditionVars(i).values = {'Uniform'};
+                    t.AddConditionVariable( 'Density', {'Uniform'})
                 case 'Only non-uniform'
-                    conditionVars(i).values = {'NonUniform'};
+                    t.AddConditionVariable( 'Density', {'NonUniform'})
                 case 'both'
-                    conditionVars(i).values = {'Uniform' 'NonUniform'};
+                    t.AddConditionVariable( 'Density',{'Uniform' 'NonUniform'})
             end
 
-            i = i+1;
-            conditionVars(i).name   = 'Task';
             switch (this.ExperimentOptions.TaskType) 
                 case 'Visual Search'
-                    conditionVars(i).values = {'Visual Search'};
+                    t.AddConditionVariable('Task',{'Visual Search'});
                 case 'Heading'
-                    conditionVars(i).values = {'Heading'};
+                    t.AddConditionVariable('Task',{'Heading'});
                 case 'Both'
-                    conditionVars(i).values = {'Both'};
+                    t.AddConditionVariable('Task',{'Both'});
                 case 'All interleaved'
-                    conditionVars(i).values = {'Visual Search' 'Heading' 'Both'};
+                    t.AddConditionVariable('Task',{'Visual Search','Heading','Both'});
             end
 
-            i = i+1;
-            conditionVars(i).name = 'WalkingSpeed';
-            conditionVars(i).values =  this.ExperimentOptions.WalkSpeed;
+            t.AddConditionVariable('WalkingSpeed',this.ExperimentOptions.WalkSpeed);
+            t.AddConditionVariable('HeadingChange',this.ExperimentOptions.HeadingChanges);
 
-            i = i+1;
-            conditionVars(i).name = 'HeadingChange';
-            conditionVars(i).values =  this.ExperimentOptions.HeadingChanges;
-
-
-            % remember - we only really want the heading-change condition
-            % to be the IV here. We do not care that there are n trials per
-            % searchtarget condition, and/or task order condition. 
-            trialTableOptions = this.GetDefaultTrialTableOptions();
-            trialTableOptions.trialSequence = 'Random';
-            trialTableOptions.trialAbortAction = 'Delay';
-            trialTableOptions.trialsPerSession = 1000;
-            trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberTrials;
-            trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
+            trialSequence = 'Random';
+            blockSequence =  'Sequential';
+            blockSequenceRepetitions = this.ExperimentOptions.NumberTrials; % basically how many repetitions of each unique condition. block wording confusing
+            abortAction = 'Delay';
+            trialsPerSession = this.ExperimentOptions.NumberTrials*height(t.ConditionTable); % full experiment
+            trialTable = t.GenerateTrialTable(trialSequence, blockSequence, blockSequenceRepetitions, abortAction, trialsPerSession);
 
             this.ExperimentOptions.nTrialsTotal = height(trialTable);
 

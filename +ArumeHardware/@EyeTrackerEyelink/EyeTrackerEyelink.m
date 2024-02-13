@@ -82,11 +82,12 @@ classdef EyeTrackerEyelink  < handle
             end
         end
         
-        function frameNumber = RecordEvent(this, message)
-            frameNumber = [];
+        function [frameNumber, timestamp] = RecordEvent(this, message)
+            frameNumber = nan;
+            timestamp = nan;
             if ( ~isempty( this.el) )
-                frameNumber=EyelinkGetTime(this.el); % [, maxwait]) % TODO: this will be a timestamp not a frame number
-                Eyelink('Message',sprintf('ELtime=%d    %s',frameNumber, message))
+                timestamp=EyelinkGetTime(this.el); % [, maxwait]) % TODO: this will be a timestamp not a frame number
+                Eyelink('Message',sprintf('ELtime=%d    %s',timestamp, message))
             end
         end
         

@@ -278,12 +278,12 @@ classdef Session < ArumeCore.DataDB
             % copyfile(filePath, fullfile(this.dataPath, [fileName ext] ));
                 
             if ( ~isfield(this.currentRun.LinkedFiles, fileTag) )
-                this.currentRun.LinkedFiles.(fileTag) = [fileName ext];
+                this.currentRun.LinkedFiles.(fileTag) = strcat(fileName, ext);
             else
                 if ~iscell(this.currentRun.LinkedFiles.(fileTag))
                     this.currentRun.LinkedFiles.(fileTag) = {this.currentRun.LinkedFiles.(fileTag)};
                 end
-                this.currentRun.LinkedFiles.(fileTag) = vertcat( this.currentRun.LinkedFiles.(fileTag), [fileName ext] );
+                this.currentRun.LinkedFiles.(fileTag) = vertcat( this.currentRun.LinkedFiles.(fileTag), strcat(fileName, ext) );
             end               
         end
         

@@ -414,11 +414,11 @@ classdef ExperimentDesign < handle
                     calibratedData = table();
                     rawData = table();
                     
-                    if ( ~isprop(this.Session.currentRun, 'LinkedFiles' ) || ~isfield(this.Session.currentRun.LinkedFiles,  'eyelinkDataFile') )
+                    if ( ~isprop(this.Session.currentRun, 'LinkedFiles' ) || ~isfield(this.Session.currentRun.LinkedFiles,  'vogDataFile') )
                         return;
                     end
                     
-                    dataFiles = this.Session.currentRun.LinkedFiles.foveDataFile;
+                    dataFiles = this.Session.currentRun.LinkedFiles.vogDataFile;
                     if (~iscell(dataFiles) )
                         dataFiles = {dataFiles};
                     end
@@ -549,6 +549,25 @@ classdef ExperimentDesign < handle
                             trialDataTable.HeadPitch(i) = mean(samplesData.HeadPitch(idx),1,"omitnan");
                             trialDataTable.HeadRoll(i) = mean(samplesData.HeadRoll(idx),1,"omitnan");
                         end
+                    case 'Eyelink'
+                        % Find the samples that mark the begining and ends of trials
+                        trialDataTable.SampleStartTrial = nan(size(trialDataTable.TrialNumber));
+                        trialDataTable.SampleStopTrial = nan(size(trialDataTable.TrialNumber));
+                        if ( ~any(strcmp(samplesData.Properties.VariableNames, 'FileNumber')))
+                            samplesData.FileNumber = ones(size(samplesData.Time));
+                        end
+                        for i=1:height(trialDataTable)
+                            trialDataTable.SampleStartTrial(i) = find(samplesData.FileNumber' == trialDataTable.FileNumber(i) & samplesData.RawFrameNumber'>=trialDataTable.EyeTrackerFrameNumberTrialStart(i),1,'first');
+                            trialDataTable.SampleStopTrial(i) = find(samplesData.FileNumber' == trialDataTable.FileNumber(i) & samplesData.RawFrameNumber'<=trialDataTable.EyeTrackerFrameNumberTrialStop(i),1,'last');
+                        end
+
+                        % Build a column for the samples with the trial number
+                        samplesData.TrialNumber = nan(size(samplesData.FrameNumber));
+                        for i=1:height(trialDataTable)
+                            idx = trialDataTable.SampleStartTrial(i):trialDataTable.SampleStopTrial(i);
+                            samplesData.TrialNumber(idx) = trialDataTable.TrialNumber(i);
+                        end
+
                 end
                 
                 
@@ -1304,6 +1323,7 @@ classdef ExperimentDesign < handle
                             
                             calibrationSuccessful = 1;
                             if ( ~isempty(this.eyeTracker))
+                                this.eyeTracker.StopRecording();
                                 calibrationSuccessful =  this.eyeTracker.Calibrate();
                             end
 
@@ -1397,9 +1417,12 @@ classdef ExperimentDesign < handle
                                             throw(ME);
                                         end
 
-                                        thisTrialData.EyeTrackerFrameNumberTrialStart = this.eyeTracker.RecordEvent( ...
+                                        [framenumber, eyetrackertime] = this.eyeTracker.RecordEvent( ...
                                             sprintf('TRIAL_START [trial=%d, condition=%d, PTBtime=%d, ', ...
                                             thisTrialData.TrialNumber, thisTrialData.Condition, thisTrialData.TimeTrialStart) );
+
+                                        thisTrialData.EyeTrackerFrameNumberTrialStart = framenumber;
+                                        thisTrialData.EyeTrackerTimeTrialStart = eyetrackertime;
 
                                         % Keep track of how many eye tracking files this session is
                                         % split in and mark this trial with the correct file number

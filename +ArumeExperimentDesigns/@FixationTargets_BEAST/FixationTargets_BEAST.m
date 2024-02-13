@@ -29,7 +29,7 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
             dlg.NumberRepetitions = 1;
 
             dlg.TargetSize = 1;
-            dlg.Experiment_Type = { {'BeaSTCal' '{9DotsCal - Center - 9DotsCal}'} };
+            dlg.Experiment_Type = { {'BeaSTCal' '{9DotsCal - Center - 9DotsCal}' 'Torsion'} };
             dlg.Calibration_Distance_H = { 2 '* (deg)' [1 3000] };
             dlg.Calibration_Distance_V = { 2 '* (deg)' [1 3000] };
 
@@ -37,6 +37,8 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
 
             dlg.BeaSTCal_Speed_degPerSec = 5;
             dlg.BeaSTCal_Step_deg = 0.5;
+
+            dlg.Torsion_Direction = { {'{CW}' 'CCW'} };
 
             dlg.RasterCenter_x = {0 '* (pixel)' [-3000 3000]};
             dlg.RasterCenter_y = {0 '* (pixel)' [-3000 3000]};
@@ -110,6 +112,30 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
 
                     trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberRepetitions;
                     trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
+                case 'Torsion'
+                    this.targetPositions = {[0,0]};
+                    targets = 1;
+                    %-- condition variables ---------------------------------------
+                    i= 0;
+
+                    i = i+1;
+                    conditionVars(i).name   = 'TargetPosition';
+                    conditionVars(i).values = targets;
+
+                    trialTableOptions = this.GetDefaultTrialTableOptions();
+                    trialTableOptions.trialSequence = 'Sequential';
+                    trialTableOptions.trialAbortAction = 'Drop';
+                    trialTableOptions.trialsPerSession = (length(targets))*this.ExperimentOptions.NumberRepetitions;
+
+                    trialTableOptions.blockSequence       = 'Sequential';	% Sequential, Random, Random with repetition, ...numberOfTimesRepeatBlockSequence = 1;
+                    trialTableOptions.blocksToRun         = 1;
+                    trialTableOptions.blocks                = struct( 'fromCondition', 1, 'toCondition', 1, 'trialsToRun', 1);
+
+                    trialTableOptions.numberOfTimesRepeatBlockSequence = this.ExperimentOptions.NumberRepetitions;
+                    trialTable = this.GetTrialTableFromConditions(conditionVars, trialTableOptions);
+
+
+
 
             end
 
@@ -190,6 +216,13 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
                     % total time for each trial
                     secondsRemaining = sp * total_deg;
                     this.ExperimentOptions.TrialDuration = secondsRemaining;
+                elseif strcmp(this.ExperimentOptions.Experiment_Type,'Torsion')
+                    h = this.ExperimentOptions.Calibration_Distance_H;
+                    v = this.ExperimentOptions.Calibration_Distance_V;
+                    sp = this.ExperimentOptions.BeaSTCal_Speed_degPerSec;
+
+                    secondsRemaining    = this.ExperimentOptions.TrialDuration;
+              
                 else
                     secondsRemaining    = this.ExperimentOptions.TrialDuration;
                 end
@@ -354,6 +387,64 @@ classdef FixationTargets_BEAST < ArumeExperimentDesigns.EyeTracking
                         this.Graph.Flip();
                         % -----------------------------------------------------------------
                     end
+
+
+
+
+
+
+                elseif strcmp(this.ExperimentOptions.Experiment_Type,'Torsion')
+                        
+                    if ( strcmp(this.ExperimentOptions.Torsion_Direction, 'CCW') )
+                        sp = -sp;
+                    end
+                    % number of random dots
+                    numDots = 50;
+                    % init position around zero point
+                    r = h .* rand(numDots,1); %only using h
+                    theta = 2*pi*rand(numDots,1);  
+                    %dotsInit = [r r] .* [cos(theta) sin(theta)];
+                    
+                    [mx, my] = RectCenter(this.Graph.wRect);
+                    mx = this.newCenter(1) + mx;
+                    my = this.newCenter(2) + my;
+                    
+                    while secondsRemaining > 0
+                        secondsElapsed      = GetSecs - thisTrialData.TimeStartLoop;
+                        secondsRemaining    = this.ExperimentOptions.TrialDuration - secondsElapsed;
+                        if secondsRemaining > 0
+                            dotsLoc = [r r] .* [cos(theta + sp*secondsElapsed) sin(theta + sp*secondsElapsed)];
+                            
+                            % -----------------------------------------------------------------
+                            % --- Drawing of stimulus -----------------------------------------
+                            % -----------------------------------------------------------------
+                            Screen('FillRect', graph.window, this.ExperimentOptions.BackgroundBrightness);
+                            %-- Draw fixation spot
+
+                            targetPix = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(this.ExperimentOptions.TargetSize);
+                            fixRect = [0 0 targetPix/2 targetPix/2];
+                            for target_i =1:length(r)
+                                targetLocHPix(1,target_i) = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(dotsLoc(target_i,1));
+                                targetLocVPix(1,target_i) = this.Graph.pxWidth/this.ExperimentOptions.DisplayOptions.ScreenWidth * this.ExperimentOptions.DisplayOptions.ScreenDistance * tand(dotsLoc(target_i,2));
+
+%                                 fixRect(target_i) = CenterRectOnPointd( fixRect, mx+targetLocHPix/2, my+targetLocVPix/2 );
+%                                 Screen('FillOval', graph.window, this.fixColor, fixRect);
+                            end
+                            targetLoc = [mx + targetLocHPix./2; my + targetLocVPix./2];
+                            %                         fixRect2 = CenterRectOnPointd( fixRect./2, mx+targetHPix/2, my+targetYPix/2 );
+                            %                         Screen('FillOval', graph.window, [250,250,250], fixRect2);
+                            Screen('DrawDots', graph.window,targetLoc,targetPix/2,this.fixColor,[0,0],1 )
+                            Screen('DrawingFinished', graph.window); % Tell PTB that no further drawing commands will follow before Screen('Flip')
+                        end
+                        this.Graph.Flip();
+                    end
+
+
+
+
+
+
+
 
                 else
 

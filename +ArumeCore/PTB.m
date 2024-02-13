@@ -82,7 +82,7 @@ classdef PTB < handle
         %% Display
         function graph = PTB( debugMode, displayOptions)
             
-            if ( ~exist('expert','var') )
+            if ( ~exist('exper','var') )
                 selectedScreenFromOptions = 200;
                 stereoMode = 0;
 

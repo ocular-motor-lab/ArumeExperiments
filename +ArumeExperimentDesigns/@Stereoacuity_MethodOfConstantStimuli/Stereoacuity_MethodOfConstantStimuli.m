@@ -22,6 +22,9 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             %% ADD new options
             dlg.Number_of_Dots = { 750 '* (num)' [10 10000] }; %750
             dlg.Size_of_Dots = { 1 '* (pix)' [1 100] };
+            %%% FYI: Even though this says minStimDeg is 2 and maxStimDeg
+            %%% is 3.5, the actual numbers that the subjects saw (with
+            %%% those settings) was 1 and 1.75 deg, respectively. -SR 5/1/24
             dlg.MaxStimDeg = {3.5 '* (deg)' [1 100] }; %3.5
             dlg.MinStimDeg = {2 '* (deg)' [1 100] }; %2
             dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };

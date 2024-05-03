@@ -64,7 +64,8 @@ classdef Stereoacuity_MethodOfConstantStimuli < ArumeExperimentDesigns.EyeTracki
             i = i+1;
             conditionVars(i).name   = 'RotateDots'; % pos rotations mean ccw, neg rotations mean cw
             conditionVars(i).values = [-30 -10 -5 0 0 5 10 30]; 
-            
+            %conditionVars(i).values = [0]; % for practice
+
             i = i+1;
             conditionVars(i).name   = 'SignDisparity';
             conditionVars(i).values = [-1 1]; 

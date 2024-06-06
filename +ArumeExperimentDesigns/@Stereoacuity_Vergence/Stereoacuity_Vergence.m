@@ -55,8 +55,7 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             t.AddConditionVariable( 'V', ["p1" "c1" "p2" "c2" "p3" "c3" "p4" "c4" "p5" "c5" "p6" "c6"]); % vergence: parallel or converged, repeated 6x
             t.AddConditionVariable( 'RotateDots', [-30 -10 -5 0 5 10 30]);
             %t.AddConditionVariable( 'RotateDots', [0]);
-            %t.AddConditionVariable( 'Disparities', [-2 -1.6 -1.2 -0.8 -0.4 0.4 0.8 1.2 1.6 2]); % arcmins
-            t.AddConditionVariable( 'Disparities', [-1.2 -0.8 -0.4 0.4 0.8 1.2]); % arcmins
+            t.AddConditionVariable( 'Disparities', [-2 -1.6 -1.2 -0.8 -0.4 0.4 0.8 1.2 1.6 2]); % arcmins
 
             % Add three blocks. One with all the upright trials, one with the rest,
             % and another one with upright trials. Running only one repeatition of

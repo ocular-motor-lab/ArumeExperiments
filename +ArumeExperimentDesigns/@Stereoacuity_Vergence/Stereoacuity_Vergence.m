@@ -24,16 +24,16 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             dlg.Number_of_Dots = { 500 '* (num)' [10 10000] }; %750
             dlg.Size_of_Dots = { 1 '* (pix)' [1 100] };
             dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
-            dlg.TimeStimOn = { 0.2 '* (sec)' [0 60] }; 
+            dlg.TimeStimOn = { 0.3 '* (sec)' [0 60] }; 
             dlg.InitFixDuration = { 1 '* (sec)' [0 60] };
             
-            dlg.NumberOfRepetitions = {10 '* (N)' [1 200] }; 
+            dlg.NumberOfRepetitions = {1 '* (N)' [1 200] }; 
             dlg.BackgroundBrightness = 0;
             
             %% CHANGE DEFAULTS values for existing options
             
             dlg.UseEyeTracker = 0;
-            dlg.Debug.DisplayVariableSelection = 'TrialNumber Vergence RotateDots Disparities GuessedCorrectly'; % which variables to display every trial in the command line separated by spaces
+            dlg.Debug.DisplayVariableSelection = 'TrialNumber Vergence RotateDots DisparityArcMin GuessedCorrectly'; % which variables to display every trial in the command line separated by spaces
             
             dlg.DisplayOptions.ScreenWidth = { 60 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenHeight = { 33.5 '* (cm)' [1 3000] };
@@ -43,7 +43,7 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 90;
-            dlg.TrialsBeforeBreak = 150;
+            dlg.TrialsBeforeBreak = 100000; %150
             dlg.TrialAbortAction = 'Repeat';
         end
         
@@ -52,26 +52,33 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             %-- condition variables ---------------------------------------
             t = ArumeCore.TrialTableBuilder();
             
-            t.AddConditionVariable( 'Vergence', ["parallel" "converged"]);
-            %t.AddConditionVariable( 'SignDisparity', [-1 1]);
-            %t.AddConditionVariable( 'RotateDots', [-30 -10 -5 0 5 10 30]);
-            t.AddConditionVariable( 'RotateDots', [30]);
-            %t.AddConditionVariable( 'Disparities', [-2.5 -2 -1.5 -1 -0.5 0.5, 1, 1.5, 2, 2.5]); % arcmins
-            t.AddConditionVariable( 'Disparities', [2.5]); % arcmins
-            
+            t.AddConditionVariable( 'V', ["p1" "c1" "p2" "c2" "p3" "c3" "p4" "c4" "p5" "c5" "p6" "c6"]); % vergence: parallel or converged, repeated 6x
+            t.AddConditionVariable( 'RotateDots', [-30 -10 -5 0 5 10 30]);
+            %t.AddConditionVariable( 'RotateDots', [0]);
+            %t.AddConditionVariable( 'Disparities', [-2 -1.6 -1.2 -0.8 -0.4 0.4 0.8 1.2 1.6 2]); % arcmins
+            t.AddConditionVariable( 'Disparities', [-1.2 -0.8 -0.4 0.4 0.8 1.2]); % arcmins
+
             % Add three blocks. One with all the upright trials, one with the rest,
             % and another one with upright trials. Running only one repeatition of
             % each upright trial and 3 repeatitions of the other trials,
-            t.AddBlock(find(t.ConditionTable.Vergence=="parallel"), 1);
-            t.AddBlock(find(t.ConditionTable.Vergence=="converged"), 3);
-            
+            t.AddBlock(find(t.ConditionTable.V=="p1"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c1"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p2"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c2"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p3"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c3"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p4"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c4"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p5"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c5"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p6"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c6"), 1);
             trialSequence = 'Random';
-            blockSequence =  'Sequential';
+            blockSequence =  'Random';
             blockSequenceRepeatitions = this.ExperimentOptions.NumberOfRepetitions; % same as dlg.NumberOfRepetitions
             abortAction = 'Repeat';
-            trialsPerSession = 10;
+            trialsPerSession = 100000;
             trialTable = t.GenerateTrialTable(trialSequence, blockSequence,blockSequenceRepeatitions, abortAction,trialsPerSession);
-            
         end
         
         
@@ -86,10 +93,8 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                 ShowCursor();
                 
                 % Prepare some settings to get the dots
-                SizeCm = [60/2 33.5]; % [this.ExperimentOptions.DisplayOptions.ScreenWidth this.ExperimentOptions.DisplayOptions.ScreenHeight];
-                ResPix = [1280 1440];  % ONE OF THE WINDOWS %[1280 1440]; %this.Graph.wRect(3:4)
-                %SizeCm = [30*16/9 30];
-                %ResPix = [1920 1080];
+                SizeCm = [this.ExperimentOptions.DisplayOptions.ScreenWidth/2 this.ExperimentOptions.DisplayOptions.ScreenHeight]; % FOR ONE OF THE TWO STEREO SCREENS
+                ResPix = this.Graph.wRect(3:4); % automatically one of the two screens 
                 ScreenDistance = this.ExperimentOptions.DisplayOptions.ScreenDistance;
                 ScreenSlant = 0;
                 IPDMm = this.ExperimentOptions.IPD;
@@ -100,12 +105,14 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                 PlaneTilt = 0;
                 PlaneSlant = 0;
                 numDots = this.ExperimentOptions.Number_of_Dots;
-                if thisTrialData.Vergence == "parallel"
+                if thisTrialData.V == "p1" || thisTrialData.V == "p2" || thisTrialData.V == "p3" || thisTrialData.V == "p4" || thisTrialData.V == "p5" || thisTrialData.V == "p6"
                     FixationSpot.Z = 200; % fixation spot distance in cm
                     sizeStimCm = 13;
-                elseif thisTrialData.Vergence == "converged"
+                    thisTrialData.Vergence = categorical("parallel");
+                elseif thisTrialData.V == "c1" || thisTrialData.V == "c2" || thisTrialData.V == "c3" || thisTrialData.V == "c4" || thisTrialData.V == "c5" || thisTrialData.V == "c6"
                     FixationSpot.Z = 30; % fixation spot distance in cm
                     sizeStimCm = 2;
+                    thisTrialData.Vergence = categorical("converged");
                 end
                 minsizeStimCm = sizeStimCm/4;
                 
@@ -119,6 +126,7 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                 % Add to trial table
                 thisTrialData.SimFixationDist =  FixationSpot.Z; % cm
                 thisTrialData.SimStimulusDist =  StimulusDistance*100; %cm
+                thisTrialData.DisparityArcMin = -thisTrialData.Disparities;
                 
                 % Make world points
                 worldPoints = table();
@@ -142,6 +150,9 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                 worldPoints{:,:} = (R*worldPoints{:,:}')';
                 % Displace by distance
                 worldPoints.Z = worldPoints.Z + thisTrialData.SimStimulusDist;
+
+                % Add the fixation spot point to the world points 
+                worldPoints=vertcat(worldPoints,array2table([0 0 FixationSpot.Z],'VariableNames',{'X','Y','Z'}));
                 % end make world points
                 
                 % Convert points to in eye points and then to on screen points
@@ -151,6 +162,21 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                 eyePoints = Geometry3D.Points3DToEyes(worldPoints, eyes);
                 screenPoints = Geometry3D.PointsEyesToScreen(eyes, eyePoints, leftEyeScreen, rightEyeScreen);
                 
+                % Make the screen points work for our screen where (0,0)
+                % is the center of the screen
+                screenPoints.RX=screenPoints.RX-rightEyeScreen.middleX;
+                screenPoints.RY=screenPoints.RY-rightEyeScreen.middleY;
+                screenPoints.LX=screenPoints.LX-leftEyeScreen.middleX;
+                screenPoints.LY=screenPoints.LY-leftEyeScreen.middleY;
+
+                % figure
+                % plot(screenPoints.RX,screenPoints.RY,'o','Color','r'); hold on
+                % plot(screenPoints.LX,screenPoints.LY,'o','Color','b');
+                % 
+                % figure
+                % plot(eyePoints.RH,eyePoints.RV,'o','Color','r'); hold on
+                % plot(eyePoints.LH,eyePoints.LV,'o','Color','b'); 
+
                 % Get fixation spot size in pix
                 moniterWidth_deg = (atan2d(this.ExperimentOptions.DisplayOptions.ScreenWidth/2, this.ExperimentOptions.DisplayOptions.ScreenDistance)) * 2;
                 pixPerDeg = (this.Graph.wRect(3)*2) / moniterWidth_deg;
@@ -158,9 +184,9 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                 
                 
                 % What the response should be
-                if thisTrialData.Disparities > 0
+                if thisTrialData.DisparityArcMin > 0
                     thisTrialData.CorrectResponse = 'F';
-                elseif thisTrialData.Disparities < 0
+                elseif thisTrialData.DisparityArcMin < 0
                     thisTrialData.CorrectResponse = 'B';
                 end
                 
@@ -188,16 +214,16 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         
                         % Draw left stim:
-                        Screen('DrawDots', this.Graph.window, [screenPoints.LX'; screenPoints.LY'], this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1); % the 1 at the end means dot type where 1 2 or 3 is circular
-                        Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
+                        Screen('DrawDots', this.Graph.window, [screenPoints.LX(1:end-1)'; screenPoints.LY(1:end-1)'], this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1); % the 1 at the end means dot type where 1 2 or 3 is circular
+                        Screen('DrawDots', this.Graph.window, [screenPoints.LX(end); screenPoints.LY(end)], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
                         
                         % Select right-eye image buffer for drawing:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
                         
                         % Draw right stim:
-                        Screen('DrawDots', this.Graph.window, [screenPoints.RX'; screenPoints.RY'], this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1);
-                        Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
+                        Screen('DrawDots', this.Graph.window, [screenPoints.RX(1:end-1)'; screenPoints.RY(1:end-1)'], this.ExperimentOptions.Size_of_Dots, [], this.Graph.wRect(3:4)/2, 1);
+                        Screen('DrawDots', this.Graph.window, [screenPoints.RX(end); screenPoints.RY(end)], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
                         
                     end
@@ -208,14 +234,14 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         
                         % Draw left stim:
-                        Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
+                        Screen('DrawDots', this.Graph.window, [screenPoints.LX(end); screenPoints.LY(end)], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
                         
                         % Select right-eye image buffer for drawing:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
                         
                         % Draw right stim:
-                        Screen('DrawDots', this.Graph.window, [0;0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
+                        Screen('DrawDots', this.Graph.window, [screenPoints.RX(end); screenPoints.RY(end)], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
                         
                     end

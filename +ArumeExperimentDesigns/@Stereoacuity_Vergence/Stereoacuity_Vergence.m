@@ -48,8 +48,8 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             %-- condition variables ---------------------------------------
             t = ArumeCore.TrialTableBuilder();
             
-            t.AddConditionVariable( 'V', ["p1" "c1" "p2" "c2" "p3" "c3" "p4" "c4" "p5" "c5" "p6" "c6"]); % vergence: parallel or converged, repeated 6x
-            %t.AddConditionVariable( 'RotateDots', [-30 -10 -5 0 5 10 30]);
+            t.AddConditionVariable( 'V', ["p1" "c1" "p2" "c2" "p3" "c3" "p4" "c4" "p5" "c5" "p6" "c6" "p7" "c7" "p8" "c8" "p9" "c9" "p10" "c10"]); % vergence: parallel or converged, repeated 6x
+            %t.AddConditionVariable( 'RotateDots', [-30 -10 -5 0 0 5 10 30]);
             t.AddConditionVariable( 'RotateDots', [0]);
             t.AddConditionVariable( 'Disparities', [-2 -1.6 -1.2 -0.8 -0.4 0.4 0.8 1.2 1.6 2]); % arcmins
 
@@ -68,6 +68,15 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             t.AddBlock(find(t.ConditionTable.V=="c5"), 1);
             t.AddBlock(find(t.ConditionTable.V=="p6"), 1);
             t.AddBlock(find(t.ConditionTable.V=="c6"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p7"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c7"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p8"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c8"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p9"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c9"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p10"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c10"), 1);
+
             trialSequence = 'Random';
             blockSequence =  'Random';
             blockSequenceRepeatitions = 1; % same as dlg.NumberOfRepetitions

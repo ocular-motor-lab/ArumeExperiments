@@ -109,11 +109,11 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                 PlaneTilt = 0;
                 PlaneSlant = 0;
                 numDots = this.ExperimentOptions.Number_of_Dots;
-                if thisTrialData.V == "p1" || thisTrialData.V == "p2" || thisTrialData.V == "p3" || thisTrialData.V == "p4" || thisTrialData.V == "p5" || thisTrialData.V == "p6"
+                if thisTrialData.V == "p1" || thisTrialData.V == "p2" || thisTrialData.V == "p3" || thisTrialData.V == "p4" || thisTrialData.V == "p5" || thisTrialData.V == "p6" || thisTrialData.V == "p7" || thisTrialData.V == "p8" || thisTrialData.V == "p9" || thisTrialData.V == "p10"
                     FixationSpot.Z = 200; % fixation spot distance in cm
                     sizeStimCm = 13;
                     thisTrialData.Vergence = categorical("parallel");
-                elseif thisTrialData.V == "c1" || thisTrialData.V == "c2" || thisTrialData.V == "c3" || thisTrialData.V == "c4" || thisTrialData.V == "c5" || thisTrialData.V == "c6"
+                elseif thisTrialData.V == "c1" || thisTrialData.V == "c2" || thisTrialData.V == "c3" || thisTrialData.V == "c4" || thisTrialData.V == "c5" || thisTrialData.V == "c6"|| thisTrialData.V == "c7" || thisTrialData.V == "c8" || thisTrialData.V == "c9" || thisTrialData.V == "c10"
                     FixationSpot.Z = 30; % fixation spot distance in cm
                     sizeStimCm = 2;
                     thisTrialData.Vergence = categorical("converged");

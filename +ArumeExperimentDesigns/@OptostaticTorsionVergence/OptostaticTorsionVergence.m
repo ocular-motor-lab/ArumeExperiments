@@ -23,7 +23,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             dlg.StimSizeDeg = { 10 '* (diameter_in_deg)' [0 10000] }; 
             dlg.FixationSpotSize = { 0.5 '* (diameter_in_deg)' [0 5] };
             dlg.InitFixDuration = {0.5 '* (s)' [0 100] };
-            dlg.TimeStimOn = { 1 '* (sec)' [0 60] }; 
+            dlg.TimeStimOn = { 5 '* (sec)' [0 60] }; 
             dlg.convergenceAmount = { 20 '* (deg)' [0 60] }; 
             dlg.StimulusContrast0to100 = {60 '* (%)' [0 100] };
             dlg.BackgroundBrightness = 0;

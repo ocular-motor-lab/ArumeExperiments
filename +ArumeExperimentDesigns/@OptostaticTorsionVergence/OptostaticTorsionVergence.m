@@ -118,12 +118,12 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
                     
                 elseif thisTrialData.V == "c1" || thisTrialData.V == "c2" || thisTrialData.V == "c3" || thisTrialData.V == "c4" || thisTrialData.V == "c5" || thisTrialData.V == "c6"|| thisTrialData.V == "c7" || thisTrialData.V == "c8" || thisTrialData.V == "c9" || thisTrialData.V == "c10"
                     thisTrialData.Vergence = categorical("converged");
-                    fixXPix_LE = tand(displacement_degs) * this.ExperimentOptions.DisplayOptions.ScreenDistance * (this.Graph.wRect(3)/(this.ExperimentOptions.DisplayOptions.ScreenWidth/2));
-                    fixYPix_LE = this.Graph.wRect(4)/2;
-                    fixXPix_RE = this.Graph.wRect(3)/2 + (this.Graph.wRect(3)/2-fixXPix_LE);
+                    fixXPix_RE = tand(displacement_degs) * this.ExperimentOptions.DisplayOptions.ScreenDistance * (this.Graph.wRect(3)/(this.ExperimentOptions.DisplayOptions.ScreenWidth/2));
                     fixYPix_RE = this.Graph.wRect(4)/2;
-                    x_top_left_LE = (tand(displacement_degs) * this.ExperimentOptions.DisplayOptions.ScreenDistance * (this.Graph.wRect(3)/(this.ExperimentOptions.DisplayOptions.ScreenWidth/2))) - (size(Isquare,2))/2;
-                    x_top_left_RE = fixXPix_RE - x_top_left_LE;
+                    fixXPix_LE = this.Graph.wRect(3)/2 + (this.Graph.wRect(3)/2-fixXPix_RE);
+                    fixYPix_LE = this.Graph.wRect(4)/2;
+                    x_top_left_RE = (tand(displacement_degs) * this.ExperimentOptions.DisplayOptions.ScreenDistance * (this.Graph.wRect(3)/(this.ExperimentOptions.DisplayOptions.ScreenWidth/2))) - (size(Isquare,2))/2;
+                    x_top_left_LE = fixXPix_LE - (size(Isquare,1)/2);
                 end
                 y_top_left = (this.Graph.wRect(4)/2) - (size(Isquare,2))/2;
                 

@@ -23,7 +23,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             dlg.StimSizeDeg = { 10 '* (diameter_in_deg)' [0 10000] }; 
             dlg.FixationSpotSize = { 0.5 '* (diameter_in_deg)' [0 5] };
             dlg.InitFixDuration = {0.5 '* (s)' [0 100] };
-            dlg.TimeStimOn = { 5 '* (sec)' [0 60] }; 
+            dlg.TimeStimOn = { 1 '* (sec)' [0 60] }; 
             dlg.convergenceAmount = { 20 '* (deg)' [0 60] }; 
             dlg.StimulusContrast0to100 = {60 '* (%)' [0 100] };
             dlg.BackgroundBrightness = 0;
@@ -54,7 +54,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             t.AddConditionVariable( 'V', ["p1" "c1" "p2" "c2" "p3" "c3"]); % vergence: parallel or converged, repeated 6x
             t.AddConditionVariable( 'ImTilt', [-30 0 30]);
             %t.AddConditionVariable( 'Image', {'01' '02' '03' '04' '05' '06' '07' '08' '09' '10' '11' '12' '13' '14' '15' '16' '17' '18' '19' '20' '21' '22' '23' '24' '25' '26' '27' '28' '29' '30' '31' '32' '33' '34' '35' '36' '37' '38' '39' '40'} ); 
-            t.AddConditionVariable( 'Image', {'01' '02' '03'})
+            t.AddConditionVariable( 'Image', {'01' '02'})
             
             % Add three blocks. One with all the upright trials, one with the rest,
             % and another one with upright trials. Running only one repeatition of
@@ -109,20 +109,23 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
                 displacement_degs = 90-x;
                 if thisTrialData.V == "p1" || thisTrialData.V == "p2" || thisTrialData.V == "p3" || thisTrialData.V == "p4" || thisTrialData.V == "p5" || thisTrialData.V == "p6" || thisTrialData.V == "p7" || thisTrialData.V == "p8" || thisTrialData.V == "p9" || thisTrialData.V == "p10"
                     thisTrialData.Vergence = categorical("parallel");
-                    fixXPix = this.Graph.wRect(3)/2; % center coord
-                    fixYPix = this.Graph.wRect(4)/2; % center coord
-                    x_top_left = (this.Graph.wRect(3)/2) - (size(Isquare,1))/2;
-                    y_top_left = (this.Graph.wRect(4)/2) - (size(Isquare,2))/2;
+                    fixXPix_LE = this.Graph.wRect(3)/2; % center coord
+                    fixYPix_LE = this.Graph.wRect(4)/2; % center coord
+                    fixXPix_RE=fixXPix_LE;  % same for the right eye
+                    fixYPix_RE=fixYPix_LE;
+                    x_top_left_LE = (this.Graph.wRect(3)/2) - (size(Isquare,1))/2;
+                    x_top_left_RE = x_top_left_LE;
                     
                 elseif thisTrialData.V == "c1" || thisTrialData.V == "c2" || thisTrialData.V == "c3" || thisTrialData.V == "c4" || thisTrialData.V == "c5" || thisTrialData.V == "c6"|| thisTrialData.V == "c7" || thisTrialData.V == "c8" || thisTrialData.V == "c9" || thisTrialData.V == "c10"
                     thisTrialData.Vergence = categorical("converged");
-                    fixXPix = tand(displacement_degs) * this.ExperimentOptions.DisplayOptions.ScreenDistance * (this.Graph.wRect(3)/(this.ExperimentOptions.DisplayOptions.ScreenWidth/2));
-                    fixYPix = this.Graph.wRect(4)/2;
-                    %%%%%%%%%%%%%%%%%%%TODO
-                    x_top_left
-                    y_top_left
+                    fixXPix_LE = tand(displacement_degs) * this.ExperimentOptions.DisplayOptions.ScreenDistance * (this.Graph.wRect(3)/(this.ExperimentOptions.DisplayOptions.ScreenWidth/2));
+                    fixYPix_LE = this.Graph.wRect(4)/2;
+                    fixXPix_RE = this.Graph.wRect(3)/2 + (this.Graph.wRect(3)/2-fixXPix_LE);
+                    fixYPix_RE = this.Graph.wRect(4)/2;
+                    x_top_left_LE = (tand(displacement_degs) * this.ExperimentOptions.DisplayOptions.ScreenDistance * (this.Graph.wRect(3)/(this.ExperimentOptions.DisplayOptions.ScreenWidth/2))) - (size(Isquare,2))/2;
+                    x_top_left_RE = fixXPix_RE - x_top_left_LE;
                 end
-                
+                y_top_left = (this.Graph.wRect(4)/2) - (size(Isquare,2))/2;
                 
                 % For the while loop trial start
                 lastFlipTime                        = Screen('Flip', graph.window);
@@ -131,8 +134,6 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
 
                 %initialize this
                 initialFixationDuration = this.ExperimentOptions.InitFixDuration;
-                x_top_left = (this.Graph.wRect(3)/2) - (size(Isquare,1))/2;
-                y_top_left = (this.Graph.wRect(4)/2) - (size(Isquare,2))/2;
                 
                 while secondsRemaining > 0
 
@@ -156,24 +157,25 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
 
                         % Draw left stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
-                        Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[x_top_left y_top_left x_top_left+size(Isquare,1) y_top_left+size(Isquare,2)],thisTrialData.ImTilt); % should be center?
+                        Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[x_top_left_LE y_top_left x_top_left_LE+size(Isquare,1) y_top_left+size(Isquare,2)],thisTrialData.ImTilt); % https://yun-weidai.com/post/ptb-draw-image/
                         Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
 
                         % Draw right stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
-                        Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[x_top_left y_top_left x_top_left+size(Isquare,1) y_top_left+size(Isquare,2)],thisTrialData.ImTilt); 
+                        Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[x_top_left_RE y_top_left x_top_left_RE+size(Isquare,1) y_top_left+size(Isquare,2)],thisTrialData.ImTilt); 
                         Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
 
                     % Any other time, just show the fixation dot
                     else
                         % Draw left stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
-                        Screen('DrawDots', this.Graph.window, [0; 0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
+                        %Screen('DrawDots', this.Graph.window, [0; 0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
+                        Screen('DrawDots', this.Graph.window, [fixXPix_LE; fixYPix_LE], fixSizePix, this.targetColor, [], 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
 
                         % Draw right stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
-                        Screen('DrawDots', this.Graph.window, [0; 0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
+                        Screen('DrawDots', this.Graph.window, [fixXPix_RE; fixYPix_RE], fixSizePix, this.targetColor, [], 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
                     end
                     

@@ -21,9 +21,9 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             %% ADD new options
             dlg.IPD = { 63 '* (mm)' [40 80] }; 
             dlg.StimSizeDeg = { 10 '* (diameter_in_deg)' [0 10000] }; 
-            dlg.FixationSpotSize = { 0.5 '* (diameter_in_deg)' [0 5] };
-            dlg.InitFixDuration = {0.5 '* (s)' [0 100] };
-            dlg.TimeStimOn = { 5 '* (sec)' [0 60] }; 
+            dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
+            dlg.InitFixDuration = {2 '* (s)' [0 100] };
+            dlg.TimeStimOn = { 1 '* (sec)' [0 60] }; 
             dlg.convergenceAmount = { 20 '* (deg)' [0 60] }; 
             dlg.StimulusContrast0to100 = {60 '* (%)' [0 100] };
             dlg.BackgroundBrightness = 0;
@@ -40,7 +40,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             dlg.DisplayOptions.SelectedScreen = { 1 '* (screen)' [0 5] };
             
             dlg.HitKeyBeforeTrial = 0;
-            dlg.TrialDuration = 90;
+            dlg.TrialDuration = 16;
             dlg.TrialsBeforeBreak = 100000; %150
             dlg.TrialsBeforeCalibration = 100000;
             dlg.TrialAbortAction = 'Repeat';
@@ -61,6 +61,10 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             % each upright trial and 3 repeatitions of the other trials,
             t.AddBlock(find(t.ConditionTable.V=="p1"), 1);
             t.AddBlock(find(t.ConditionTable.V=="c1"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p2"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c2"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p3"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c3"), 1);
 
             trialSequence = 'Random';
             blockSequence =  'Random';
@@ -152,21 +156,23 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
                     % -----------------------------------------------------------------
 
 
-                    % If it's during the time when the stimulus (dots) is on, then show the stimulus plus the fixation dot
+                    % If it's during the time when the stimulus is on, then show the stimulus plus the fixation dot
                     if ( secondsElapsed > initialFixationDuration && secondsElapsed < initialFixationDuration + this.ExperimentOptions.TimeStimOn) % then show dots + fixation dot
 
                         % Draw left stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[x_top_left_LE y_top_left x_top_left_LE+size(Isquare,1) y_top_left+size(Isquare,2)],thisTrialData.ImTilt); % https://yun-weidai.com/post/ptb-draw-image/
+                        Screen('DrawDots', this.Graph.window, [fixXPix_LE; fixYPix_LE], fixSizePix, this.targetColor, [], 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
 
                         % Draw right stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
                         Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[x_top_left_RE y_top_left x_top_left_RE+size(Isquare,1) y_top_left+size(Isquare,2)],thisTrialData.ImTilt); 
+                        Screen('DrawDots', this.Graph.window, [fixXPix_RE; fixYPix_RE], fixSizePix, this.targetColor, [], 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
 
                     % Any other time, just show the fixation dot
-                    else
+                    elseif ( secondsElapsed < initialFixationDuration )
                         % Draw left stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         %Screen('DrawDots', this.Graph.window, [0; 0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
@@ -177,6 +183,11 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
                         Screen('DrawDots', this.Graph.window, [fixXPix_RE; fixYPix_RE], fixSizePix, this.targetColor, [], 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
+                    end
+                    
+                    % Break trial if needed
+                    if (secondsElapsed > initialFixationDuration + this.ExperimentOptions.TimeStimOn)
+                        break
                     end
                     
                     % -----------------------------------------------------------------

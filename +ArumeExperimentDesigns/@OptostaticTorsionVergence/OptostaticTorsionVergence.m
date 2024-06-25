@@ -7,7 +7,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
     %   convergence OCR.
     %
     properties
-        targetColor = [150 150 150];
+        targetColor = [255 0 0];
         stimTexture = [];
     end
     
@@ -21,9 +21,9 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             %% ADD new options
             dlg.IPD = { 63 '* (mm)' [40 80] }; 
             dlg.StimSizeDeg = { 10 '* (diameter_in_deg)' [0 10000] }; 
-            dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
+            dlg.FixationSpotSize = { 0.2 '* (deg)' [0 5] };
             dlg.InitFixDuration = {2 '* (s)' [0 100] };
-            dlg.TimeStimOn = { 1 '* (sec)' [0 60] }; 
+            dlg.TimeStimOn = { 5 '* (sec)' [0 60] }; 
             dlg.convergenceAmount = { 20 '* (deg)' [0 60] }; 
             dlg.StimulusContrast0to100 = {60 '* (%)' [0 100] };
             dlg.BackgroundBrightness = 0;
@@ -31,7 +31,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             %% CHANGE DEFAULTS values for existing options
             
             dlg.UseEyeTracker = 0;
-            dlg.Debug.DisplayVariableSelection = 'TrialNumber Vergence RotateDots DisparityArcMin GuessedCorrectly'; % which variables to display every trial in the command line separated by spaces
+            dlg.Debug.DisplayVariableSelection = 'TrialNumber Vergence ImTilt Image GuessedCorrectly'; % which variables to display every trial in the command line separated by spaces
             
             dlg.DisplayOptions.ScreenWidth = { 60 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenHeight = { 33.5 '* (cm)' [1 3000] };
@@ -41,7 +41,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 16;
-            dlg.TrialsBeforeBreak = 100000; %150
+            dlg.TrialsBeforeBreak = 20; %150
             dlg.TrialsBeforeCalibration = 100000;
             dlg.TrialAbortAction = 'Repeat';
         end
@@ -54,7 +54,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             t.AddConditionVariable( 'V', ["p1" "c1" "p2" "c2" "p3" "c3"]); % vergence: parallel or converged, repeated 6x
             t.AddConditionVariable( 'ImTilt', [-30 0 30]);
             %t.AddConditionVariable( 'Image', {'01' '02' '03' '04' '05' '06' '07' '08' '09' '10' '11' '12' '13' '14' '15' '16' '17' '18' '19' '20' '21' '22' '23' '24' '25' '26' '27' '28' '29' '30' '31' '32' '33' '34' '35' '36' '37' '38' '39' '40'} ); 
-            t.AddConditionVariable( 'Image', {'01' '02'})
+            t.AddConditionVariable( 'Image', {'01' '02' '03' '06' '08' '09' '10' '15' '16' '17' '20' '25' '29' '30' '31' '32' '33' '35' '36' '40'})
             
             % Add three blocks. One with all the upright trials, one with the rest,
             % and another one with upright trials. Running only one repeatition of

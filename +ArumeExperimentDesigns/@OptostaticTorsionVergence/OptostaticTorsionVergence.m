@@ -41,7 +41,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 16;
-            dlg.TrialsBeforeBreak = 20; %150
+            dlg.TrialsBeforeBreak = 30; %150
             dlg.TrialsBeforeCalibration = 100000;
             dlg.TrialAbortAction = 'Repeat';
         end

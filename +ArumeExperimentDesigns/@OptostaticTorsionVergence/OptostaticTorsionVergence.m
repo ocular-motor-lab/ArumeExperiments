@@ -23,7 +23,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             dlg.StimSizeDeg = { 10 '* (diameter_in_deg)' [0 10000] }; 
             dlg.FixationSpotSize = { 0.2 '* (deg)' [0 5] };
             dlg.InitFixDuration = {2 '* (s)' [0 100] };
-            dlg.TimeStimOn = { 5 '* (sec)' [0 60] }; 
+            dlg.TimeStimOn = { 10 '* (sec)' [0 60] }; 
             dlg.convergenceAmount = { 20 '* (deg)' [0 60] }; 
             dlg.StimulusContrast0to100 = {60 '* (%)' [0 100] };
             dlg.BackgroundBrightness = 0;
@@ -51,7 +51,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             %-- condition variables ---------------------------------------
             t = ArumeCore.TrialTableBuilder();
             
-            t.AddConditionVariable( 'V', ["p1" "c1" "p2" "c2" "p3" "c3"]); % vergence: parallel or converged, repeated 6x
+            t.AddConditionVariable( 'V', ["p" "c"]); % vergence: parallel or converged, repeated 6x
             t.AddConditionVariable( 'ImTilt', [-30 0 30]);
             %t.AddConditionVariable( 'Image', {'01' '02' '03' '04' '05' '06' '07' '08' '09' '10' '11' '12' '13' '14' '15' '16' '17' '18' '19' '20' '21' '22' '23' '24' '25' '26' '27' '28' '29' '30' '31' '32' '33' '34' '35' '36' '37' '38' '39' '40'} ); 
             t.AddConditionVariable( 'Image', {'01' '02' '03' '06' '08' '09' '10' '15' '16' '17' '20' '25' '29' '30' '31' '32' '33' '35' '36' '40'})
@@ -59,12 +59,10 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             % Add three blocks. One with all the upright trials, one with the rest,
             % and another one with upright trials. Running only one repeatition of
             % each upright trial and 3 repeatitions of the other trials,
-            t.AddBlock(find(t.ConditionTable.V=="p1"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c1"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="p2"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c2"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="p3"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c3"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c"), 1);
 
             trialSequence = 'Random';
             blockSequence =  'Random';
@@ -111,7 +109,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
                 % Determine fixation dot location depending on vergence 
                 x=(180-this.ExperimentOptions.convergenceAmount)/2;
                 displacement_degs = 90-x;
-                if thisTrialData.V == "p1" || thisTrialData.V == "p2" || thisTrialData.V == "p3" || thisTrialData.V == "p4" || thisTrialData.V == "p5" || thisTrialData.V == "p6" || thisTrialData.V == "p7" || thisTrialData.V == "p8" || thisTrialData.V == "p9" || thisTrialData.V == "p10"
+                if thisTrialData.V == "p" || thisTrialData.V == "p1" || thisTrialData.V == "p2" || thisTrialData.V == "p3" || thisTrialData.V == "p4" || thisTrialData.V == "p5" || thisTrialData.V == "p6" || thisTrialData.V == "p7" || thisTrialData.V == "p8" || thisTrialData.V == "p9" || thisTrialData.V == "p10"
                     thisTrialData.Vergence = categorical("parallel");
                     fixXPix_LE = this.Graph.wRect(3)/2; % center coord
                     fixYPix_LE = this.Graph.wRect(4)/2; % center coord
@@ -120,7 +118,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
                     x_top_left_LE = (this.Graph.wRect(3)/2) - (size(Isquare,1))/2;
                     x_top_left_RE = x_top_left_LE;
                     
-                elseif thisTrialData.V == "c1" || thisTrialData.V == "c2" || thisTrialData.V == "c3" || thisTrialData.V == "c4" || thisTrialData.V == "c5" || thisTrialData.V == "c6"|| thisTrialData.V == "c7" || thisTrialData.V == "c8" || thisTrialData.V == "c9" || thisTrialData.V == "c10"
+                elseif thisTrialData.V == "c" || thisTrialData.V == "c1" || thisTrialData.V == "c2" || thisTrialData.V == "c3" || thisTrialData.V == "c4" || thisTrialData.V == "c5" || thisTrialData.V == "c6"|| thisTrialData.V == "c7" || thisTrialData.V == "c8" || thisTrialData.V == "c9" || thisTrialData.V == "c10"
                     thisTrialData.Vergence = categorical("converged");
                     fixXPix_RE = tand(displacement_degs) * this.ExperimentOptions.DisplayOptions.ScreenDistance * (this.Graph.wRect(3)/(this.ExperimentOptions.DisplayOptions.ScreenWidth/2));
                     fixYPix_RE = this.Graph.wRect(4)/2;

@@ -25,7 +25,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             dlg.InitFixDuration = {2 '* (s)' [0 100] };
             dlg.TimeStimOn = { 10 '* (sec)' [0 60] }; 
             dlg.convergenceAmount = { 20 '* (deg)' [0 60] }; 
-            dlg.StimulusContrast0to100 = {60 '* (%)' [0 100] };
+            dlg.StimulusContrast0to100 = {90 '* (%)' [0 100] };
             dlg.BackgroundBrightness = 0;
             
             %% CHANGE DEFAULTS values for existing options
@@ -41,7 +41,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 16;
-            dlg.TrialsBeforeBreak = 30; %150
+            dlg.TrialsBeforeBreak = 33; %150
             dlg.TrialsBeforeCalibration = 100000;
             dlg.TrialAbortAction = 'Repeat';
         end

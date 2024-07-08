@@ -54,15 +54,33 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             t.AddConditionVariable( 'V', ["p" "c"]); % vergence: parallel or converged, repeated 6x
             t.AddConditionVariable( 'ImTilt', [-30 0 30]);
             %t.AddConditionVariable( 'Image', {'01' '02' '03' '04' '05' '06' '07' '08' '09' '10' '11' '12' '13' '14' '15' '16' '17' '18' '19' '20' '21' '22' '23' '24' '25' '26' '27' '28' '29' '30' '31' '32' '33' '34' '35' '36' '37' '38' '39' '40'} ); 
-            t.AddConditionVariable( 'Image', {'01' '02' '03' '06' '08' '09' '10' '15' '16' '17' '20' '25' '29' '30' '31' '32' '33' '35' '36' '40'})
+            %t.AddConditionVariable( 'Image', {'01' '02' '03' '06' '08'
+            %'09' '10' '15' '16' '17' '20' '25' '29' '30' '31' '32' '33'
+            %'35' '36' '40'}) %20 images
+            t.AddConditionVariable( 'Image', {'01' '02' '03' '06' '08' '09' '10' '11' '12' '15' '16' '17' '19' '20' '21' '22' '23' '25' '28' '29' '30' '31' '32' '33' '34' '35' '36' '38' '39' '40'}) %30 images
             
-            % Add three blocks. One with all the upright trials, one with the rest,
-            % and another one with upright trials. Running only one repeatition of
-            % each upright trial and 3 repeatitions of the other trials,
-            t.AddBlock(find(t.ConditionTable.V=="p"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="p"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c"), 1);
+            % Add blocks -- the vergence can change every 15 trials now
+            ok=unique(t.ConditionTable.Image);
+            if length(ok) ~= 30
+                disp('there might be an error!!')
+            end
+            t.AddBlock(find(ismember(t.ConditionTable.Image,ok(1:5)) & t.ConditionTable.V=="p"),1)
+            t.AddBlock(find(ismember(t.ConditionTable.Image,ok(6:10)) & t.ConditionTable.V=="p"),1)
+            t.AddBlock(find(ismember(t.ConditionTable.Image,ok(11:15)) & t.ConditionTable.V=="p"),1)
+            t.AddBlock(find(ismember(t.ConditionTable.Image,ok(16:20)) & t.ConditionTable.V=="p"),1)
+            t.AddBlock(find(ismember(t.ConditionTable.Image,ok(21:25)) & t.ConditionTable.V=="p"),1)
+            t.AddBlock(find(ismember(t.ConditionTable.Image,ok(26:30)) & t.ConditionTable.V=="p"),1)
+            t.AddBlock(find(ismember(t.ConditionTable.Image,ok(1:5)) & t.ConditionTable.V=="c"),1)
+            t.AddBlock(find(ismember(t.ConditionTable.Image,ok(6:10)) & t.ConditionTable.V=="c"),1)
+            t.AddBlock(find(ismember(t.ConditionTable.Image,ok(11:15)) & t.ConditionTable.V=="c"),1)
+            t.AddBlock(find(ismember(t.ConditionTable.Image,ok(16:20)) & t.ConditionTable.V=="c"),1)
+            t.AddBlock(find(ismember(t.ConditionTable.Image,ok(21:25)) & t.ConditionTable.V=="c"),1)
+            t.AddBlock(find(ismember(t.ConditionTable.Image,ok(26:30)) & t.ConditionTable.V=="c"),1)
+            
+            %t.AddBlock(find(t.ConditionTable.V=="p"), 1);
+            %t.AddBlock(find(t.ConditionTable.V=="c"), 1);
+            %t.AddBlock(find(t.ConditionTable.V=="p"), 1);
+            %t.AddBlock(find(t.ConditionTable.V=="c"), 1);
 
             trialSequence = 'Random';
             blockSequence =  'Random';

@@ -18,7 +18,7 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            dlg.IPD = { 63 '* (mm)' [40 80] }; 
+            dlg.IPD = { 61 '* (mm)' [40 80] }; 
             dlg.Number_of_Dots = { 500 '* (num)' [10 10000] }; %750
             dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
             dlg.TimeStimOn = { 0.3 '* (sec)' [0 60] }; 
@@ -38,7 +38,7 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 90;
-            dlg.TrialsBeforeBreak = 100000; %150
+            dlg.TrialsBeforeBreak = 150; %150
             dlg.TrialsBeforeCalibration = 100000;
             dlg.TrialAbortAction = 'Repeat';
         end
@@ -49,9 +49,9 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             t = ArumeCore.TrialTableBuilder();
             
             t.AddConditionVariable( 'V', ["p1" "c1" "p2" "c2" "p3" "c3" "p4" "c4" "p5" "c5" "p6" "c6" "p7" "c7" "p8" "c8" "p9" "c9" "p10" "c10"]); % vergence: parallel or converged, repeated 6x
-            %t.AddConditionVariable( 'RotateDots', [-30 -10 -5 0 0 5 10 30]);
-            t.AddConditionVariable( 'RotateDots', [0]);
-            t.AddConditionVariable( 'Disparities', [-2 -1.6 -1.2 -0.8 -0.4 0.4 0.8 1.2 1.6 2]); % arcmins
+            t.AddConditionVariable( 'RotateDots', [-30 -10 -5 0 0 5 10 30]);
+            %t.AddConditionVariable( 'RotateDots', [0]);
+            t.AddConditionVariable( 'Disparities', [-1.6 -1.2 -0.8 -0.4 0.4 0.8 1.2 1.6]); % arcmins
 
             % Add three blocks. One with all the upright trials, one with the rest,
             % and another one with upright trials. Running only one repeatition of

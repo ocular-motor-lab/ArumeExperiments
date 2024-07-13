@@ -24,13 +24,13 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             dlg.FixationSpotSize = { 0.2 '* (deg)' [0 5] };
             dlg.InitFixDuration = {2 '* (s)' [0 100] };
             dlg.TimeStimOn = { 10 '* (sec)' [0 60] }; 
-            dlg.convergenceAmount = { 20 '* (deg)' [0 60] }; 
+            dlg.convergenceAmount = { 20 '* (deg)' [0 60] }; %TODO figure out what that actually means bc something is weird. it's the max we can do anyway but need to find out how much ppl actually converge 
             dlg.StimulusContrast0to100 = {90 '* (%)' [0 100] };
             dlg.BackgroundBrightness = 0;
             
             %% CHANGE DEFAULTS values for existing options
             
-            dlg.UseEyeTracker = 0;
+            dlg.UseEyeTracker = 1;
             dlg.Debug.DisplayVariableSelection = 'TrialNumber Vergence ImTilt Image GuessedCorrectly'; % which variables to display every trial in the command line separated by spaces
             
             dlg.DisplayOptions.ScreenWidth = { 60 '* (cm)' [1 3000] };
@@ -51,12 +51,10 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             %-- condition variables ---------------------------------------
             t = ArumeCore.TrialTableBuilder();
             
-            t.AddConditionVariable( 'V', ["p" "c"]); % vergence: parallel or converged, repeated 6x
+            t.AddConditionVariable( 'V', [ "c"]); % vergence: parallel or converged, repeated 6x
             t.AddConditionVariable( 'ImTilt', [-30 0 30]);
             %t.AddConditionVariable( 'Image', {'01' '02' '03' '04' '05' '06' '07' '08' '09' '10' '11' '12' '13' '14' '15' '16' '17' '18' '19' '20' '21' '22' '23' '24' '25' '26' '27' '28' '29' '30' '31' '32' '33' '34' '35' '36' '37' '38' '39' '40'} ); 
-            %t.AddConditionVariable( 'Image', {'01' '02' '03' '06' '08'
-            %'09' '10' '15' '16' '17' '20' '25' '29' '30' '31' '32' '33'
-            %'35' '36' '40'}) %20 images
+            %t.AddConditionVariable( 'Image', {'01' '02' '03' '06' '08' '09' '10' '15' '16' '17' '20' '25' '29' '30' '31' '32' '33' '35' '36' '40'}) %20 images
             t.AddConditionVariable( 'Image', {'01' '02' '03' '06' '08' '09' '10' '11' '12' '15' '16' '17' '19' '20' '21' '22' '23' '25' '28' '29' '30' '31' '32' '33' '34' '35' '36' '38' '39' '40'}) %30 images
             
             % Add blocks -- the vergence can change every 15 trials now

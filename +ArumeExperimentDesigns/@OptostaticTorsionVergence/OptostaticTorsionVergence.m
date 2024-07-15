@@ -51,7 +51,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             %-- condition variables ---------------------------------------
             t = ArumeCore.TrialTableBuilder();
             
-            t.AddConditionVariable( 'V', [ "c"]); % vergence: parallel or converged, repeated 6x
+            t.AddConditionVariable( 'V', ["p" "c"]); % vergence: parallel or converged, repeated 6x
             t.AddConditionVariable( 'ImTilt', [-30 0 30]);
             %t.AddConditionVariable( 'Image', {'01' '02' '03' '04' '05' '06' '07' '08' '09' '10' '11' '12' '13' '14' '15' '16' '17' '18' '19' '20' '21' '22' '23' '24' '25' '26' '27' '28' '29' '30' '31' '32' '33' '34' '35' '36' '37' '38' '39' '40'} ); 
             %t.AddConditionVariable( 'Image', {'01' '02' '03' '06' '08' '09' '10' '15' '16' '17' '20' '25' '29' '30' '31' '32' '33' '35' '36' '40'}) %20 images

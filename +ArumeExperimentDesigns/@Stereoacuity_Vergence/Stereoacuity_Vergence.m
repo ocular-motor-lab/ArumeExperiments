@@ -322,26 +322,30 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
 
     methods
         
-        function [out] = Plot_ConstantStim(this)
+        function [thresholdTable] = Plot_StereoVergencePsychometric(this)
             %%
             trialTable = this.Session.trialDataTable;
-            
-            
             trialTable.RespondedFront = ones(size(trialTable,1),1);
             trialTable.RespondedFront(trialTable.Response == 'B') = trialTable.RespondedFront(trialTable.Response == 'B') *0;
-            RotateDotsCond = unique(trialTable.RotateDots);
+            
+            RotateDotsCond = unique(abs(trialTable.RotateDots));
+            EyePosCond=unique(trialTable.Vergence);
+            thresholdTable = table();
             here=1;
             
-                figure
+            for arotation = 1:length(RotateDotsCond)
+            
                 
-                for arotation = 1:length(RotateDotsCond)
-                    idxs = find(trialTable.RotateDots == RotateDotsCond(arotation));
+                %figure('Position',1.0e+03 * [0.3243  1.0297 1.2357  0.3083]);
+                
+                for aneyepos = 1:length(EyePosCond)
+                    idxs = find((trialTable.RotateDots == RotateDotsCond(arotation) & trialTable.Vergence == EyePosCond(aneyepos))  | ((trialTable.RotateDots == -RotateDotsCond(arotation) & trialTable.Vergence == EyePosCond(aneyepos))));
                     temp=sortrows(array2table([trialTable.DisparityArcMin(idxs) trialTable.RespondedFront(idxs)],'VariableNames',{'DisparityArcMin','RespondedFront'}));
                     
                     % Fit model
                     modelspec = 'RespondedFront ~ DisparityArcMin';
                     mdl = fitglm(temp(:,{'RespondedFront', 'DisparityArcMin'}), modelspec, 'Distribution', 'binomial');
-                    a=[-1:0.01:0, 0.01:0.01:1];
+                    a=[-2:0.01:0, 0.01:0.01:2];
                     p = predict(mdl,a');
                     
                     % Get average response for that disparity
@@ -363,24 +367,48 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                     x3 = (log(p3/(1-p3))-beta)/alpha;
                     slope = (p3-p2) / (x3-x2);
                     threshold=(x3-x2)/2;
-                  
+                    
+                    % Add them to a table
+                    thresholdTable.Vergence(here,:) = EyePosCond(aneyepos);
+                    thresholdTable.Condition(here) = abs(RotateDotsCond(arotation));
+                    thresholdTable.Slope(here) = slope;
+                    thresholdTable.Threshold(here) = threshold;
+                    thresholdTable.CoeffIntercept(here) = mdl.Coefficients.Estimate(1);
+                    thresholdTable.CoeffDispar(here) = mdl.Coefficients.Estimate(2);
+                    thresholdTable.Temp(here)={(table2cell(temp))};
+                    
+                    % Add baseline to threshold table if the zero condition was added
+                    if ~isempty(thresholdTable.Threshold( find(thresholdTable.Vergence == EyePosCond(aneyepos) & thresholdTable.Condition == 0)))
+                        thresholdTable.baseline(here) = thresholdTable.Threshold( find(thresholdTable.Vergence == EyePosCond(aneyepos) & thresholdTable.Condition == 0));
+                    end
+                    
                     % Plot
-                    subplot(1,(length(RotateDotsCond)),arotation)
-                    plot(a,p) % plot prediction
+                    subplot(1,length(RotateDotsCond),arotation)
+                    if EyePosCond(aneyepos) == "parallel"
+                        par=plot(a,p); % plot prediction
+                    elseif EyePosCond(aneyepos) == "converged"
+                        con=plot(a,p); % plot prediction
+                    end
                     hold on;
-                    plot(temp.DisparityArcMin,temp.meanedResp,'o'); hold on
+                    plot(temp.DisparityArcMin,temp.meanedResp,'o'); 
                     ylim([0 1])
                     xlabel('Disparity (arcmin)')
                     ylabel('Proportion Front')
-                    %text(min(xlim)+0.05, max(ylim)-0.1, sprintf('PSE: %.2f', x1), 'Horiz','left', 'Vert','bottom')
-                    text(min(xlim)+0.05, max(ylim)-0.1, sprintf('Slope: %.2f', slope), 'Horiz','left', 'Vert','bottom')
-                    text(min(xlim)+0.05, max(ylim)-0.15, sprintf('Threshold(arcmin): %.2f', threshold), 'Horiz','left', 'Vert','bottom')
-                    title(sprintf('Rotation: %s',string(RotateDotsCond(arotation))))
+                    if EyePosCond(aneyepos) == "parallel"
+                        text(min(xlim)+0.05, max(ylim)-0.1, sprintf('P Threshold(arcmin): %.2f', threshold), 'Horiz','left', 'Vert','bottom')
+                    elseif EyePosCond(aneyepos) == "converged"
+                        text(min(xlim)+0.05, max(ylim)-0.15, sprintf('C Threshold(arcmin): %.2f', threshold), 'Horiz','left', 'Vert','bottom')
+                    end
+                    title([sprintf('   Rotation: %s',string(abs(RotateDotsCond(arotation))))])
+                    % only make the legend once the data are all there
+                    if aneyepos == 2
+                        legend([ con par ],{'Converged','Parallel'},'location','southeast')
+                    end
                     
                     here=here+1;
                 end
-            
-
+                
+            end
 
 
         end

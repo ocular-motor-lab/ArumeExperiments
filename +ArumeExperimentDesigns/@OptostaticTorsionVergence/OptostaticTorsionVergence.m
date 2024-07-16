@@ -241,64 +241,91 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
 
     methods
         
-        function [out] = Plot_ConstantStim(this)
+        function [out] = Plot_OptoVergence(this)
             %%
-            trialTable = this.Session.trialDataTable;
+            trialDataTable = this.Session.trialDataTable;
+
+            % converged Positions
+            x_converged = trialDataTable.mean_T(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged")
+            y_converged = trialDataTable.mean_T(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged")
+            z_converged = trialDataTable.mean_T(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "converged")
             
+            % Parallel Positions
+            x_parallel = trialDataTable.mean_T(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "parallel")
+            y_parallel = trialDataTable.mean_T(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "parallel")
+            z_parallel = trialDataTable.mean_T(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel")
             
-            trialTable.RespondedFront = ones(size(trialTable,1),1);
-            trialTable.RespondedFront(trialTable.Response == 'B') = trialTable.RespondedFront(trialTable.Response == 'B') *0;
-            RotateDotsCond = unique(trialTable.RotateDots);
-            here=1;
+            % boxplots
+            group1 = [ones(size(x_converged)); 3 * ones(size(y_converged)); 5 * ones(size(z_converged)); 2 * ones(size(x_parallel)); 4 * ones(size(y_parallel)); 6 * ones(size(z_parallel))]
+            figure
+            boxplot([x_converged; x_parallel; y_converged; y_parallel; z_converged; z_parallel ], group1, 'Whisker', inf, 'Colors',[0 0 0]); hold on
+            plot(ones(size(x_converged)), x_converged,'o','Color',[0 0 1])
+            plot(ones(size(y_converged))*3, y_converged,'o','Color',[0 0 1]) %problem with color
+            plot(ones(size(z_converged))*5, z_converged,'o','Color',[0 0 1])
+            plot(ones(size(x_parallel))*2, x_parallel,'o','Color',[1 0 0])
+            plot(ones(size(y_parallel))*4, y_parallel,'o','Color',[1 0 0]) %problem with color
+            plot(ones(size(z_parallel))*6, z_parallel,'o','Color',[1 0 0])
+            ylim([-2 1.5])
+            xlabel('Image Tilt at Eye Vergence')
+            ylabel('Optostatic Torsion')
+            title('OST during Converged and Distance Viewing')
+            set(gca,'XTickLabel',{'Converged -30°','Parallel -30°','Converged 0°','Parallel 0°',' Converged 30°','Parallel 30°'})
             
-                figure
-                
-                for arotation = 1:length(RotateDotsCond)
-                    idxs = find(trialTable.RotateDots == RotateDotsCond(arotation));
-                    temp=sortrows(array2table([trialTable.DisparityArcMin(idxs) trialTable.RespondedFront(idxs)],'VariableNames',{'DisparityArcMin','RespondedFront'}));
-                    
-                    % Fit model
-                    modelspec = 'RespondedFront ~ DisparityArcMin';
-                    mdl = fitglm(temp(:,{'RespondedFront', 'DisparityArcMin'}), modelspec, 'Distribution', 'binomial');
-                    a=[-1:0.01:0, 0.01:0.01:1];
-                    p = predict(mdl,a');
-                    
-                    % Get average response for that disparity
-                    temp.meanedResp=zeros(height(temp),1);
-                    [uniqueDisparities,~] = unique(temp.DisparityArcMin);
-                    for i = 1:length(uniqueDisparities)
-                        idxs=find(temp.DisparityArcMin == uniqueDisparities(i));
-                        temp.meanedResp(idxs) = mean(temp.RespondedFront(idxs));
-                    end
-                    
-                    % Get the numbers
-                    alpha = mdl.Coefficients.Estimate(2);
-                    beta=mdl.Coefficients.Estimate(1);
-                    p1=0.5;
-                    x1 = (log(p1/(1-p1))-beta)/alpha; %PSE % log(p/1-p) = ax+b where we know p and a and b and are trying to get x.
-                    p2=.25;
-                    x2 = (log(p2/(1-p2))-beta)/alpha;
-                    p3=.75;
-                    x3 = (log(p3/(1-p3))-beta)/alpha;
-                    slope = (p3-p2) / (x3-x2);
-                    threshold=(x3-x2)/2;
-                  
-                    % Plot
-                    subplot(1,(length(RotateDotsCond)),arotation)
-                    plot(a,p) % plot prediction
-                    hold on;
-                    plot(temp.DisparityArcMin,temp.meanedResp,'o'); hold on
-                    ylim([0 1])
-                    xlabel('Disparity (arcmin)')
-                    ylabel('Proportion Front')
-                    %text(min(xlim)+0.05, max(ylim)-0.1, sprintf('PSE: %.2f', x1), 'Horiz','left', 'Vert','bottom')
-                    text(min(xlim)+0.05, max(ylim)-0.1, sprintf('Slope: %.2f', slope), 'Horiz','left', 'Vert','bottom')
-                    text(min(xlim)+0.05, max(ylim)-0.15, sprintf('Threshold(arcmin): %.2f', threshold), 'Horiz','left', 'Vert','bottom')
-                    title(sprintf('Rotation: %s',string(RotateDotsCond(arotation))))
-                    
-                    here=here+1;
-                end
+           %%
+           %Left Eye Torsion
+            x_leftconverged = trialDataTable.mean_LeftT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged")
+            y_leftconverged = trialDataTable.mean_LeftT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged")
+            z_leftconverged = trialDataTable.mean_LeftT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "converged")
             
+            % Parallel Positions
+            x_leftparallel = trialDataTable.mean_LeftT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "parallel")
+            y_leftparallel = trialDataTable.mean_LeftT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "parallel")
+            z_leftparallel = trialDataTable.mean_LeftT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel")
+            
+            %converged boxplots
+            group2 = [ones(size(x_leftconverged)); 3 * ones(size(y_leftconverged)); 5 * ones(size(z_leftconverged)); 2 * ones(size(x_leftparallel)); 4 * ones(size(y_leftparallel)); 6 * ones(size(z_leftparallel))]
+            figure
+            boxplot([x_leftconverged; x_leftparallel; y_leftconverged; y_leftparallel; z_leftconverged; z_leftparallel ], group2, 'Whisker', inf, 'Colors',[0 0 0]); hold on
+            plot(ones(size(x_leftconverged)), x_leftconverged,'o','Color',[0 0 1])
+            plot(ones(size(y_leftconverged))*3, y_leftconverged,'o','Color',[0 0 1])
+            plot(ones(size(z_leftconverged))*5, z_leftconverged,'o','Color',[0 0 1])
+            plot(ones(size(x_leftparallel))*2, x_leftparallel,'o','Color',[1 0 0])
+            plot(ones(size(y_leftparallel))*4, y_leftparallel,'o','Color',[1 0 0])
+            plot(ones(size(z_leftparallel))*6, z_leftparallel,'o','Color',[1 0 0])
+            ylim([-2 1.5])
+            xlabel('Image Tilt at Eye Vergence')
+            ylabel('Optostatic Torsion')
+            title('Left Eye OST during Converged and Distance Viewing')
+            set(gca,'XTickLabel',{'Converged -30°','Parallel -30°','Converged 0°','Parallel 0°',' Converged 30°','Parallel 30°'})
+
+           
+            %%
+            %Right Eye Torsion
+            x_rightconverged = trialDataTable.mean_RightT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged")
+            y_rightconverged = trialDataTable.mean_RightT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged")
+            z_rightconverged = trialDataTable.mean_RightT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "converged")
+            
+            % Parallel Positions
+            x_rightparallel = trialDataTable.mean_RightT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "parallel")
+            y_rightparallel = trialDataTable.mean_RightT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "parallel")
+            z_rightparallel = trialDataTable.mean_RightT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel")
+            
+            %converged boxplots
+            group2 = [ones(size(x_rightconverged)); 3 * ones(size(y_rightconverged)); 5 * ones(size(z_rightconverged)); 2 * ones(size(x_rightparallel)); 4 * ones(size(y_rightparallel)); 6 * ones(size(z_rightparallel))]
+            figure
+            boxplot([x_rightconverged; x_rightparallel; y_rightconverged; y_rightparallel; z_rightconverged; z_rightparallel ], group2, 'Whisker', inf, 'Colors',[0 0 0]); hold on
+            plot(ones(size(x_rightconverged)), x_rightconverged,'o','Color',[0 0 1])
+            plot(ones(size(y_rightconverged))*3, y_rightconverged,'o','Color',[0 0 1])
+            plot(ones(size(z_rightconverged))*5, z_rightconverged,'o','Color',[0 0 1])
+            plot(ones(size(x_rightparallel))*2, x_rightparallel,'o','Color',[1 0 0])
+            plot(ones(size(y_rightparallel))*4, y_rightparallel,'o','Color',[1 0 0])
+            plot(ones(size(z_rightparallel))*6, z_rightparallel,'o','Color',[1 0 0])
+            ylim([-2 1.5])
+            xlabel('Image Tilt at Eye Vergence')
+            ylabel('Optostatic Torsion')
+            title('Right Eye OST during Converged and Distance Viewing')
+            set(gca,'XTickLabel',{'Converged -30°','Parallel -30°','Converged 0°','Parallel 0°',' Converged 30°','Parallel 30°'})
+
 
 
 

@@ -19,12 +19,11 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
             %% ADD new options
-            dlg.IPD = { 63 '* (mm)' [40 80] }; 
             dlg.StimSizeDeg = { 10 '* (diameter_in_deg)' [0 10000] }; 
             dlg.FixationSpotSize = { 0.2 '* (deg)' [0 5] };
             dlg.InitFixDuration = {2 '* (s)' [0 100] };
             dlg.TimeStimOn = { 10 '* (sec)' [0 60] }; 
-            dlg.convergenceAmount = { 20 '* (deg)' [0 60] }; %TODO figure out what that actually means bc something is weird. it's the max we can do anyway but need to find out how much ppl actually converge 
+            dlg.convergenceAmount = { 10 '* (deg)' [0 60] }; 
             dlg.StimulusContrast0to100 = {90 '* (%)' [0 100] };
             dlg.BackgroundBrightness = 0;
             
@@ -123,8 +122,6 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
                 fixSizePix = pixPerDeg * this.ExperimentOptions.FixationSpotSize;
                 
                 % Determine fixation dot location depending on vergence 
-                x=(180-this.ExperimentOptions.convergenceAmount)/2;
-                displacement_degs = 90-x;
                 if thisTrialData.V == "p" || thisTrialData.V == "p1" || thisTrialData.V == "p2" || thisTrialData.V == "p3" || thisTrialData.V == "p4" || thisTrialData.V == "p5" || thisTrialData.V == "p6" || thisTrialData.V == "p7" || thisTrialData.V == "p8" || thisTrialData.V == "p9" || thisTrialData.V == "p10"
                     thisTrialData.Vergence = categorical("parallel");
                     fixXPix_LE = this.Graph.wRect(3)/2; % center coord
@@ -136,11 +133,12 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
                     
                 elseif thisTrialData.V == "c" || thisTrialData.V == "c1" || thisTrialData.V == "c2" || thisTrialData.V == "c3" || thisTrialData.V == "c4" || thisTrialData.V == "c5" || thisTrialData.V == "c6"|| thisTrialData.V == "c7" || thisTrialData.V == "c8" || thisTrialData.V == "c9" || thisTrialData.V == "c10"
                     thisTrialData.Vergence = categorical("converged");
-                    fixXPix_RE = tand(displacement_degs) * this.ExperimentOptions.DisplayOptions.ScreenDistance * (this.Graph.wRect(3)/(this.ExperimentOptions.DisplayOptions.ScreenWidth/2));
+                    % this line is based on tan(x) = opp/adj where we have a desired x (convergence/2) and we want to know opp. once you get opp (the displacement on the screen in cm), you need to convert that to pix. lastly, the screen coordinates have zero on the far left of the screen so you need to add the middle back to get 0 to be at the "origin"
+                    fixXPix_RE = -(tand(this.ExperimentOptions.convergenceAmount/2) * this.ExperimentOptions.DisplayOptions.ScreenDistance * (this.Graph.wRect(3)/(this.ExperimentOptions.DisplayOptions.ScreenWidth/2))) + this.Graph.wRect(3)/2;
                     fixYPix_RE = this.Graph.wRect(4)/2;
                     fixXPix_LE = this.Graph.wRect(3)/2 + (this.Graph.wRect(3)/2-fixXPix_RE);
                     fixYPix_LE = this.Graph.wRect(4)/2;
-                    x_top_left_RE = (tand(displacement_degs) * this.ExperimentOptions.DisplayOptions.ScreenDistance * (this.Graph.wRect(3)/(this.ExperimentOptions.DisplayOptions.ScreenWidth/2))) - (size(Isquare,2))/2;
+                    x_top_left_RE = fixXPix_RE- (size(Isquare,1)/2);
                     x_top_left_LE = fixXPix_LE - (size(Isquare,1)/2);
                 end
                 y_top_left = (this.Graph.wRect(4)/2) - (size(Isquare,2))/2;

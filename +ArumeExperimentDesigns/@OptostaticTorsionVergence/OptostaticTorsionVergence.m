@@ -254,15 +254,15 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             z_parallel = trialDataTable.mean_T(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel")
             
             % boxplots
-            group1 = [ones(size(x_converged)); 3 * ones(size(y_converged)); 5 * ones(size(z_converged)); 2 * ones(size(x_parallel)); 4 * ones(size(y_parallel)); 6 * ones(size(z_parallel))]
+            group1 = [ones(size(x_converged)); 3 * ones(size(y_converged)); 5 * ones(size(z_converged)); 1.5 * ones(size(x_parallel)); 3.5 * ones(size(y_parallel)); 5.5 * ones(size(z_parallel))]
             figure
-            boxplot([x_converged; x_parallel; y_converged; y_parallel; z_converged; z_parallel ], group1, 'Whisker', inf, 'Colors',[0 0 0]); hold on
+            boxplot([x_converged; x_parallel; y_converged; y_parallel; z_converged; z_parallel ], group1, 'Positions', group1, 'Whisker', inf, 'Colors',[0 0 0]); hold on
             plot(ones(size(x_converged)), x_converged,'o','Color',[0 0 1])
             plot(ones(size(y_converged))*3, y_converged,'o','Color',[0 0 1]) %problem with color
             plot(ones(size(z_converged))*5, z_converged,'o','Color',[0 0 1])
-            plot(ones(size(x_parallel))*2, x_parallel,'o','Color',[1 0 0])
-            plot(ones(size(y_parallel))*4, y_parallel,'o','Color',[1 0 0]) %problem with color
-            plot(ones(size(z_parallel))*6, z_parallel,'o','Color',[1 0 0])
+            plot(ones(size(x_parallel))*1.5, x_parallel,'o','Color',[1 0 0])
+            plot(ones(size(y_parallel))*3.5, y_parallel,'o','Color',[1 0 0]) %problem with color
+            plot(ones(size(z_parallel))*5.5, z_parallel,'o','Color',[1 0 0])
             ylim([-2 1.5])
             xlabel('Image Tilt at Eye Vergence')
             ylabel('Optostatic Torsion')
@@ -281,15 +281,15 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             z_leftparallel = trialDataTable.mean_LeftT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel")
             
             %converged boxplots
-            group2 = [ones(size(x_leftconverged)); 3 * ones(size(y_leftconverged)); 5 * ones(size(z_leftconverged)); 2 * ones(size(x_leftparallel)); 4 * ones(size(y_leftparallel)); 6 * ones(size(z_leftparallel))]
+            group2 = [ones(size(x_leftconverged)); 3 * ones(size(y_leftconverged)); 5 * ones(size(z_leftconverged)); 1.5 * ones(size(x_leftparallel)); 3.5 * ones(size(y_leftparallel)); 5.5 * ones(size(z_leftparallel))]
             figure
-            boxplot([x_leftconverged; x_leftparallel; y_leftconverged; y_leftparallel; z_leftconverged; z_leftparallel ], group2, 'Whisker', inf, 'Colors',[0 0 0]); hold on
+            boxplot([x_leftconverged; x_leftparallel; y_leftconverged; y_leftparallel; z_leftconverged; z_leftparallel ], group2, 'Positions', group2, 'Whisker', inf, 'Colors',[0 0 0]); hold on
             plot(ones(size(x_leftconverged)), x_leftconverged,'o','Color',[0 0 1])
             plot(ones(size(y_leftconverged))*3, y_leftconverged,'o','Color',[0 0 1])
             plot(ones(size(z_leftconverged))*5, z_leftconverged,'o','Color',[0 0 1])
-            plot(ones(size(x_leftparallel))*2, x_leftparallel,'o','Color',[1 0 0])
-            plot(ones(size(y_leftparallel))*4, y_leftparallel,'o','Color',[1 0 0])
-            plot(ones(size(z_leftparallel))*6, z_leftparallel,'o','Color',[1 0 0])
+            plot(ones(size(x_leftparallel))*1.5, x_leftparallel,'o','Color',[1 0 0])
+            plot(ones(size(y_leftparallel))*3.5, y_leftparallel,'o','Color',[1 0 0])
+            plot(ones(size(z_leftparallel))*5.5, z_leftparallel,'o','Color',[1 0 0])
             ylim([-2 1.5])
             xlabel('Image Tilt at Eye Vergence')
             ylabel('Optostatic Torsion')
@@ -309,15 +309,15 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             z_rightparallel = trialDataTable.mean_RightT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel")
             
             %converged boxplots
-            group2 = [ones(size(x_rightconverged)); 3 * ones(size(y_rightconverged)); 5 * ones(size(z_rightconverged)); 2 * ones(size(x_rightparallel)); 4 * ones(size(y_rightparallel)); 6 * ones(size(z_rightparallel))]
+            group2 = [ones(size(x_rightconverged)); 3 * ones(size(y_rightconverged)); 5 * ones(size(z_rightconverged)); 1.5 * ones(size(x_rightparallel)); 3.5 * ones(size(y_rightparallel)); 5.5 * ones(size(z_rightparallel))]
             figure
-            boxplot([x_rightconverged; x_rightparallel; y_rightconverged; y_rightparallel; z_rightconverged; z_rightparallel ], group2, 'Whisker', inf, 'Colors',[0 0 0]); hold on
+            boxplot([x_rightconverged; x_rightparallel; y_rightconverged; y_rightparallel; z_rightconverged; z_rightparallel ], group2, 'Positions', group2, 'Whisker', inf, 'Colors',[0 0 0]); hold on
             plot(ones(size(x_rightconverged)), x_rightconverged,'o','Color',[0 0 1])
             plot(ones(size(y_rightconverged))*3, y_rightconverged,'o','Color',[0 0 1])
             plot(ones(size(z_rightconverged))*5, z_rightconverged,'o','Color',[0 0 1])
-            plot(ones(size(x_rightparallel))*2, x_rightparallel,'o','Color',[1 0 0])
-            plot(ones(size(y_rightparallel))*4, y_rightparallel,'o','Color',[1 0 0])
-            plot(ones(size(z_rightparallel))*6, z_rightparallel,'o','Color',[1 0 0])
+            plot(ones(size(x_rightparallel))*1.5, x_rightparallel,'o','Color',[1 0 0])
+            plot(ones(size(y_rightparallel))*3.5, y_rightparallel,'o','Color',[1 0 0])
+            plot(ones(size(z_rightparallel))*5.5, z_rightparallel,'o','Color',[1 0 0])
             ylim([-2 1.5])
             xlabel('Image Tilt at Eye Vergence')
             ylabel('Optostatic Torsion')

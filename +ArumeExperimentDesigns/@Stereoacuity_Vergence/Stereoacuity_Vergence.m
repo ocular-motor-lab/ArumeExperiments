@@ -48,7 +48,8 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             %-- condition variables ---------------------------------------
             t = ArumeCore.TrialTableBuilder();
             
-            t.AddConditionVariable( 'V', ["p1" "c1" "p2" "c2" "p3" "c3" "p4" "c4" "p5" "c5" "p6" "c6" "p7" "c7" "p8" "c8" "p9" "c9" "p10" "c10"]); % vergence: parallel or converged, repeated 6x
+            %t.AddConditionVariable( 'V', ["p1" "c1" "p2" "c2" "p3" "c3" "p4" "c4" "p5" "c5" "p6" "c6" "p7" "c7" "p8" "c8" "p9" "c9" "p10" "c10"]); 
+            t.AddConditionVariable( 'V', ["p" "c"]); 
             t.AddConditionVariable( 'RotateDots', [-30 -10 -5 0 0 5 10 30]);
             %t.AddConditionVariable( 'RotateDots', [0]);
             t.AddConditionVariable( 'Disparities', [-1.6 -1.2 -0.8 -0.4 0.4 0.8 1.2 1.6]); % arcmins
@@ -56,26 +57,26 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             % Add three blocks. One with all the upright trials, one with the rest,
             % and another one with upright trials. Running only one repeatition of
             % each upright trial and 3 repeatitions of the other trials,
-            t.AddBlock(find(t.ConditionTable.V=="p1"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c1"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="p2"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c2"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="p3"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c3"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="p4"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c4"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="p5"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c5"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="p6"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c6"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="p7"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c7"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="p8"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c8"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="p9"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c9"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="p10"), 1);
-            t.AddBlock(find(t.ConditionTable.V=="c10"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="p"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c"), 1);
+            t.AddBlock(find(t.ConditionTable.V=="c"), 1);
 
             trialSequence = 'Random';
             blockSequence =  'Random';
@@ -109,11 +110,11 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                 PlaneTilt = 0;
                 PlaneSlant = 0;
                 numDots = this.ExperimentOptions.Number_of_Dots;
-                if thisTrialData.V == "p1" || thisTrialData.V == "p2" || thisTrialData.V == "p3" || thisTrialData.V == "p4" || thisTrialData.V == "p5" || thisTrialData.V == "p6" || thisTrialData.V == "p7" || thisTrialData.V == "p8" || thisTrialData.V == "p9" || thisTrialData.V == "p10"
+                if thisTrialData.V == "p" || thisTrialData.V == "p1" || thisTrialData.V == "p2" || thisTrialData.V == "p3" || thisTrialData.V == "p4" || thisTrialData.V == "p5" || thisTrialData.V == "p6" || thisTrialData.V == "p7" || thisTrialData.V == "p8" || thisTrialData.V == "p9" || thisTrialData.V == "p10"
                     FixationSpot.Z = 200; % fixation spot distance in cm
                     sizeStimCm = 13;
                     thisTrialData.Vergence = categorical("parallel");
-                elseif thisTrialData.V == "c1" || thisTrialData.V == "c2" || thisTrialData.V == "c3" || thisTrialData.V == "c4" || thisTrialData.V == "c5" || thisTrialData.V == "c6"|| thisTrialData.V == "c7" || thisTrialData.V == "c8" || thisTrialData.V == "c9" || thisTrialData.V == "c10"
+                elseif thisTrialData.V == "c" || thisTrialData.V == "c1" || thisTrialData.V == "c2" || thisTrialData.V == "c3" || thisTrialData.V == "c4" || thisTrialData.V == "c5" || thisTrialData.V == "c6"|| thisTrialData.V == "c7" || thisTrialData.V == "c8" || thisTrialData.V == "c9" || thisTrialData.V == "c10"
                     FixationSpot.Z = 30; % fixation spot distance in cm
                     sizeStimCm = 2;
                     thisTrialData.Vergence = categorical("converged");
@@ -200,42 +201,58 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
 
                 %initialize this
                 response = []; 
-                initialFixationDuration = this.ExperimentOptions.InitFixDuration;
                 sizeOfDots=1; % in pix
+                displayGridAndWait = 0;
+                initialWaiting = 0;
+                if thisTrialData.TrialNumber > 1
+                    % If it's a new block or if it's right after a break
+                    if (thisTrialData.Vergence ~= this.Session.currentRun.pastTrialTable.Vergence(thisTrialData.TrialNumber-1) || mod(thisTrialData.TrialNumber-1, this.ExperimentOptions.TrialsBeforeBreak) == 0)
+                        displayGridAndWait = 1;
+                    end
+                end
+                    
 
+                % If you press space accidentaly instead of responding F/B
+                % then the stimulus will just show itself again
+                % If you press F/B instead of space (following the grid
+                % display), then it will skip to the next trial. This is
+                % not ideal so the epxerimenter needs to watch for this.
                 while secondsRemaining > 0
 
                     secondsElapsed      = GetSecs - thisTrialData.TimeStartLoop;
                     secondsRemaining    = this.ExperimentOptions.TrialDuration - secondsElapsed;
 
-                    if thisTrialData.TrialNumber > 1
-                        % If it's a new block
-                        if thisTrialData.Vergence ~= this.Session.currentRun.pastTrialTable.Vergence(thisTrialData.TrialNumber-1)
-                            initialFixationDuration = 6;
+                    if displayGridAndWait == 0
+                        
+                        % If it's during the time when the stimulus (dots) is on, then show the stimulus plus the fixation dot
+                        if ( secondsElapsed > this.ExperimentOptions.InitFixDuration+initialWaiting && secondsElapsed < this.ExperimentOptions.InitFixDuration+initialWaiting + this.ExperimentOptions.TimeStimOn) % then show dots + fixation dot
+                            
+                            % Draw left stim:
+                            Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
+                            Screen('DrawDots', this.Graph.window, [screenPoints.LX(1:end-1)'; screenPoints.LY(1:end-1)'],sizeOfDots, [], this.Graph.wRect(3:4)/2, 1); % the 1 at the end means dot type where 1 2 or 3 is circular
+                            Screen('DrawDots', this.Graph.window, [screenPoints.LX(end); screenPoints.LY(end)], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
+                            Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
+                            
+                            % Draw right stim:
+                            Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
+                            Screen('DrawDots', this.Graph.window, [screenPoints.RX(1:end-1)'; screenPoints.RY(1:end-1)'], sizeOfDots, [], this.Graph.wRect(3:4)/2, 1);
+                            Screen('DrawDots', this.Graph.window, [screenPoints.RX(end); screenPoints.RY(end)], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
+                            Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
+                            
                         end
-                    end
-
-                    % -----------------------------------------------------------------
-                    % --- Drawing of stimulus -----------------------------------------
-                    % -----------------------------------------------------------------
-
-
-                    % If it's during the time when the stimulus (dots) is on, then show the stimulus plus the fixation dot
-                    if ( secondsElapsed > initialFixationDuration && secondsElapsed < initialFixationDuration + this.ExperimentOptions.TimeStimOn) % then show dots + fixation dot
-
+                        
+                    elseif displayGridAndWait == 1
                         % Draw left stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
-                        Screen('DrawDots', this.Graph.window, [screenPoints.LX(1:end-1)'; screenPoints.LY(1:end-1)'],sizeOfDots, [], this.Graph.wRect(3:4)/2, 1); % the 1 at the end means dot type where 1 2 or 3 is circular
-                        Screen('DrawDots', this.Graph.window, [screenPoints.LX(end); screenPoints.LY(end)], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
-                        Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
-
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2-200, this.Graph.wRect(4)/2, this.Graph.wRect(3)/2+200, this.Graph.wRect(4)/2, 5);
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2, this.Graph.wRect(4)/2-200, this.Graph.wRect(3)/2, this.Graph.wRect(4)/2+200, 5);
+                        
                         % Draw right stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
-                        Screen('DrawDots', this.Graph.window, [screenPoints.RX(1:end-1)'; screenPoints.RY(1:end-1)'], sizeOfDots, [], this.Graph.wRect(3:4)/2, 1);
-                        Screen('DrawDots', this.Graph.window, [screenPoints.RX(end); screenPoints.RY(end)], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
-                        Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
-
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2-200, this.Graph.wRect(4)/2, this.Graph.wRect(3)/2+200, this.Graph.wRect(4)/2, 5);
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2, this.Graph.wRect(4)/2-200, this.Graph.wRect(3)/2, this.Graph.wRect(4)/2+200, 5);
                     end
+
 
                     % Any other time, just show the fixation dot
                     % Draw left stim:
@@ -247,6 +264,7 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                     Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
                     Screen('DrawDots', this.Graph.window, [screenPoints.RX(end); screenPoints.RY(end)], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                     Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
+                    
 
                     % -----------------------------------------------------------------
                     % --- END Drawing of stimulus -------------------------------------
@@ -261,7 +279,7 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                     % -----------------------------------------------------------------
 
                     % Only collect responses after the stim has been displayed
-                    if secondsElapsed > initialFixationDuration
+                    if secondsElapsed > this.ExperimentOptions.InitFixDuration+initialWaiting
                         [keyIsDown, secs, keyCode, deltaSecs] = KbCheck();
                         if ( keyIsDown )
                             keys = find(keyCode);
@@ -276,6 +294,9 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                                         response = 'F';
                                     case 'UpArrow'
                                         response = 'B';
+                                    case 'space'
+                                        initialWaiting = GetSecs - thisTrialData.TimeStartLoop;
+                                        displayGridAndWait = 0;
                                 end
                             end
                             if ( ~isempty(response) ) % if there is a response, break this trial and start the next

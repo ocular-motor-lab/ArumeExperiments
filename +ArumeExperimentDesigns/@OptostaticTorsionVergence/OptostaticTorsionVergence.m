@@ -244,9 +244,9 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             trialDataTable = this.Session.trialDataTable;
 
             % converged Positions
-            x_converged = trialDataTable.mean_T(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged")
-            y_converged = trialDataTable.mean_T(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged")
-            z_converged = trialDataTable.mean_T(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "converged")
+            x_converged = trialDataTable.mean_T(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged") % -30 tilt
+            y_converged = trialDataTable.mean_T(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged")  % 0 tilt
+            z_converged = trialDataTable.mean_T(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "converged") % 30 tilt
             
             % Parallel Positions
             x_parallel = trialDataTable.mean_T(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "parallel")
@@ -323,10 +323,125 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             ylabel('Optostatic Torsion')
             title('Right Eye OST during Converged and Distance Viewing')
             set(gca,'XTickLabel',{'Converged -30°','Parallel -30°','Converged 0°','Parallel 0°',' Converged 30°','Parallel 30°'})
+        end
 
 
+       function [out] = Plot_OptoVergence_BarGraph(this)
+            %% 
+            
+            %converged
+            trialDataTable = this.Session.trialDataTable;
 
+            negthirtytilt_mean_converged =  mean(trialDataTable.mean_T(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged")) 
+            zerotilt_mean_converged = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged"))
+            posthirtytilt_mean_converged = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "converged"))
+            diff_xy_converged = negthirtytilt_mean_converged - zerotilt_mean_converged
+            diff_zy_converged = posthirtytilt_mean_converged - zerotilt_mean_converged
 
+            %parallel 
+            negthirtytilt_mean_parallel = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "parallel"))
+            zerotilt_mean_parallel = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "parallel"))
+            posthirtytilt_mean_parallel = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel"))
+            diff_xy_parallel =  negthirtytilt_mean_parallel - zerotilt_mean_parallel
+            diff_zy_parallel =  posthirtytilt_mean_parallel - zerotilt_mean_parallel
+
+            figure
+            title('OST during Converged Viewing')
+            subplot(1,2,1)
+            b1 = bar(1,diff_xy_converged); hold on
+            b2 = bar(2,diff_zy_converged); 
+            xticks(1:2)
+            xticklabels({'-30','30'})
+            ylim([-0.25 0.30])
+            xlabel('Image Tilt during Converged Viewing')
+            ylabel('Optostatic Torsion')
+            legend([b1 b2],'-30° tilt converged','30° tilt converged')
+            
+            subplot(1,2,2)
+            b3 = bar(1,diff_xy_parallel); hold on 
+            b4 = bar(2,diff_zy_parallel); 
+            ylim([-0.25 0.30])
+            xlabel('Image Tilt during Parallel Viewing')
+            ylabel('Optostatic Torsion')
+            legend([b3 b4],'-30° tilt parallel','30° tilt parallel')
+            title('OST during Distance Viewing')
+            
+            %% bar plot for left eye
+
+            negthirtytilt_leftmean_converged =  mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged")) 
+            zerotilt_leftmean_converged = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged"))
+            posthirtytilt_leftmean_converged = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "converged"))
+            leftdiff_xy_converged = negthirtytilt_leftmean_converged - zerotilt_leftmean_converged
+            leftdiff_zy_converged = posthirtytilt_leftmean_converged - zerotilt_leftmean_converged
+
+            %parallel 
+            negthirtytilt_leftmean_parallel = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "parallel"))
+            zerotilt_leftmean_parallel = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "parallel"))
+            posthirtytilt_leftmean_parallel = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel"))
+            leftdiff_xy_parallel =  negthirtytilt_leftmean_parallel - zerotilt_leftmean_parallel
+            leftdiff_zy_parallel =  posthirtytilt_leftmean_parallel - zerotilt_leftmean_parallel
+
+            figure
+            subplot(1,2,1)
+            b1 = bar(1,leftdiff_xy_converged); hold on
+            b2 = bar(2,leftdiff_zy_converged); 
+            xticks(1:2)
+            xticklabels({'-30','30'})
+            ylim([-0.25 0.30])
+            xlabel('Image Tilt during Converged Viewing')
+            ylabel('Optostatic Torsion')
+            legend([b1 b2],'-30° tilt converged','30° tilt converged')
+            title('Left eye OST during Converged Viewing')
+            
+            subplot(1,2,2)
+            b3 = bar(1,leftdiff_xy_parallel); hold on 
+            b4 = bar(2,leftdiff_zy_parallel); 
+            ylim([-0.25 0.30])
+            xlabel('Image Tilt during Parallel Viewing')
+            ylabel('Optostatic Torsion')
+            legend([b3 b4],'-30° tilt parallel','30° tilt parallel')
+            title('Left eye OST during Distance Viewing')
+            
+            %% bar plot for right eye
+
+            negthirtytilt_rightmean_converged =  mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged")) 
+            zerotilt_rightmean_converged = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged"))
+            posthirtytilt_rightmean_converged = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "converged"))
+            rightdiff_xy_converged = negthirtytilt_rightmean_converged - zerotilt_rightmean_converged
+            rightdiff_zy_converged = posthirtytilt_rightmean_converged - zerotilt_rightmean_converged
+
+            %parallel 
+            negthirtytilt_rightmean_parallel = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "parallel"))
+            zerotilt_rightmean_parallel = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "parallel"))
+            posthirtytilt_rightmean_parallel = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel"))
+            rightdiff_xy_parallel =  negthirtytilt_rightmean_parallel - zerotilt_rightmean_parallel
+            rightdiff_zy_parallel =  posthirtytilt_rightmean_parallel - zerotilt_rightmean_parallel
+
+            figure
+            subplot(1,2,1)
+            b1 = bar(1,rightdiff_xy_converged); hold on
+            b2 = bar(2,rightdiff_zy_converged); 
+            xticks(1:2)
+            xticklabels({'-30','30'})
+            ylim([-0.25 0.30])
+            xlabel('Image Tilt during Converged Viewing')
+            ylabel('Optostatic Torsion')
+            legend([b1 b2],'-30° tilt converged','30° tilt converged')
+            title('Right eye OST during Converged Viewing')
+            
+            subplot(1,2,2)
+            b3 = bar(1,rightdiff_xy_parallel); hold on 
+            b4 = bar(2,rightdiff_zy_parallel); 
+            ylim([-0.25 0.30])
+            xlabel('Image Tilt during Parallel Viewing')
+            ylabel('Optostatic Torsion')
+            legend([b3 b4],'-30° tilt parallel','30° tilt parallel')
+            title('Reft eye OST during Distance Viewing')
+            
+            
+   
+       
+            
         end
     end
 end

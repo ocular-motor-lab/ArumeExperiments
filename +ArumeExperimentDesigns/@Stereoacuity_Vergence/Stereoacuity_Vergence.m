@@ -244,13 +244,22 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                     elseif displayGridAndWait == 1
                         % Draw left stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
-                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2-200, this.Graph.wRect(4)/2, this.Graph.wRect(3)/2+200, this.Graph.wRect(4)/2, 5);
-                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2, this.Graph.wRect(4)/2-200, this.Graph.wRect(3)/2, this.Graph.wRect(4)/2+200, 5);
-                        
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2+screenPoints.LX(end)-200, this.Graph.wRect(4)/2, this.Graph.wRect(3)/2+screenPoints.LX(end)+200, this.Graph.wRect(4)/2, 3); % main horizontal line
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2+screenPoints.LX(end), this.Graph.wRect(4)/2+screenPoints.LY(end)-200, this.Graph.wRect(3)/2+screenPoints.LX(end), this.Graph.wRect(4)/2+screenPoints.LY(end)+200, 3); % main vert line
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2+screenPoints.LX(end)-200, this.Graph.wRect(4)/2+100, this.Graph.wRect(3)/2+screenPoints.LX(end)+200, this.Graph.wRect(4)/2+100, 3); 
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2+screenPoints.LX(end)-200, this.Graph.wRect(4)/2-100, this.Graph.wRect(3)/2+screenPoints.LX(end)+200, this.Graph.wRect(4)/2-100, 3); 
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2+screenPoints.LX(end)+100, this.Graph.wRect(4)/2+screenPoints.LY(end)-200, this.Graph.wRect(3)/2+screenPoints.LX(end)+100, this.Graph.wRect(4)/2+screenPoints.LY(end)+200, 3);
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2+screenPoints.LX(end)-100, this.Graph.wRect(4)/2+screenPoints.LY(end)-200, this.Graph.wRect(3)/2+screenPoints.LX(end)-100, this.Graph.wRect(4)/2+screenPoints.LY(end)+200, 3);
+
                         % Draw right stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
-                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2-200, this.Graph.wRect(4)/2, this.Graph.wRect(3)/2+200, this.Graph.wRect(4)/2, 5);
-                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2, this.Graph.wRect(4)/2-200, this.Graph.wRect(3)/2, this.Graph.wRect(4)/2+200, 5);
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2+screenPoints.RX(end)-200, this.Graph.wRect(4)/2, this.Graph.wRect(3)/2+screenPoints.RX(end)+200, this.Graph.wRect(4)/2, 3); % main horizontal line
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2+screenPoints.RX(end), this.Graph.wRect(4)/2+screenPoints.RY(end)-200, this.Graph.wRect(3)/2+screenPoints.RX(end), this.Graph.wRect(4)/2+screenPoints.RY(end)+200, 3); % main vert line
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2+screenPoints.RX(end)-200, this.Graph.wRect(4)/2+100, this.Graph.wRect(3)/2+screenPoints.RX(end)+200, this.Graph.wRect(4)/2+100, 5); 
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2+screenPoints.RX(end)-200, this.Graph.wRect(4)/2-100, this.Graph.wRect(3)/2+screenPoints.RX(end)+200, this.Graph.wRect(4)/2-100, 3); 
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2+screenPoints.RX(end)+100, this.Graph.wRect(4)/2+screenPoints.RY(end)-200, this.Graph.wRect(3)/2+screenPoints.RX(end)+100, this.Graph.wRect(4)/2+screenPoints.RY(end)+200, 3);
+                        Screen('DrawLine', this.Graph.window, [255 0 0], this.Graph.wRect(3)/2+screenPoints.RX(end)-100, this.Graph.wRect(4)/2+screenPoints.RY(end)-200, this.Graph.wRect(3)/2+screenPoints.RX(end)-100, this.Graph.wRect(4)/2+screenPoints.RY(end)+200, 3);
+                 
                     end
 
 

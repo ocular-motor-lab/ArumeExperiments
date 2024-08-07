@@ -346,21 +346,21 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             diff_zy_parallel =  posthirtytilt_mean_parallel - zerotilt_mean_parallel
 
             figure
-            title('OST during Converged Viewing')
             subplot(1,2,1)
             b1 = bar(1,diff_xy_converged); hold on
             b2 = bar(2,diff_zy_converged); 
             xticks(1:2)
             xticklabels({'-30','30'})
-            ylim([-0.25 0.30])
+            ylim([-0.5 0.5])
             xlabel('Image Tilt during Converged Viewing')
             ylabel('Optostatic Torsion')
             legend([b1 b2],'-30° tilt converged','30° tilt converged')
+            title('OST during Converged Viewing')
             
             subplot(1,2,2)
             b3 = bar(1,diff_xy_parallel); hold on 
             b4 = bar(2,diff_zy_parallel); 
-            ylim([-0.25 0.30])
+            ylim([-0.5 0.5])
             xlabel('Image Tilt during Parallel Viewing')
             ylabel('Optostatic Torsion')
             legend([b3 b4],'-30° tilt parallel','30° tilt parallel')
@@ -387,7 +387,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             b2 = bar(2,leftdiff_zy_converged); 
             xticks(1:2)
             xticklabels({'-30','30'})
-            ylim([-0.25 0.30])
+            ylim([-0.5 0.5])
             xlabel('Image Tilt during Converged Viewing')
             ylabel('Optostatic Torsion')
             legend([b1 b2],'-30° tilt converged','30° tilt converged')
@@ -396,7 +396,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             subplot(1,2,2)
             b3 = bar(1,leftdiff_xy_parallel); hold on 
             b4 = bar(2,leftdiff_zy_parallel); 
-            ylim([-0.25 0.30])
+            ylim([-0.5 0.5])
             xlabel('Image Tilt during Parallel Viewing')
             ylabel('Optostatic Torsion')
             legend([b3 b4],'-30° tilt parallel','30° tilt parallel')
@@ -423,7 +423,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             b2 = bar(2,rightdiff_zy_converged); 
             xticks(1:2)
             xticklabels({'-30','30'})
-            ylim([-0.25 0.30])
+            ylim([-0.5 0.5])
             xlabel('Image Tilt during Converged Viewing')
             ylabel('Optostatic Torsion')
             legend([b1 b2],'-30° tilt converged','30° tilt converged')
@@ -432,16 +432,54 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             subplot(1,2,2)
             b3 = bar(1,rightdiff_xy_parallel); hold on 
             b4 = bar(2,rightdiff_zy_parallel); 
-            ylim([-0.25 0.30])
+            ylim([-0.5 0.5])
             xlabel('Image Tilt during Parallel Viewing')
             ylabel('Optostatic Torsion')
             legend([b3 b4],'-30° tilt parallel','30° tilt parallel')
-            title('Reft eye OST during Distance Viewing')
+            title('Right eye OST during Distance Viewing')
             
             
    
        
             
+       end
+
+        function [analysisResults, samplesDataTable, trialDataTable, sessionTable]  = RunDataAnalyses(this, analysisResults, samplesDataTable, trialDataTable, sessionTable, options)
+
+  %converged
+            %trialDataTable = this.Session.trialDataTable;
+
+            sessionTable.negthirtytilt_mean_converged =  mean(trialDataTable.mean_T(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged")) ;
+            sessionTable.zerotilt_mean_converged = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged"));
+            sessionTable.posthirtytilt_mean_converged = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "converged"));
+
+            %parallel 
+            sessionTable.negthirtytilt_mean_parallel = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "parallel"));
+            sessionTable.zerotilt_mean_parallel = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "parallel"));
+            sessionTable.posthirtytilt_mean_parallel = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel"));
+
+            
+            sessionTable.negthirtytilt_leftmean_converged =  mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged")) ;
+            sessionTable.zerotilt_leftmean_converged = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged"));
+            sessionTable.posthirtytilt_leftmean_converged = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "converged"));
+
+            %parallel 
+            sessionTable.negthirtytilt_leftmean_parallel = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "parallel"));
+            sessionTable.zerotilt_leftmean_parallel = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "parallel"));
+            sessionTable.posthirtytilt_leftmean_parallel = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel"));
+
+
+            sessionTable.negthirtytilt_rightmean_converged =  mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged")); 
+            sessionTable.zerotilt_rightmean_converged = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged"));
+            sessionTable.posthirtytilt_rightmean_converged = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "converged"));
+
+            %parallel 
+            sessionTable.negthirtytilt_rightmean_parallel = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "parallel"));
+            sessionTable.zerotilt_rightmean_parallel = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "parallel"));
+            sessionTable.posthirtytilt_rightmean_parallel = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel"));
+            
+
         end
+
     end
 end

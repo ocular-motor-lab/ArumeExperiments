@@ -19,15 +19,16 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             
             %% ADD new options
             dlg.IPD = { 61 '* (mm)' [40 80] }; 
-            dlg.Number_of_Dots = { 500 '* (num)' [10 10000] }; %750
+            dlg.Practice = { 0 '* (1 or 0)' [0 1] }; 
+            dlg.Number_of_Dots = { 750 '* (num)' [10 10000] }; %750
             dlg.FixationSpotSize = { 0.25 '* (diameter_in_deg)' [0 5] };
-            dlg.TimeStimOn = { 0.3 '* (sec)' [0 60] }; 
+            dlg.TimeStimOn = { 0.3 '* (sec)' [0 60] }; %0.3
             dlg.InitFixDuration = { 1 '* (sec)' [0 60] };
             dlg.BackgroundBrightness = 0;
             
             %% CHANGE DEFAULTS values for existing options
             
-            dlg.UseEyeTracker = 0;
+            dlg.UseEyeTracker = 1; % this will automatically get set to 0 if you're doing practice
             dlg.Debug.DisplayVariableSelection = 'TrialNumber Vergence RotateDots DisparityArcMin GuessedCorrectly'; % which variables to display every trial in the command line separated by spaces
             
             dlg.DisplayOptions.ScreenWidth = { 60 '* (cm)' [1 3000] };
@@ -48,12 +49,14 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             %-- condition variables ---------------------------------------
             t = ArumeCore.TrialTableBuilder();
             
-            %t.AddConditionVariable( 'V', ["p1" "c1" "p2" "c2" "p3" "c3" "p4" "c4" "p5" "c5" "p6" "c6" "p7" "c7" "p8" "c8" "p9" "c9" "p10" "c10"]); 
             t.AddConditionVariable( 'V', ["p" "c"]); 
-            t.AddConditionVariable( 'RotateDots', [-30 -10 -5 0 0 5 10 30]);
-            %t.AddConditionVariable( 'RotateDots', [0]);
-            %t.AddConditionVariable( 'Disparities', [-1.6 -1.2 -0.8 -0.4 0.4 0.8 1.2 1.6]); % arcmins
-            t.AddConditionVariable( 'Disparities', [ -1.2 -0.8 -0.4 0.4 0.8 1.2 ]); % arcmins
+            if this.ExperimentOptions.Practice == 0
+                t.AddConditionVariable( 'RotateDots', [-30 -10 -5 0 0 5 10 30]);
+            elseif this.ExperimentOptions.Practice == 1
+                t.AddConditionVariable( 'RotateDots', [0]);
+                this.ExperimentOptions.UseEyeTracker = 0; % no need for eye tracking w/ practice!
+            end
+            t.AddConditionVariable( 'Disparities', [-1.6 -1.2 -0.8 -0.4 0.4 0.8 1.2 1.6]); % arcmins
 
             % Add three blocks. One with all the upright trials, one with the rest,
             % and another one with upright trials. Running only one repeatition of
@@ -111,13 +114,13 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                 PlaneTilt = 0;
                 PlaneSlant = 0;
                 numDots = this.ExperimentOptions.Number_of_Dots;
-                if thisTrialData.V == "p" || thisTrialData.V == "p1" || thisTrialData.V == "p2" || thisTrialData.V == "p3" || thisTrialData.V == "p4" || thisTrialData.V == "p5" || thisTrialData.V == "p6" || thisTrialData.V == "p7" || thisTrialData.V == "p8" || thisTrialData.V == "p9" || thisTrialData.V == "p10"
+                if thisTrialData.V == "p" 
                     FixationSpot.Z = 200; % fixation spot distance in cm
-                    sizeStimCm = 13/2; %13
+                    sizeStimCm = 13; %13
                     thisTrialData.Vergence = categorical("parallel");
-                elseif thisTrialData.V == "c" || thisTrialData.V == "c1" || thisTrialData.V == "c2" || thisTrialData.V == "c3" || thisTrialData.V == "c4" || thisTrialData.V == "c5" || thisTrialData.V == "c6"|| thisTrialData.V == "c7" || thisTrialData.V == "c8" || thisTrialData.V == "c9" || thisTrialData.V == "c10"
+                elseif thisTrialData.V == "c"
                     FixationSpot.Z = 30; % fixation spot distance in cm
-                    sizeStimCm = 2/2; %2
+                    sizeStimCm = 2; %2
                     thisTrialData.Vergence = categorical("converged");
                 end
                 minsizeStimCm = sizeStimCm/4;

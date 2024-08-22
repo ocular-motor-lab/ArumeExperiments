@@ -449,36 +449,38 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
   %converged
             %trialDataTable = this.Session.trialDataTable;
 
+            %both eyes converged
             sessionTable.negthirtytilt_mean_converged =  mean(trialDataTable.mean_T(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged")) ;
             sessionTable.zerotilt_mean_converged = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged"));
             sessionTable.posthirtytilt_mean_converged = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "converged"));
 
-            %parallel 
+            %both eyes parallel 
             sessionTable.negthirtytilt_mean_parallel = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "parallel"));
             sessionTable.zerotilt_mean_parallel = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "parallel"));
             sessionTable.posthirtytilt_mean_parallel = mean(trialDataTable.mean_T(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel"));
 
-            
+            %left eyes converged
             sessionTable.negthirtytilt_leftmean_converged =  mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged")) ;
             sessionTable.zerotilt_leftmean_converged = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged"));
             sessionTable.posthirtytilt_leftmean_converged = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "converged"));
 
-            %parallel 
+            %left eye parallel 
             sessionTable.negthirtytilt_leftmean_parallel = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "parallel"));
             sessionTable.zerotilt_leftmean_parallel = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "parallel"));
             sessionTable.posthirtytilt_leftmean_parallel = mean(trialDataTable.mean_LeftT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel"));
 
-
+            %right eyes converged
             sessionTable.negthirtytilt_rightmean_converged =  mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged")); 
             sessionTable.zerotilt_rightmean_converged = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged"));
             sessionTable.posthirtytilt_rightmean_converged = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "converged"));
 
-            %parallel 
+            %right eye parallel 
             sessionTable.negthirtytilt_rightmean_parallel = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "parallel"));
             sessionTable.zerotilt_rightmean_parallel = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "parallel"));
             sessionTable.posthirtytilt_rightmean_parallel = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel"));
             
-
+            
+            
         end
 
     end

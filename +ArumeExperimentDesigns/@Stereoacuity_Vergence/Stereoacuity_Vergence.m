@@ -315,6 +315,7 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                             if ( ~isempty(response) ) % if there is a response, break this trial and start the next
                                 thisTrialData.Response = response;
                                 thisTrialData.ResponseTime = GetSecs;
+                                thisTrialData.GridWaitTime = initialWaiting;
                                 break;
                             end
                         end
@@ -324,6 +325,7 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                 if ( isempty(response) )
                     thisTrialData.Response = 'N';
                     thisTrialData.ResponseTime = GetSecs;
+                    thisTrialData.GridWaitTime = initialWaiting;
                     trialResult = Enum.trialResult.ABORT;
                 else
                     trialResult = Enum.trialResult.CORRECT;

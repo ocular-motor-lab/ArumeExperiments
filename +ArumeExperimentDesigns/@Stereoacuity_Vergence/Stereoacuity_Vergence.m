@@ -39,7 +39,7 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 90;
-            dlg.TrialsBeforeBreak = 2; %150
+            dlg.TrialsBeforeBreak = 150; %150
             dlg.TrialsBeforeCalibration = 100000;
             dlg.TrialAbortAction = 'Repeat';
         end

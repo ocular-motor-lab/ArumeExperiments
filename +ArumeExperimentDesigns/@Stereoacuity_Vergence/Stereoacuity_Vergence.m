@@ -39,7 +39,7 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
             
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 90;
-            dlg.TrialsBeforeBreak = 150; %150
+            dlg.TrialsBeforeBreak = 2; %150
             dlg.TrialsBeforeCalibration = 100000;
             dlg.TrialAbortAction = 'Repeat';
         end
@@ -56,7 +56,8 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                 t.AddConditionVariable( 'RotateDots', [0]);
                 this.ExperimentOptions.UseEyeTracker = 0; % no need for eye tracking w/ practice!
             end
-            t.AddConditionVariable( 'Disparities', [-1.6 -1.2 -0.8 -0.4 0.4 0.8 1.2 1.6]); % arcmins
+            %t.AddConditionVariable( 'Disparities', [-1.6 -1.2 -0.8 -0.4 0.4 0.8 1.2 1.6 ]); % arcmins
+            t.AddConditionVariable( 'Disparities', [-0.8 -0.6 -0.4 -0.2 0.2 0.4 0.6 0.8 ]); % arcmins
 
             % Add three blocks. One with all the upright trials, one with the rest,
             % and another one with upright trials. Running only one repeatition of
@@ -98,7 +99,7 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                 Enum = ArumeCore.ExperimentDesign.getEnum();
                 graph = this.Graph;
                 trialResult = Enum.trialResult.CORRECT;
-                Screen('FillRect', graph.window, 0); % not sure if needed
+                Screen('FillRect', graph.window, 0.5); % not sure if needed
                 ShowCursor();
                 
                 % Prepare some settings to get the dots
@@ -254,6 +255,8 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                         Screen('DrawLine', this.Graph.window, [150 150 150], this.Graph.wRect(3)/2+screenPoints.LX(end)-200, this.Graph.wRect(4)/2-100, this.Graph.wRect(3)/2+screenPoints.LX(end)+200, this.Graph.wRect(4)/2-100, 3); 
                         Screen('DrawLine', this.Graph.window, [150 150 150], this.Graph.wRect(3)/2+screenPoints.LX(end)+100, this.Graph.wRect(4)/2+screenPoints.LY(end)-200, this.Graph.wRect(3)/2+screenPoints.LX(end)+100, this.Graph.wRect(4)/2+screenPoints.LY(end)+200, 3);
                         Screen('DrawLine', this.Graph.window, [150 150 150], this.Graph.wRect(3)/2+screenPoints.LX(end)-100, this.Graph.wRect(4)/2+screenPoints.LY(end)-200, this.Graph.wRect(3)/2+screenPoints.LX(end)-100, this.Graph.wRect(4)/2+screenPoints.LY(end)+200, 3);
+                        %Screen('TextSize', this.Graph.window, 70);
+                        %DrawFormattedText(this.Graph.window, 'QTQ', this.Graph.wRect(3)/2+screenPoints.LX(end)-100,this.Graph.wRect(4)/2+screenPoints.LY(end),[150 150 150]);
 
                         % Draw right stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
@@ -263,7 +266,8 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                         Screen('DrawLine', this.Graph.window, [150 150 150], this.Graph.wRect(3)/2+screenPoints.RX(end)-200, this.Graph.wRect(4)/2-100, this.Graph.wRect(3)/2+screenPoints.RX(end)+200, this.Graph.wRect(4)/2-100, 3); 
                         Screen('DrawLine', this.Graph.window, [150 150 150], this.Graph.wRect(3)/2+screenPoints.RX(end)+100, this.Graph.wRect(4)/2+screenPoints.RY(end)-200, this.Graph.wRect(3)/2+screenPoints.RX(end)+100, this.Graph.wRect(4)/2+screenPoints.RY(end)+200, 3);
                         Screen('DrawLine', this.Graph.window, [150 150 150], this.Graph.wRect(3)/2+screenPoints.RX(end)-100, this.Graph.wRect(4)/2+screenPoints.RY(end)-200, this.Graph.wRect(3)/2+screenPoints.RX(end)-100, this.Graph.wRect(4)/2+screenPoints.RY(end)+200, 3);
-                 
+                        %Screen('TextSize', this.Graph.window, 70);
+                        %DrawFormattedText(this.Graph.window, 'QTQ', this.Graph.wRect(3)/2+screenPoints.RX(end)-100,this.Graph.wRect(4)/2+screenPoints.RY(end),[150 150 150]);
                     end
 
 
@@ -421,12 +425,12 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                     % Plot
                     subplot(1,length(RotateDotsCond),arotation)
                     if EyePosCond(aneyepos) == "parallel"
-                        par=plot(a,p); % plot prediction
+                        par=plot(a,p,'Color',[8, 143, 143]/255,'LineWidth',1.5); hold on % plot prediction, blue
+                        plot(temp.DisparityArcMin,temp.meanedResp,'o','Color',[8, 143, 143]/255);
                     elseif EyePosCond(aneyepos) == "converged"
-                        con=plot(a,p); % plot prediction
+                        con=plot(a,p,'Color',[255 121 0]/255,'LineWidth',1.5); hold on  % plot prediction, yellow-orange
+                        plot(temp.DisparityArcMin,temp.meanedResp,'o','Color',[255 121 0]/255);
                     end
-                    hold on;
-                    plot(temp.DisparityArcMin,temp.meanedResp,'o'); 
                     ylim([0 1])
                     xlabel('Disparity (arcmin)')
                     ylabel('Proportion Front')

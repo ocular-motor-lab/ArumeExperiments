@@ -242,7 +242,7 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
         function [out] = Plot_OptoVergence(this)
             %%
             trialDataTable = this.Session.trialDataTable;
-
+            
             % converged Positions
             x_converged = trialDataTable.mean_T(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "converged") % -30 tilt
             y_converged = trialDataTable.mean_T(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "converged")  % 0 tilt

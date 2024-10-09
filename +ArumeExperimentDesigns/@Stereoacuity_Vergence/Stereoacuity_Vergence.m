@@ -426,10 +426,10 @@ classdef Stereoacuity_Vergence < ArumeExperimentDesigns.EyeTracking
                     subplot(1,length(RotateDotsCond),arotation)
                     if EyePosCond(aneyepos) == "parallel"
                         par=plot(a,p,'Color',[8, 143, 143]/255,'LineWidth',1.5); hold on % plot prediction, blue
-                        plot(temp.DisparityArcMin,temp.meanedResp,'o','Color',[8, 143, 143]/255);
+                        plot(temp.DisparityArcMin,temp.meanedResp,'o','Color',[8, 143, 143]/255,'LineWidth',1);
                     elseif EyePosCond(aneyepos) == "converged"
-                        con=plot(a,p,'Color',[255 121 0]/255,'LineWidth',1.5); hold on  % plot prediction, yellow-orange
-                        plot(temp.DisparityArcMin,temp.meanedResp,'o','Color',[255 121 0]/255);
+                        con=plot(a,p,'Color',[255 121 0]/255,'LineWidth',1.5); hold on  % plot prediction, orange
+                        plot(temp.DisparityArcMin,temp.meanedResp,'o','Color',[255 121 0]/255,'LineWidth',1);
                     end
                     ylim([0 1])
                     xlabel('Disparity (arcmin)')

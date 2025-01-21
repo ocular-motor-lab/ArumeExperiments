@@ -478,6 +478,9 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
             sessionTable.negthirtytilt_rightmean_parallel = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==-30 & trialDataTable.Vergence== "parallel"));
             sessionTable.zerotilt_rightmean_parallel = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==0 & trialDataTable.Vergence== "parallel"));
             sessionTable.posthirtytilt_rightmean_parallel = mean(trialDataTable.mean_RightT(trialDataTable.ImTilt ==30 & trialDataTable.Vergence== "parallel"));
+
+           
+
             
             
             

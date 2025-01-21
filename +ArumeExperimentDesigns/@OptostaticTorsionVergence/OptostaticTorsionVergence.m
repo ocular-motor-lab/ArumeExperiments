@@ -174,20 +174,19 @@ classdef OptostaticTorsionVergence < ArumeExperimentDesigns.EyeTracking
                         % Draw left stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
                         Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[x_top_left_LE y_top_left x_top_left_LE+size(Isquare,1) y_top_left+size(Isquare,2)],thisTrialData.ImTilt); % https://yun-weidai.com/post/ptb-draw-image/
-                        Screen('DrawDots', this.Graph.window, [fixXPix_LE; fixYPix_LE], fixSizePix, this.targetColor, [], 1); % fixation spot
+                        %Screen('DrawDots', this.Graph.window, [fixXPix_LE; fixYPix_LE], fixSizePix, this.targetColor, [], 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
 
                         % Draw right stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 1);
                         Screen('DrawTexture', this.Graph.window, this.stimTexture, [],[x_top_left_RE y_top_left x_top_left_RE+size(Isquare,1) y_top_left+size(Isquare,2)],thisTrialData.ImTilt); 
-                        Screen('DrawDots', this.Graph.window, [fixXPix_RE; fixYPix_RE], fixSizePix, this.targetColor, [], 1); % fixation spot
+                        %Screen('DrawDots', this.Graph.window, [fixXPix_RE; fixYPix_RE], fixSizePix, this.targetColor, [], 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [0 1 0], [], 5);
 
                     % Any other time, just show the fixation dot
                     elseif ( secondsElapsed < initialFixationDuration )
                         % Draw left stim:
                         Screen('SelectStereoDrawBuffer', this.Graph.window, 0);
-                        %Screen('DrawDots', this.Graph.window, [0; 0], fixSizePix, this.targetColor, this.Graph.wRect(3:4)/2, 1); % fixation spot
                         Screen('DrawDots', this.Graph.window, [fixXPix_LE; fixYPix_LE], fixSizePix, this.targetColor, [], 1); % fixation spot
                         Screen('FrameRect', this.Graph.window, [1 0 0], [], 5);
 

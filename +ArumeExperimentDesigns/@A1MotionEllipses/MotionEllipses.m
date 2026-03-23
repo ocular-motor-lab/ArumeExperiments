@@ -1,10 +1,5 @@
 classdef MotionEllipses < ArumeExperimentDesigns.EyeTracking
-    % DEMO experiment for Arume 
-    %
-    %   1. Copy paste the folder @Demo within +ArumeExperimentDesigns.
-    %   2. Rename the folder with the name of the new experiment but keep that @ at the begining!
-    %   3. Rename also the file inside to match the name of the folder (without the @ this time).
-    %   4. Then change the name of the class inside the folder.
+    % Motion Ellipses foveal threshold exp.
     %     
     properties
         fixRad = 20;
@@ -32,7 +27,7 @@ classdef MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.Num_RefVelocitiesPerComponent = 5;
 
             dlg.Do_Full_Grid = { {'0','{1}'} };
-            dlg.NumberOfRepetitions = {8 '* (N)' [1 100] };
+            dlg.Num_Repeats = {8 '* (N)' [1 100] };
 
             dlg.Dots_Per_Window = 700;
             dlg.Dots_Diameter   = { 1.5 '* (pix)' [0.01 100] };
@@ -79,6 +74,8 @@ classdef MotionEllipses < ArumeExperimentDesigns.EyeTracking
         end
         
         function trialTable = SetUpTrialTable(this)
+
+            max_degS = this.ExperimentOptions.Max_RefVelocityComponent;
             
             if ( this.ExperimentOptions.Do_Full_Grid )
                 % for entire grid of reference vectors:
@@ -114,7 +111,7 @@ classdef MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 ref_vecs = [ref_Vx(:), ref_Vy(:)];
             end
 
-
+            % build the table
             t = ArumeCore.TrialTableBuilder();
 
             t.AddConditionVariable('ReferenceVelocity',ref_vecs);
@@ -202,6 +199,7 @@ classdef MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
 
             degS_to_pixFrame_convFactor = mm_per_deg*pixels_per_mm/refreshHz;
+            deg_to_pix_convFactor = mm_per_deg * pixels_per_mm(1);
 
 
 
@@ -209,21 +207,14 @@ classdef MotionEllipses < ArumeExperimentDesigns.EyeTracking
             %% Window config
             % circle window radii (deg) - could be different for each window
             window_radii_deg = this.ExperimentOptions.Window_Radius_Deg*[1 1 1];
-            window_radii = window_radii_deg .* (mm_per_deg * pixels_per_mm(1));
+            window_radii = window_radii_deg .* deg_to_pix_convFactor;
 
             % Distance of window centers from fixation point (pixels)
             window_eccentricity_deg = this.ExperimentOptions.Window_Eccentricity_Deg*[1 1 1];
-            window_eccentricity = window_eccentricity_deg * mm_per_deg * pixels_per_mm(1);
-
-            expParams.window_radii_deg = window_radii_deg;
-            expParams.window_eccentricity_deg = window_eccentricity_deg;
+            window_eccentricity = window_eccentricity_deg * deg_to_pix_convFactor;
 
 
             window_angles = [thisTrialData.Window1_Angle thisTrialData.Window2_Angle  thisTrialData.Window3_Angle ];
-
-
-
-
 
 
             % Boundary margin around the circle to generate dots in:
@@ -421,10 +412,8 @@ classdef MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 thisTrialData.TimeStartLoop = lastFlipTime;
 
 
-            dlg.Initial_Fixation_Duration = 1;
-            dlg.Motion_Duration = 1;
-                InitialFixationDuration = 1;
-                MotionDuration = 1;
+                dlg.Initial_Fixation_Duration = 1;
+                dlg.Motion_Duration = 1;
 
 
 

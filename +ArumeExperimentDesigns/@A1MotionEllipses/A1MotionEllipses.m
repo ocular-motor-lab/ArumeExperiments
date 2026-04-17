@@ -26,7 +26,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.Max_RefVelocityComponent = { 2 '* (deg/s)' [0.01 100] };
             dlg.Num_RefVelocitiesPerComponent = 5;
 
-            dlg.Do_Full_Grid = { {'0','{1}'} };
+            dlg.Do_Full_Grid = { {'{0}','1'} };
             dlg.Num_Repeats = {8 '* (N)' [1 100] };
 
             dlg.Dots_Per_Window = 700;
@@ -71,6 +71,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.TrialDuration = 5;
             dlg.TrialsBeforeBreak = 15;
             dlg.TrialAbortAction = 'Repeat';
+
         end
         
         function trialTable = SetUpTrialTable(this)
@@ -88,7 +89,9 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
                 %% BUT: I only want 9 of them: In a 3x3 square, but the direction (ie. signage of components) can be varying
                 % use participant_ID to seed the rng so it gets the same one everytime
-                rng(keyHash(participant_ID)/10^10)
+                rng(keyHash(this.Session.subjectCode)/10^10)
+
+                % axis of the 
 
                 % grid of reference speeds
                 [ref_Vx ref_Vy] = meshgrid(-max_degS:0);
@@ -103,6 +106,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 flip_idx_Vy =  randperm(numel(ref_Vy), flip_num_Vy); % which ones to flip
                 ref_Vy(flip_idx_Vy) = -ref_Vy(flip_idx_Vy); % flip those SIGNS
 
+                % make a datetime
+                nowo = datetime("now");
                 % seed the random back to something random to make sure no duplicate trials
                 rng(second(nowo) + minute(nowo) + hour(nowo));
 
@@ -114,8 +119,25 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             % build the table
             t = ArumeCore.TrialTableBuilder();
 
-            t.AddConditionVariable('ReferenceVelocity',ref_vecs);
+            %all the reference vectors
+            celled_ref_vecs = {};
+            for n = 1:size(ref_vecs, 1)
+                celled_ref_vecs{n} = ref_vecs(n, :);
+            end
+            t.AddConditionVariable('ReferenceVelocity',celled_ref_vecs);
+
+            % the condition table will generate the appropriate
+            % combinations itself
+            % t.AddConditionVariable('ReferenceVelocityY',ref_vecs(:, 1)');
+            % t.AddConditionVariable('ReferenceVelocityX',ref_vecs(:, 2)');
+
+            
+
+
+            % comparison vector - how much of an increment on the reference vector?
             t.AddConditionVariable('Increment',-100:(200)/(this.ExperimentOptions.Number_Of_Increments - 1):100);
+
+            % what stimulus type?
             switch(this.ExperimentOptions.Stimulus_Type)
                 case 'both'
                     t.AddConditionVariable('TypeOfIncrement',{'Speed' 'Direction'});
@@ -136,7 +158,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             blockSequence =  'Sequential';
             blockSequenceRepeatitions = this.ExperimentOptions.Num_Repeats;
             abortAction = 'Delay';
-            trialsPerSession = 1000000;
+            trialsPerSession = 100;
             trialTable = t.GenerateTrialTable(trialSequence, blockSequence, blockSequenceRepeatitions, abortAction,trialsPerSession);
 
 
@@ -144,22 +166,33 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             trialTable.Window2_Angle = wrapTo360(trialTable.Window1_Angle-120);
             trialTable.Window3_Angle = wrapTo360(trialTable.Window1_Angle-240);
 
-            compVelocity = trialTable.ReferenceVelocity; % init to something
+            compVelocity = cell(size(trialTable.ReferenceVelocity, 1), 1);
+            %compVelocity = trialTable.ReferenceVelocity;
+            %compVelocityXY = [trialTable.ReferenceVelocityX, trialTable.ReferenceVelocityY]; % init to something
             directionTrials = t.ConditionTable.TypeOfIncrement=='Direction';
             speedTrials = t.ConditionTable.TypeOfIncrement=='Speed';
-            
-            angleIncrement = this.ExperimentOptions.Max_Increment_Direction_Angle .* trialTable.Increment/100;
 
-            for i=1:height(directionTrials)
-                thisTrialAngle = angleIncrement(directionTrials(i));
+            directionTrialsInds = find(directionTrials==1);
+            speedTrialsInds = find(speedTrials==1);
+            
+            % only want the increments for the direction trials
+            angleIncrement = this.ExperimentOptions.Max_Increment_Direction_Angle .* trialTable.Increment(directionTrials)/100;
+
+            for i=1:size(directionTrialsInds, 1)
+                thisTrialAngle = angleIncrement(i);
                 rotation_matrix = [ cosd(thisTrialAngle), -sind(thisTrialAngle);
                     sind(thisTrialAngle), cosd(thisTrialAngle)];
 
-                compVelocity(directionTrials(i),:) = (rotation_matrix * trialTable.ReferenceVelocity(directionTrials(i),:)')';
+                %compVelocity(directionTrialsInds(i),:) = (rotation_matrix * trialTable.ReferenceVelocity{directionTrialsInds(i),:}')';
+                compVelocity(directionTrialsInds(i)) = {(rotation_matrix * trialTable.ReferenceVelocity{directionTrialsInds(i),:}')'};
+            end
+
+            for i = 1:size(speedTrialsInds, 1)
+                compVelocity(speedTrialsInds(i)) = {trialTable.ReferenceVelocity{speedTrialsInds(i),:} + ...
+                    this.ExperimentOptions.Max_Increment_Speed_Percent/100 .* trialTable.Increment(speedTrialsInds(i))/100 .* trialTable.ReferenceVelocity{speedTrialsInds(i),:}};
+
             end
             
-            compVelocity(speedTrials,:) = trialTable.ReferenceVelocity(speedTrials,:) + ...
-                this.ExperimentOptions.Max_Increment_Speed_Percent .* trialTable.Increment/100 .* trialTable.ReferenceVelocity(speedTrials,:);
 
             trialTable.Window1_Velocity = trialTable.ReferenceVelocity;
             trialTable.Window2_Velocity = trialTable.ReferenceVelocity;

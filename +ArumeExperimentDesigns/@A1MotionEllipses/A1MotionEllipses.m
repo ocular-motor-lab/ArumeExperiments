@@ -63,6 +63,9 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.DisplayOptions.ScreenHeight = { 95.6009 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenDistance = { 125 '* (cm)' [1 3000] };
 
+            dlg.ScreenNumber = {1 '' [0 5]};
+            dlg.Debug.DebugMode = {0 {1}};
+
             %     % case 'ClaraDesk'
             % screen_dims_mm = [596.74, 335.66]; %https://dl.dell.com/manuals/all-products/esuprt_electronics_accessories/esuprt_electronics_accessories_monitors/dell-p2721q-monitor_user's-guide_en-us.pdf
             % distance_from_screen = 0.5; %meters
@@ -130,9 +133,6 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             % combinations itself
             % t.AddConditionVariable('ReferenceVelocityY',ref_vecs(:, 1)');
             % t.AddConditionVariable('ReferenceVelocityX',ref_vecs(:, 2)');
-
-            
-
 
             % comparison vector - how much of an increment on the reference vector?
             t.AddConditionVariable('Increment',-100:(200)/(this.ExperimentOptions.Number_Of_Increments - 1):100);
@@ -211,8 +211,6 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             Enum = ArumeCore.ExperimentDesign.getEnum();
             trialResult = Enum.trialResult.CORRECT;
 
-
-
             % the range that the comparison stimulus can increment from the reference
             inc_range_perc = this.ExperimentOptions.Max_Increment_Speed_Percent/100*[-1 1];
             inc_range_dir = this.ExperimentOptions.Max_Increment_Direction_Angle*[-1 1]; % in degrees
@@ -220,8 +218,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             stim_type = this.ExperimentOptions.Stimulus_Type; %{ {'{both}' 'speed' 'direction'} };
             max_degS = this.ExperimentOptions.Max_RefVelocityComponent;
 
-            white_col = 255*[1 1 1] * WhiteIndex(screenNumber);
-            black_col = [1 1 1] * BlackIndex(screenNumber);
+            white_col = 255*[1 1 1] * WhiteIndex(this.ExperimentOptions.ScreenNumber);
+            black_col = [1 1 1] * BlackIndex(this.ExperimentOptions.ScreenNumber);
             grey_col = white_col * this.ExperimentOptions.Dots_Grey_Level;
             all_dots_colour = grey_col;
 
@@ -231,8 +229,31 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             lifetime_S  = this.ExperimentOptions.Dots_LifeTime;
 
 
-            degS_to_pixFrame_convFactor = mm_per_deg*pixels_per_mm/refreshHz;
-            deg_to_pix_convFactor = mm_per_deg * pixels_per_mm(1);
+            % HARD CODED FOR THE SAMSUNG OLED
+
+            % this.ExperimentOptions.DisplayOptions.ScreenWidth = { 169.957 '* (cm)' [1 3000] };
+            % this.ExperimentOptions.DisplayOptions.ScreenHeight = { 95.6009 '* (cm)' [1 3000] };
+            % this.ExperimentOptions.DisplayOptions.ScreenDistance = { 125 '* (cm)' [1 3000] };
+
+
+            % Get the refresh rate and screen dimensions (in pixels) of the screen
+            this.ExperimentOptions.DisplayOptions.refreshHz = Screen('FrameRate', this.ExperimentOptions.ScreenNumber);
+            [windowRect] = Screen('Rect', this.ExperimentOptions.ScreenNumber);
+            this.ExperimentOptions.DisplayOptions.screen_dims_pix = windowRect(3:4);
+
+            % Calculate window center positions
+            screenCenterX = windowRect(3) / 2;
+            screenCenterY = windowRect(4) / 2;
+            
+            this.ExperimentOptions.DisplayOptions.screen_dims_mm = 10.*[this.ExperimentOptions.DisplayOptions.ScreenWidth, this.ExperimentOptions.DisplayOptions.ScreenHeight]; %https://www.displayspecifications.com/en/model/cd7a3130
+            this.ExperimentOptions.DisplayOptions.distance_from_screen = this.ExperimentOptions.DisplayOptions.ScreenDistance/100; %meters
+
+            this.ExperimentOptions.DisplayOptions.pixels_per_mm = this.ExperimentOptions.DisplayOptions.screen_dims_pix./this.ExperimentOptions.DisplayOptions.screen_dims_mm;
+            % mm_per_pixel = screen_dims_mm./screen_dims_pix;
+            this.ExperimentOptions.DisplayOptions.mm_per_deg = tan(deg2rad(1)) * this.ExperimentOptions.DisplayOptions.distance_from_screen * 1000;
+
+            degS_to_pixFrame_convFactor = this.ExperimentOptions.DisplayOptions.mm_per_deg*this.ExperimentOptions.DisplayOptions.pixels_per_mm/this.ExperimentOptions.DisplayOptions.refreshHz;
+            this.ExperimentOptions.DisplayOptions.deg_to_pix_convFactor = this.ExperimentOptions.DisplayOptions.mm_per_deg * this.ExperimentOptions.DisplayOptions.pixels_per_mm(1);
 
 
 
@@ -240,14 +261,17 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             %% Window config
             % circle window radii (deg) - could be different for each window
             window_radii_deg = this.ExperimentOptions.Window_Radius_Deg*[1 1 1];
-            window_radii = window_radii_deg .* deg_to_pix_convFactor;
+            window_radii = window_radii_deg .* this.ExperimentOptions.DisplayOptions.deg_to_pix_convFactor;
 
             % Distance of window centers from fixation point (pixels)
             window_eccentricity_deg = this.ExperimentOptions.Window_Eccentricity_Deg*[1 1 1];
-            window_eccentricity = window_eccentricity_deg * deg_to_pix_convFactor;
+            window_eccentricity = window_eccentricity_deg * this.ExperimentOptions.DisplayOptions.deg_to_pix_convFactor;
 
+            % Assemble together all the rotational positions of the windows
+            window_angles = [this.TrialTable.Window1_Angle, this.TrialTable.Window2_Angle, this.TrialTable.Window3_Angle];
 
-            window_angles = [thisTrialData.Window1_Angle thisTrialData.Window2_Angle  thisTrialData.Window3_Angle ];
+            % Number of trials
+            this.ExperimentOptions.numTrials = size(this.TrialTable, 1);
 
 
             % Boundary margin around the circle to generate dots in:
@@ -255,23 +279,46 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             % for lotsdots1.bordersX/bordersY, etc.
             bord_marg = 3;
 
-            window_centers = zeros(numTrials, 3, 2);
+            %% THIS MAY NEED TO BE ADDED TO THE EXPERIMENT OPTIONS?
+            window_centers = zeros(this.ExperimentOptions.numTrials, 3, 2);
 
-            for n = 1:numTrials
+            for n = 1:this.ExperimentOptions.numTrials
                 for w = 1:3
                     angle_rad = deg2rad(window_angles(n, w));
-                    window_centers(n, w, 1) = screenCenterX + window_eccentricity * cos(angle_rad);
-                    window_centers(n, w, 2) = screenCenterY - window_eccentricity * sin(angle_rad);  % negative because Y increases downward
+                    window_centers(n, w, 1) = screenCenterX + this.ExperimentOptions.Window_Radius_Deg * cos(angle_rad);
+                    window_centers(n, w, 2) = screenCenterY - this.ExperimentOptions.Window_Radius_Deg * sin(angle_rad);  % negative because Y increases downward
                 end
             end
 
+            %% Assign the parameters to the different windows
+            all_dots_colour = grey_col;
+
+            % Window 1 dot parameters - this structure keeps the functionality for simultaneous motion
+            window1_vec1 = this.TrialTable.Window1_Velocity{1, :};   % Movement vector for first half of dots
+            window1_vec2 = window1_vec1;    % Movement vector for second half of dots
+            window1_colour1 = all_dots_colour;
+            window1_colour2 = window1_colour1;
+            
+            % Window 2 dot parameters
+            window2_vec1 = this.TrialTable.Window2_Velocity{1, :};
+            window2_vec2 = window2_vec1;
+            window2_colour1 = all_dots_colour;
+            window2_colour2 = window2_colour1;
+            
+            % Window 3 dot parameters
+            window3_vec1 = this.TrialTable.Window3_Velocity{1, :};
+            window3_vec2 = window3_vec1;  
+            window3_colour1 = all_dots_colour;
+            window3_colour2 = window3_colour1;
+
             %% Create LotsDots for Window 1
+            speed = 1; % unneed parameter; set to 1
             lifetimes1   = (lifetime_S*ones(dots_per_window, 1));
             ages1        = lifetimes1(1)*rand(dots_per_window, 1);
             diameters1   = (diameter*ones(dots_per_window, 1));
             speeds1      = (speed*ones(dots_per_window,1));
             locations1   = (ones(dots_per_window, 2));
-            refreshHzes1 = (refreshHz*ones(dots_per_window, 1));
+            refreshHzes1 = (this.ExperimentOptions.DisplayOptions.refreshHz*ones(dots_per_window, 1));
 
             draw_bordersX1 = [window_centers(1, 1, 1) - bord_marg*window_radii(1), window_centers(1, 1, 1) + bord_marg*window_radii(1)];
             draw_bordersY1 = [window_centers(1, 1, 2) - bord_marg*window_radii(1), window_centers(1, 1, 2) + bord_marg*window_radii(1)];
@@ -295,6 +342,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             moveVecs1 = zeros(dots_per_window, 2);
             idx0_1 = ID_array1 == 0;
             idx1_1 = ID_array1 == 1;
+
+
             moveVecs1(idx0_1, :) = repmat(window1_vec1, sum(idx0_1), 1);
             moveVecs1(idx1_1, :) = repmat(window1_vec2, sum(idx1_1), 1);
 
@@ -321,7 +370,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             diameters2   = (diameter*ones(dots_per_window, 1));
             speeds2      = (speed*ones(dots_per_window,1));
             locations2   = (ones(dots_per_window, 2));
-            refreshHzes2 = (refreshHz*ones(dots_per_window, 1));
+            refreshHzes2 = (this.ExperimentOptions.DisplayOptions.refreshHz*ones(dots_per_window, 1));
 
             draw_bordersX2 = [window_centers(1, 2, 1) - bord_marg*window_radii(2), window_centers(1, 2, 1) + bord_marg*window_radii(2)];
             draw_bordersY2 = [window_centers(1, 2, 2) - bord_marg*window_radii(2), window_centers(1, 2, 2) + bord_marg*window_radii(2)];
@@ -371,7 +420,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             diameters3   = (diameter*ones(dots_per_window, 1));
             speeds3      = (speed*ones(dots_per_window,1));
             locations3   = (ones(dots_per_window, 2));
-            refreshHzes3 = (refreshHz*ones(dots_per_window, 1));
+            refreshHzes3 = (this.ExperimentOptions.DisplayOptions.refreshHz*ones(dots_per_window, 1));
 
             draw_bordersX3 = [window_centers(1, 3, 1) - bord_marg*window_radii(3), window_centers(1, 3, 1) + bord_marg*window_radii(3)];
             draw_bordersY3 = [window_centers(1, 3, 2) - bord_marg*window_radii(3), window_centers(1, 3, 2) + bord_marg*window_radii(3)];

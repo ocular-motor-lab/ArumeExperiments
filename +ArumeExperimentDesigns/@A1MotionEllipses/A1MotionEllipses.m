@@ -7,7 +7,10 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
         lots_dots1
         lots_dots2
-        lots_dots3
+        lots_dots3213132q
+        
+
+        gazedata
     end
     
     % ---------------------------------------------------------------------
@@ -26,6 +29,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.Max_RefVelocityComponent = { 2 '* (deg/s)' [0.01 100] };
             dlg.Num_RefVelocitiesPerComponent = 5;
 
+            %% PUT IN THE EYETRACKER OPTIONS!! QQ TODO
+
             dlg.Do_Full_Grid = { {'{0}','1'} };
             dlg.Num_Repeats = {8 '* (N)' [1 100] };
 
@@ -37,7 +42,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.Window_Radius_Deg   = { 0.5 '* (deg)' [0.01 100] };
             dlg.Window_Eccentricity_Deg   = { 0.75 '* (deg)' [0.01 100] };
 
-            dlg.Fixation_Check_WinSize = 1;
+            dlg.Fixation_Check_WinSize = {1 '* (deg)' [0.01 100]};
             dlg.Fixation_Check_TimeOut = 0.3;
 
             %% Fixation Configuration
@@ -70,10 +75,12 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             % distance_from_screen = 0.5; %meters
             
             dlg.HitKeyBeforeTrial = 0;
-            dlg.TrialDuration = 5;
+            dlg.TrialDuration = 50000000; % Very large to prevent skipping forward
             dlg.TrialsBeforeBreak = 15;
             dlg.TrialAbortAction = 'Repeat';
 
+            dlg.EyeTrackerCalibProportion = {[.30,.30],'Calibration Area (width, height)',[0.05,1],1};
+            
         end
         
         function trialTable = SetUpTrialTable(this)
@@ -157,7 +164,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             blockSequence =  'Sequential';
             blockSequenceRepeatitions = this.ExperimentOptions.Num_Repeats;
             abortAction = 'Delay';
-            trialsPerSession = 100;
+            trialsPerSession = 1000;
             trialTable = t.GenerateTrialTable(trialSequence, blockSequence, blockSequenceRepeatitions, abortAction,trialsPerSession);
 
 
@@ -203,13 +210,14 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
 
         end
-        
-        % runPreTrial
-        % use this to prepare things before the trial starts 
-        % run before EACH trial
-        function [trialResult, thisTrialData] = runPreTrial(this, thisTrialData )
-            Enum = ArumeCore.ExperimentDesign.getEnum();
-            trialResult = Enum.trialResult.CORRECT;
+
+        % run initialization before the first trial is run
+        % Use this function to initialize things that need to be
+        % initialized before running but don't need to be initialized for
+        % every single trial
+        function shouldContinue = initBeforeRunning( this )
+
+            shouldContinue = 1;
 
             % the range that the comparison stimulus can increment from the reference
             inc_range_perc = this.ExperimentOptions.Max_Increment_Speed_Percent/100*[-1 1];
@@ -224,13 +232,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             
             % screen bg colour
             this.ExperimentOptions.DisplayOptions.BackgroundColor = 0;
-
-
-            dots_per_window = this.ExperimentOptions.Dots_Per_Window;  % dots per window
-            num_dots    = dots_per_window*3;  % total dots across all 3 windows
-            diameter    = this.ExperimentOptions.Dots_Diameter;
-            lifetime_S  = this.ExperimentOptions.Dots_LifeTime;
-
+            this.ExperimentOptions.DisplayOptions.ForegroundColor = 127;
 
             % HARD CODED FOR THE SAMSUNG OLED
 
@@ -238,6 +240,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             this.ExperimentOptions.DisplayOptions.refreshHz = Screen('FrameRate', this.ExperimentOptions.DisplayOptions.SelectedScreen);
             [windowRect] = Screen('Rect', this.ExperimentOptions.DisplayOptions.SelectedScreen);
             this.ExperimentOptions.DisplayOptions.screen_dims_pix = windowRect(3:4);
+            this.ExperimentOptions.DisplayOptions.windowRect = windowRect;
 
             % Calculate window center positions
             this.ExperimentOptions.DisplayOptions.screenCenterX = windowRect(3) / 2;
@@ -250,26 +253,59 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             % mm_per_pixel = screen_dims_mm./screen_dims_pix;
             this.ExperimentOptions.DisplayOptions.mm_per_deg = tan(deg2rad(1)) * this.ExperimentOptions.DisplayOptions.distance_from_screen * 1000;
 
-            degS_to_pixFrame_convFactor = this.ExperimentOptions.DisplayOptions.mm_per_deg*this.ExperimentOptions.DisplayOptions.pixels_per_mm/this.ExperimentOptions.DisplayOptions.refreshHz;
+            this.ExperimentOptions.DisplayOptions.degS_to_pixFrame_convFactor = this.ExperimentOptions.DisplayOptions.mm_per_deg*this.ExperimentOptions.DisplayOptions.pixels_per_mm/this.ExperimentOptions.DisplayOptions.refreshHz;
             this.ExperimentOptions.DisplayOptions.deg_to_pix_convFactor = this.ExperimentOptions.DisplayOptions.mm_per_deg * this.ExperimentOptions.DisplayOptions.pixels_per_mm(1);
 
-
+            this.ExperimentOptions.Fixation_Check_WinSize_pix = this.ExperimentOptions.Fixation_Check_WinSize*this.ExperimentOptions.DisplayOptions.deg_to_pix_convFactor;
 
 
             %% Window config
             % circle window radii (deg) - could be different for each window
             window_radii_deg = this.ExperimentOptions.Window_Radius_Deg*[1 1 1];
-            window_radii = window_radii_deg .* this.ExperimentOptions.DisplayOptions.deg_to_pix_convFactor;
+            this.ExperimentOptions.window_radii = window_radii_deg .* this.ExperimentOptions.DisplayOptions.deg_to_pix_convFactor;
 
             % Distance of window centers from fixation point (pixels)
-            window_eccentricity_deg = this.ExperimentOptions.Window_Eccentricity_Deg*[1 1 1];
-            window_eccentricity = window_eccentricity_deg(1) * this.ExperimentOptions.DisplayOptions.deg_to_pix_convFactor;
+            this.ExperimentOptions.window_eccentricity_deg = this.ExperimentOptions.Window_Eccentricity_Deg*[1 1 1];
+            this.ExperimentOptions.window_eccentricity = this.ExperimentOptions.window_eccentricity_deg(1) * this.ExperimentOptions.DisplayOptions.deg_to_pix_convFactor;
 
             % Assemble together all the rotational positions of the windows
-            window_angles = [this.TrialTable.Window1_Angle, this.TrialTable.Window2_Angle, this.TrialTable.Window3_Angle];
+            this.ExperimentOptions.window_angles = [this.TrialTable.Window1_Angle, this.TrialTable.Window2_Angle, this.TrialTable.Window3_Angle];
+
 
             % Number of trials
             this.ExperimentOptions.numTrials = size(this.TrialTable, 1);
+
+            % keeps track of trial duration 
+            actualDuration = min(this.ExperimentOptions.Motion_Duration, this.ExperimentOptions.TrialDuration);
+            
+            % store all gaze contingent data
+            nrows = ceil(this.Graph.frameRate*actualDuration)*1.5;
+            gazedata = table;
+            gazedata.ELtime = nan(nrows,1);
+            gazedata.PTBtime = nan(nrows,1);
+            gazedata.LGazeX = nan(nrows,1);
+            gazedata.LGazeY = nan(nrows,1);
+            gazedata.RGazeX = nan(nrows,1);
+            gazedata.RGazeY = nan(nrows,1);
+            this.gazedata = gazedata;
+
+
+        end
+        
+        % runPreTrial
+        % use this to prepare things before the trial starts 
+        % This runs before EACH trial
+        function [trialResult, thisTrialData] = runPreTrial(this, thisTrialData )
+            Enum = ArumeCore.ExperimentDesign.getEnum();
+            trialResult = Enum.trialResult.CORRECT;
+
+
+            dots_per_window = this.ExperimentOptions.Dots_Per_Window;  % dots per window
+            num_dots    = dots_per_window*3;  % total dots across all 3 windows
+            diameter    = this.ExperimentOptions.Dots_Diameter;
+            lifetime_S  = this.ExperimentOptions.Dots_LifeTime;
+
+            window_radii = this.ExperimentOptions.window_radii;
 
 
             % Boundary margin around the circle to generate dots in:
@@ -278,33 +314,32 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             bord_marg = 3;
 
             %% THIS MAY NEED TO BE ADDED TO THE EXPERIMENT OPTIONS?
-            window_centers = zeros(this.ExperimentOptions.numTrials, 3, 2);
+            window_centers = zeros(3, 2);
 
-            for n = 1:this.ExperimentOptions.numTrials
-                for w = 1:3
-                    angle_rad = deg2rad(window_angles(n, w));
-                    window_centers(n, w, 1) = this.ExperimentOptions.DisplayOptions.screenCenterX + window_eccentricity * cos(angle_rad);
-                    window_centers(n, w, 2) = this.ExperimentOptions.DisplayOptions.screenCenterY - window_eccentricity * sin(angle_rad);  % negative because Y increases downward
-                end
+            for w = 1:3
+                angle_rad = deg2rad(this.ExperimentOptions.window_angles(thisTrialData.TrialNumber, w));
+                window_centers(w, 1) = this.ExperimentOptions.DisplayOptions.screenCenterX + this.ExperimentOptions.window_eccentricity * cos(angle_rad);
+                window_centers(w, 2) = this.ExperimentOptions.DisplayOptions.screenCenterY - this.ExperimentOptions.window_eccentricity * sin(angle_rad);  % negative because Y increases downward
             end
+
 
             %% Assign the parameters to the different windows
             all_dots_colour = this.ExperimentOptions.DisplayOptions.grey_col;
 
             % Window 1 dot parameters - this structure keeps the functionality for simultaneous motion
-            window1_vec1 = degS_to_pixFrame_convFactor(1)*this.TrialTable.Window1_Velocity{1, :};   % Movement vector for first half of dots
+            window1_vec1 = this.ExperimentOptions.DisplayOptions.degS_to_pixFrame_convFactor(1)*this.TrialTable.Window1_Velocity{thisTrialData.TrialNumber, :};   % Movement vector for first half of dots
             window1_vec2 = window1_vec1;    % Movement vector for second half of dots
             window1_colour1 = all_dots_colour;
             window1_colour2 = window1_colour1;
             
             % Window 2 dot parameters
-            window2_vec1 = degS_to_pixFrame_convFactor(1)*this.TrialTable.Window2_Velocity{1, :};
+            window2_vec1 = this.ExperimentOptions.DisplayOptions.degS_to_pixFrame_convFactor(1)*this.TrialTable.Window2_Velocity{thisTrialData.TrialNumber, :};
             window2_vec2 = window2_vec1;
             window2_colour1 = all_dots_colour;
             window2_colour2 = window2_colour1;
             
             % Window 3 dot parameters
-            window3_vec1 = degS_to_pixFrame_convFactor(1)*this.TrialTable.Window3_Velocity{1, :};
+            window3_vec1 = this.ExperimentOptions.DisplayOptions.degS_to_pixFrame_convFactor(1)*this.TrialTable.Window3_Velocity{thisTrialData.TrialNumber, :};
             window3_vec2 = window3_vec1;  
             window3_colour1 = all_dots_colour;
             window3_colour2 = window3_colour1;
@@ -318,8 +353,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             locations1   = (ones(dots_per_window, 2));
             refreshHzes1 = (this.ExperimentOptions.DisplayOptions.refreshHz*ones(dots_per_window, 1));
 
-            draw_bordersX1 = [window_centers(1, 1, 1) - bord_marg*window_radii(1), window_centers(1, 1, 1) + bord_marg*window_radii(1)];
-            draw_bordersY1 = [window_centers(1, 1, 2) - bord_marg*window_radii(1), window_centers(1, 1, 2) + bord_marg*window_radii(1)];
+            draw_bordersX1 = [window_centers(1, 1) - bord_marg*window_radii(1), window_centers(1, 1) + bord_marg*window_radii(1)];
+            draw_bordersY1 = [window_centers(1, 2) - bord_marg*window_radii(1), window_centers(1, 2) + bord_marg*window_radii(1)];
 
             % Fill locations randomly around window 1's circular area
             for n = 1:dots_per_window
@@ -329,7 +364,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
                 locations1(n, :)     = [randX, randY]; % dot locations filled
 
-                world_dimses1(n,:) = windowRect;
+                world_dimses1(n,:) = this.ExperimentOptions.DisplayOptions.windowRect;
                 colours1(n,:) = this.ExperimentOptions.DisplayOptions.black_col;
             end
 
@@ -356,8 +391,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 world_dimses1, refreshHzes1, moveVecs1, ID_array1, ON_colours1);
 
             % Set window 1 boundaries
-            lots_dots1.centerX = window_centers(1, 1, 1);
-            lots_dots1.centerY = window_centers(1, 1, 2);
+            lots_dots1.centerX = window_centers(1, 1);
+            lots_dots1.centerY = window_centers(1, 2);
             lots_dots1.radius = window_radii(1);
             lots_dots1.bordersX = draw_bordersX1; %QQ: change this every trial
             lots_dots1.bordersY = draw_bordersY1;
@@ -370,8 +405,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             locations2   = (ones(dots_per_window, 2));
             refreshHzes2 = (this.ExperimentOptions.DisplayOptions.refreshHz*ones(dots_per_window, 1));
 
-            draw_bordersX2 = [window_centers(1, 2, 1) - bord_marg*window_radii(2), window_centers(1, 2, 1) + bord_marg*window_radii(2)];
-            draw_bordersY2 = [window_centers(1, 2, 2) - bord_marg*window_radii(2), window_centers(1, 2, 2) + bord_marg*window_radii(2)];
+            draw_bordersX2 = [window_centers(2, 1) - bord_marg*window_radii(2), window_centers(2, 1) + bord_marg*window_radii(2)];
+            draw_bordersY2 = [window_centers(2, 2) - bord_marg*window_radii(2), window_centers(2, 2) + bord_marg*window_radii(2)];
 
             % Fill locations randomly around window 2's circular area
             for n = 1:dots_per_window
@@ -381,7 +416,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
                 locations2(n, :)     = [randX, randY]; % dot locations filled
 
-                world_dimses2(n,:) = windowRect;
+                world_dimses2(n,:) = this.ExperimentOptions.DisplayOptions.windowRect;
                 colours2(n,:) = this.ExperimentOptions.DisplayOptions.black_col;
             end
 
@@ -406,8 +441,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 world_dimses2, refreshHzes2, moveVecs2, ID_array2, ON_colours2);
 
             % Set window 2 boundaries
-            lots_dots2.centerX = window_centers(1, 2, 1);
-            lots_dots2.centerY = window_centers(1, 2, 2);
+            lots_dots2.centerX = window_centers(2, 1);
+            lots_dots2.centerY = window_centers(2, 2);
             lots_dots2.radius = window_radii(2);
             lots_dots2.bordersX = draw_bordersX2;
             lots_dots2.bordersY = draw_bordersY2;
@@ -420,8 +455,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             locations3   = (ones(dots_per_window, 2));
             refreshHzes3 = (this.ExperimentOptions.DisplayOptions.refreshHz*ones(dots_per_window, 1));
 
-            draw_bordersX3 = [window_centers(1, 3, 1) - bord_marg*window_radii(3), window_centers(1, 3, 1) + bord_marg*window_radii(3)];
-            draw_bordersY3 = [window_centers(1, 3, 2) - bord_marg*window_radii(3), window_centers(1, 3, 2) + bord_marg*window_radii(3)];
+            draw_bordersX3 = [window_centers(3, 1) - bord_marg*window_radii(3), window_centers(3, 1) + bord_marg*window_radii(3)];
+            draw_bordersY3 = [window_centers(3, 2) - bord_marg*window_radii(3), window_centers(3, 2) + bord_marg*window_radii(3)];
 
             % Fill locations randomly around window 2's circular area
             for n = 1:dots_per_window
@@ -431,7 +466,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
                 locations3(n, :)     = [randX, randY]; % dot locations filled
 
-                world_dimses3(n,:) = windowRect;
+                world_dimses3(n,:) = this.ExperimentOptions.DisplayOptions.windowRect;
                 colours3(n,:) = this.ExperimentOptions.DisplayOptions.black_col;
             end
 
@@ -456,11 +491,11 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 world_dimses3, refreshHzes3, moveVecs3, ID_array3, ON_colours3);
 
             % Set window 3 boundaries
-            lots_dots3.centerX = window_centers(1, 3, 1);
-            lots_dots3.centerY = window_centers(1, 3, 2);
+            lots_dots3.centerX = window_centers(3, 1);
+            lots_dots3.centerY = window_centers(3, 2);
             lots_dots3.radius = window_radii(3);
-            lots_dots3.bordersX = [window_centers(1, 3, 1) - bord_marg*window_radii(3), window_centers(1, 3, 1) + bord_marg*window_radii(3)];
-            lots_dots3.bordersY = [window_centers(1, 3, 2) - bord_marg*window_radii(3), window_centers(1, 3, 2) + bord_marg*window_radii(3)];
+            lots_dots3.bordersX = [window_centers(3, 1) - bord_marg*window_radii(3), window_centers(3, 1) + bord_marg*window_radii(3)];
+            lots_dots3.bordersY = [window_centers(3, 2) - bord_marg*window_radii(3), window_centers(3, 2) + bord_marg*window_radii(3)];
 
 
 
@@ -471,7 +506,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
             % little invisible prelim run to make the dots spots more diffuse
             prelim_run = true;
-            prelim_run_time = 3;
+            prelim_run_time = 0;
             time = 0;
             % Query the frame duration
             ifi = Screen('GetFlipInterval', this.Graph.window);
@@ -499,6 +534,21 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         function [trialResult, thisTrialData] = runTrial( this, thisTrialData )
 
             try
+
+                
+                if this.ExperimentOptions.UseEyeTracker
+                    nframesctr = 1;
+
+                    [framenumber, eyetrackertime] = this.eyeTracker.RecordEvent( ...
+                        sprintf('STIMULUS_ONSET [,trial=%d condition=%d]', ...
+                        thisTrialData.TrialNumber, thisTrialData.Condition) );
+                
+                    % matches the frame number to the eyetracker time at the start of the trial
+                    thisTrialData.EyeTrackerFrameNumberStimulusOnset = framenumber;
+                    thisTrialData.EyeTrackerTimeStimulusOnset = eyetrackertime;
+
+                end
+
                 %% Fixation Configuration
                 fixation_type = this.ExperimentOptions.Fixation_Type;
                 fixation_size = this.ExperimentOptions.Fixation_Size_Deg;
@@ -515,7 +565,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 thisTrialData.TimeStartLoop = lastFlipTime;
 
 
-                this.ExperimentOptions.Initial_Fixation_Duration = 0.25;
+                this.ExperimentOptions.Initial_Fixation_Duration = 0.5;
                 this.ExperimentOptions.Motion_Duration = 1;
 
                 % make this a bit shorter
@@ -534,34 +584,16 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     % --- Drawing of stimulus -----------------------------------------
                     % -----------------------------------------------------------------
 
-                    % Draw fixation spot
-                    if(1)
-
-                        % TODO: grab experiment options
-
-                        %-- Find the center of the screen
-                        [mx, my] = RectCenter(graph.wRect);
-
-                        fixRect = [0 0 10 10];
-                        fixRect = CenterRectOnPointd( fixRect, mx, my );
-                        Screen('FillOval', graph.window,  this.fixColor, fixRect);
-
-                        if strcmp(fixation_type, 'circle')
-                            fixation_rect = [screenCenterX - fixation_size/2, screenCenterY - fixation_size/2, ...
-                                screenCenterX + fixation_size/2, screenCenterY + fixation_size/2];
-                            Screen('FillOval', graph.window, fixation_color, fixation_rect);
-                        elseif strcmp(fixation_type, 'cross')
-                            % Horizontal and vertical lines for cross
-                            cross_coords = [
-                                screenCenterX - fixation_size/2, screenCenterY, screenCenterX + fixation_size/2, screenCenterY;  % horizontal
-                                screenCenterX, screenCenterY - fixation_size/2, screenCenterX, screenCenterY + fixation_size/2   % vertical
-                                ];
-                            Screen('DrawLines', graph.window, cross_coords', fixation_line_width, fixation_color, [0 0], 2);
-                        end
-                    end
 
                     % Draw dots
-                    if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration ...
+                    if (secondsElapsed < this.ExperimentOptions.Initial_Fixation_Duration)
+                       
+                        % Move the dots without showing them
+                        this.lots_dots1.move();
+                        this.lots_dots2.move();
+                        this.lots_dots3.move();
+                        
+                    elseif ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration ...
                             && secondsElapsed < this.ExperimentOptions.Initial_Fixation_Duration + this.ExperimentOptions.Motion_Duration)
 
                         % first move dots
@@ -615,19 +647,48 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     
                     end
 
+
+                    % Draw fixation spot
+                    if(1)
+
+                        % TODO: grab experiment options
+
+                        %-- Find the center of the screen
+                        [mx, my] = RectCenter(graph.wRect);
+
+                        fixRect = [0 0 10 10];
+                        fixRect = CenterRectOnPointd( fixRect, mx, my );
+                        Screen('FillOval', graph.window,  this.fixColor, fixRect);
+
+                        if strcmp(fixation_type, 'circle')
+                            fixation_rect = [screenCenterX - fixation_size/2, screenCenterY - fixation_size/2, ...
+                                screenCenterX + fixation_size/2, screenCenterY + fixation_size/2];
+                            Screen('FillOval', graph.window, fixation_color, fixation_rect);
+                        elseif strcmp(fixation_type, 'cross')
+                            % Horizontal and vertical lines for cross
+                            cross_coords = [
+                                screenCenterX - fixation_size/2, screenCenterY, screenCenterX + fixation_size/2, screenCenterY;  % horizontal
+                                screenCenterX, screenCenterY - fixation_size/2, screenCenterX, screenCenterY + fixation_size/2   % vertical
+                                ];
+                            Screen('DrawLines', graph.window, cross_coords', fixation_line_width, fixation_color, [0 0], 2);
+                        end
+                    end
                    
 
 
                     % -----------------------------------------------------------------
                     % --- END Drawing of stimulus -------------------------------------
                     % -----------------------------------------------------------------
-                    
+
+                    % Get all gaze data
+                    PBT_Time = this.Graph.Flip(this, thisTrialData, secondsRemaining);
+  
                     % -----------------------------------------------------------------
                     % -- Flip buffers to refresh screen -------------------------------
                     % -----------------------------------------------------------------
                     % Screen('Flip', this.Graph.window)
                     % this.Graph.Flip(this, secondsRemaining);
-                    this.Graph.Flip(this, thisTrialData, secondsRemaining); % only shows all the variables when
+                    %this.Graph.Flip(this, thisTrialData, secondsRemaining); % only shows all the variables when
                     %in debug mode
                     % -----------------------------------------------------------------
 
@@ -644,13 +705,14 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                             if ( keyIsDown )
                                 keys = find(keyCode);
                                 for i=1:length(keys)
-                                    KbName(keys(i));
+                                    KbName(keys(i))
+
                                     switch(KbName(keys(i)))
-                                        case [KbName('1') KbName('1!')]
+                                        case {'1' '1!'}
                                             response = 1;
-                                        case [KbName('2') KbName('2@')]
+                                        case {'2' '2@'}
                                             response = 2;
-                                        case [KbName('3') KbName('3#')]
+                                        case {'3' '3#'}
                                             response = 3;
                                     end
                                 end
@@ -659,7 +721,25 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                                 thisTrialData.Response = response;
                                 thisTrialData.ResponseTime = GetSecs;
 
+                                if this.ExperimentOptions.UseEyeTracker
+                                    [framenumber, eyetrackertime] = this.eyeTracker.RecordEvent( ...
+                                        sprintf('STIMULUS_OFFSET [trial=%d, condition=%d]', ...
+                                        thisTrialData.TrialNumber, thisTrialData.Condition) );
+                                
+                                    thisTrialData.EyeTrackerFrameNumberStimulusOffset = framenumber;
+                                    thisTrialData.EyeTrackerTimeStimulusOffset = eyetrackertime;
+            
+                                    % truncate table to correct sz
+                                    this.gazedata = this.gazedata(1:nframesctr-1,:);
+                                    thisTrialData.gazedatatbl = {this.gazedata};
+                                    
+                                    % establish how much time there were between frames
+                                    thisTrialData.EmpiricalFPS = (nframesctr-2)/sum(diff(this.gazedata.PTBtime));
+            
+                                end
+
                                 break;
+
                             end
                         end
                     end
@@ -667,6 +747,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     % --- END Collecting responses  -----------------------------------
                     % -----------------------------------------------------------------
 
+                    
 
 
                     % -----------------------------------------------------------------
@@ -675,12 +756,49 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
                     if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration + this.ExperimentOptions.Min_Motion_Duration_Before_Response)
 
-                        this.checkFixation(this, fixRect(1:2), this.ExperimentOptions.Fixation_Check_WinSize*[1 1], this.ExperimentOptions.Fixation_Check_TimeOut);
+                        if ( ~isempty(this.eyeTracker) && this.ExperimentOptions.UseEyeTracker)
+
+                             evt = this.eyeTracker.GetCurrentData();
+
+                            % Get the eye tracking data to know where the eye is looking at
+                            eyeData = this.eyeTracker.GetCurrentData();
+
+                            if isfield(eyeData,'mx') && isfield(eyeData,'my')
+                                gazeX = eyeData.mx;
+                                gazeY = eyeData.my;
+                            else
+                                % assume eyes are closed and out of bounds?
+                                gazeX = inf;
+                                gazeY = inf;
+                            end
+
+
+                            fixRect = [0 0 10 10];
+                            fixRect = CenterRectOnPointd( fixRect, gazeX,gazeY );
+                            Screen('FillOval', graph.window,  [255 0 0], fixRect);
+                        end
+
+
+                        this.gazedata.PTBtime(nframesctr) = PBT_Time;
+                        this.gazedata.ELtime(nframesctr) = evt.time;
+                        this.gazedata.LGazeX(nframesctr) = evt.gx(1);
+                        this.gazedata.RGazeX(nframesctr) = evt.gx(2);
+                        this.gazedata.LGazeY(nframesctr) = evt.gy(1);
+                        this.gazedata.RGazeY(nframesctr) = evt.gy(2);
+                        
+                        nframesctr = nframesctr+1;
+
+                        % Check to make sure that the participant is looking where they're supposed to look
+                        this.checkFixation(fixRect([1 2]), this.ExperimentOptions.Fixation_Check_WinSize_pix, this.ExperimentOptions.Fixation_Check_TimeOut)
+
+
+
                     end
                     % -----------------------------------------------------------------
                     % --- Check Fixation  -----------------------------------
                     % -----------------------------------------------------------------
                 end
+            
             catch ex
                 rethrow(ex)
             end

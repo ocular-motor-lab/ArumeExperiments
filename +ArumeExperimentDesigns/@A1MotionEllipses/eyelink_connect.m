@@ -15,7 +15,7 @@ end
 currtime = GetSecs;
 
 % keeps track of trial duration 
-actualDuration = min(thisTrialData.movieDuration,this.ExperimentOptions.TrialDuration);
+actualDuration = min(this.ExperimentOptions.Motion_Duration, this.ExperimentOptions.TrialDuration);
 
 % store all gaze contingent data
 nrows = ceil(this.Graph.frameRate*actualDuration)*1.5;

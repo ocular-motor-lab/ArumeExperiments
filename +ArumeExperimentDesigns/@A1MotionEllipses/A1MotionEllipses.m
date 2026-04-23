@@ -7,8 +7,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
         lots_dots1
         lots_dots2
-        lots_dots3213132q
-        
+        lots_dots3
+
 
         gazedata
     end
@@ -63,12 +63,18 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.UseEyeTracker = 0;
             dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult Speed Stimulus'; % which variables to display every trial in the command line separated by spaces
 
+            %% Display options
             % SamsungOLED
             dlg.DisplayOptions.ScreenWidth = { 169.957 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenHeight = { 95.6009 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenDistance = { 125 '* (cm)' [1 3000] };
             dlg.DisplayOptions.SelectedScreen = {1 '' [0 5]};
-            dlg.Debug.DebugMode = {0 {1}};
+            dlg.Debug.DebugMode = {1 {0}};
+
+            % colours
+            % screen bg colour
+            dlg.DisplayOptions.BackgroundColor = 0;
+            dlg.DisplayOptions.ForegroundColor = 127;
 
             %     % case 'ClaraDesk'
             % screen_dims_mm = [596.74, 335.66]; %https://dl.dell.com/manuals/all-products/esuprt_electronics_accessories/esuprt_electronics_accessories_monitors/dell-p2721q-monitor_user's-guide_en-us.pdf
@@ -80,6 +86,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.TrialAbortAction = 'Repeat';
 
             dlg.EyeTrackerCalibProportion = {[.30,.30],'Calibration Area (width, height)',[0.05,1],1};
+
+            dlg.ClaraDebug = {0 {1}};
             
         end
         
@@ -288,6 +296,11 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             gazedata.RGazeX = nan(nrows,1);
             gazedata.RGazeY = nan(nrows,1);
             this.gazedata = gazedata;
+
+            % show cursor if ClaraDebug
+            if this.ExperimentOptions.ClaraDebug
+                ShowCursor;
+            end
 
 
         end
@@ -657,7 +670,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                         [mx, my] = RectCenter(graph.wRect);
 
                         fixRect = [0 0 10 10];
-                        fixRect = CenterRectOnPointd( fixRect, mx, my );
+                        fixRect = CenterRectOnPointd(fixRect, mx, my );
                         Screen('FillOval', graph.window,  this.fixColor, fixRect);
 
                         if strcmp(fixation_type, 'circle')
@@ -673,7 +686,14 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                             Screen('DrawLines', graph.window, cross_coords', fixation_line_width, fixation_color, [0 0], 2);
                         end
                     end
-                   
+
+                    % only show gaze bounding box if ClaraDebug
+                    if this.ExperimentOptions.ClaraDebug
+                        fix_bounds_rect = [0 0 2*this.ExperimentOptions.Fixation_Check_WinSize_pix 2*this.ExperimentOptions.Fixation_Check_WinSize_pix];
+                        fix_bounds_rect = CenterRectOnPointd(fix_bounds_rect, mx, my );
+                        Screen('FrameRect', graph.window, [255 255 0], fix_bounds_rect, 3);
+                    end
+
 
 
                     % -----------------------------------------------------------------
@@ -757,38 +777,39 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration + this.ExperimentOptions.Min_Motion_Duration_Before_Response)
 
                         if ( ~isempty(this.eyeTracker) && this.ExperimentOptions.UseEyeTracker)
-
-                             evt = this.eyeTracker.GetCurrentData();
-
                             % Get the eye tracking data to know where the eye is looking at
                             eyeData = this.eyeTracker.GetCurrentData();
 
                             if isfield(eyeData,'mx') && isfield(eyeData,'my')
-                                gazeX = eyeData.mx;
-                                gazeY = eyeData.my;
+                                gazeX = eyeData.gx(2)/2+eyeData.gx(1)/2;
+                                gazeY = eyeData.gy(2)/2+eyeData.gy(1)/2;
                             else
                                 % assume eyes are closed and out of bounds?
                                 gazeX = inf;
                                 gazeY = inf;
                             end
 
-
-                            fixRect = [0 0 10 10];
-                            fixRect = CenterRectOnPointd( fixRect, gazeX,gazeY );
-                            Screen('FillOval', graph.window,  [255 0 0], fixRect);
+                            % only show fixation tracking dot if ClaraDebug
+                            if this.ExperimentOptions.ClaraDebug
+                                fixRect = [0 0 10 10];
+                                fixRect = CenterRectOnPointd( fixRect, gazeX, gazeY );
+                                Screen('FillOval', graph.window,  [255 0 0], fixRect);
+                            end
                         end
 
-
-                        this.gazedata.PTBtime(nframesctr) = PBT_Time;
-                        this.gazedata.ELtime(nframesctr) = evt.time;
-                        this.gazedata.LGazeX(nframesctr) = evt.gx(1);
-                        this.gazedata.RGazeX(nframesctr) = evt.gx(2);
-                        this.gazedata.LGazeY(nframesctr) = evt.gy(1);
-                        this.gazedata.RGazeY(nframesctr) = evt.gy(2);
-                        
-                        nframesctr = nframesctr+1;
+                        % 
+                        % this.gazedata.PTBtime(nframesctr) = PBT_Time;
+                        % this.gazedata.ELtime(nframesctr) = eyeData.time;
+                        % this.gazedata.LGazeX(nframesctr) = eyeData.gx(1);
+                        % this.gazedata.RGazeX(nframesctr) = eyeData.gx(2);
+                        % this.gazedata.LGazeY(nframesctr) = eyeData.gy(1);
+                        % this.gazedata.RGazeY(nframesctr) = eyeData.gy(2);
+                        % 
+                        % nframesctr = nframesctr+1;
 
                         % Check to make sure that the participant is looking where they're supposed to look
+                        % I think the Fixation_Check_WinSize_pix is like the "radius" of the rectangle, so the actual
+                        % bounding box is 2x this measurement
                         this.checkFixation(fixRect([1 2]), this.ExperimentOptions.Fixation_Check_WinSize_pix, this.ExperimentOptions.Fixation_Check_TimeOut)
 
 

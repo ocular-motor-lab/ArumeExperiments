@@ -19,6 +19,7 @@ actualDuration = min(this.ExperimentOptions.Motion_Duration, this.ExperimentOpti
 
 % store all gaze contingent data
 nrows = ceil(this.Graph.frameRate*actualDuration)*1.5;
+
 gazedata = table;
 gazedata.ELtime = nan(nrows,1);
 gazedata.PTBtime = nan(nrows,1);

@@ -5,6 +5,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         fixRad = 20;
         fixColor = [255 0 0];
 
+
         lots_dots1
         lots_dots2
         lots_dots3
@@ -20,7 +21,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         function dlg = GetOptionsDialog( this, importing )
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
             
-            %% ADD new options
+            %% Options for stimulus
             dlg.Max_Increment_Speed_Percent = { 100 '* (%)' [0.1 100] };
             dlg.Max_Increment_Direction_Angle = { 60 '* (deg)' [0.1 100] };
             dlg.Number_Of_Increments = 9;
@@ -29,7 +30,6 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.Max_RefVelocityComponent = { 2 '* (deg/s)' [0.01 100] };
             dlg.Num_RefVelocitiesPerComponent = 5;
 
-            %% PUT IN THE EYETRACKER OPTIONS!! QQ TODO
 
             dlg.Do_Full_Grid = { {'{0}','1'} };
             dlg.Num_Repeats = {8 '* (N)' [1 100] };
@@ -52,15 +52,16 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.Fixation_Line_Width = 3;  % for cross only
 
 
-            dlg.Initial_Fixation_Duration = 0.5;
-            dlg.Motion_Duration = 1;
-            dlg.Min_Motion_Duration_Before_Response = 0.2;
+            dlg.Initial_Fixation_Duration = { 0.5 '* (sec)' [0.01 100] };
+            dlg.Initial_Fixation_Buffer_Duration = { 0.2 '* (sec)' [0.01 100] };
+            dlg.Motion_Duration = { 1 '* (sec)' [0.01 100] };
+            dlg.Min_Motion_Duration_Before_Response = { 0.2 '* (sec)' [0.01 100] };
 
             dlg.BackgroundBrightness = 0;
             
-            %% CHANGE DEFAULTS values for existing options
+            %% Eye tracking options
 
-            dlg.UseEyeTracker = 0;
+            dlg.UseEyeTracker = 1;
             dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult Speed Stimulus'; % which variables to display every trial in the command line separated by spaces
 
             %% Display options
@@ -69,7 +70,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.DisplayOptions.ScreenHeight = { 95.6009 '* (cm)' [1 3000] };
             dlg.DisplayOptions.ScreenDistance = { 125 '* (cm)' [1 3000] };
             dlg.DisplayOptions.SelectedScreen = {1 '' [0 5]};
-            dlg.Debug.DebugMode = {1 {0}};
+            dlg.Debug.DebugMode = {0 {1}};
 
             % colours
             % screen bg colour
@@ -578,13 +579,16 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 thisTrialData.TimeStartLoop = lastFlipTime;
 
 
-                this.ExperimentOptions.Initial_Fixation_Duration = 0.5;
-                this.ExperimentOptions.Motion_Duration = 1;
+                %this.ExperimentOptions.Initial_Fixation_Duration = 0.5;
+                %this.ExperimentOptions.Motion_Duration = 1;
 
                 % make this a bit shorter
                 screenCenterX = this.ExperimentOptions.DisplayOptions.screenCenterX;
                 screenCenterY = this.ExperimentOptions.DisplayOptions.screenCenterY;
 
+                % Initialize the eyePos to be recorded and averaged during the trial
+                eyePos_FixationPeriod = [0, 0];
+                N=1; % counter for how many have been added to the average
 
 
                 while secondsRemaining > 0
@@ -598,7 +602,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     % -----------------------------------------------------------------
 
 
-                    % Draw dots
+                    % Fixation Period:
                     if (secondsElapsed < this.ExperimentOptions.Initial_Fixation_Duration)
                        
                         % Move the dots without showing them
@@ -606,6 +610,23 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                         this.lots_dots2.move();
                         this.lots_dots3.move();
                         
+                        %fprintf('\n[0.2%f]', secondsElapsed);
+                        % Add to the average IF using eyetracker and above
+                        % the Initial_Fixation_Buffer_Duration time
+                        if this.ExperimentOptions.UseEyeTracker && secondsElapsed > this.ExperimentOptions.Initial_Fixation_Buffer_Duration
+                            % Get the eye tracking data to know where the eye is looking at
+                            eyeData = this.eyeTracker.GetCurrentData();
+
+                            % add to the average - just using the first one bc ultimately relative
+                            eyePos_FixationPeriod(1) = eyeData.gx(1)*(1/N) + eyePos_FixationPeriod(1)*((N-1)/N);
+                            eyePos_FixationPeriod(2) = eyeData.gy(1)*(1/N) + eyePos_FixationPeriod(2)*((N-1)/N);
+                            fprintf('\n[0.2%f,0.2%f]', eyePos_FixationPeriod(1), eyePos_FixationPeriod(2));
+
+                            % increment counter
+                            N=N+1;
+                        end
+
+                    % Stimulus Presentation Period:
                     elseif ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration ...
                             && secondsElapsed < this.ExperimentOptions.Initial_Fixation_Duration + this.ExperimentOptions.Motion_Duration)
 
@@ -626,7 +647,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                         Screen('DrawDots', graph.window, this.lots_dots3.location_array', this.lots_dots3.diameter_array, (this.lots_dots3.colour_array)', [], 2);
                     
                     % Draw numbers for responses
-                    elseif ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration + this.ExperimentOptions.Motion_Duration)% ...
+                    elseif ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration ...
+                            + this.ExperimentOptions.Motion_Duration)% ...
                            % && secondsElapsed < this.ExperimentOptions.TrialDuration)
 
                         circleRadius = this.lots_dots1.radius; % adjust if needed
@@ -688,11 +710,11 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     end
 
                     % only show gaze bounding box if ClaraDebug
-                    if this.ExperimentOptions.ClaraDebug
-                        fix_bounds_rect = [0 0 2*this.ExperimentOptions.Fixation_Check_WinSize_pix 2*this.ExperimentOptions.Fixation_Check_WinSize_pix];
-                        fix_bounds_rect = CenterRectOnPointd(fix_bounds_rect, mx, my );
-                        Screen('FrameRect', graph.window, [255 255 0], fix_bounds_rect, 3);
-                    end
+                    % if this.ExperimentOptions.ClaraDebug
+                    %     fix_bounds_rect = [0 0 2*this.ExperimentOptions.Fixation_Check_WinSize_pix 2*this.ExperimentOptions.Fixation_Check_WinSize_pix];
+                    %     fix_bounds_rect = CenterRectOnPointd(fix_bounds_rect, mx, my );
+                    %     Screen('FrameRect', graph.window, [255 255 0], fix_bounds_rect, 3);
+                    % end
 
 
 
@@ -777,15 +799,19 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration + this.ExperimentOptions.Min_Motion_Duration_Before_Response)
 
                         if ( ~isempty(this.eyeTracker) && this.ExperimentOptions.UseEyeTracker)
+
                             % Get the eye tracking data to know where the eye is looking at
                             eyeData = this.eyeTracker.GetCurrentData();
 
-                            if isfield(eyeData,'mx') && isfield(eyeData,'my')
+
+                            if isfield(eyeData,'gx') && isfield(eyeData,'gy')
                                 gazeX = eyeData.gx(2)/2+eyeData.gx(1)/2;
                                 gazeY = eyeData.gy(2)/2+eyeData.gy(1)/2;
                             else
                                 % assume eyes are closed and out of bounds?
                                 gazeX = inf;
+                                n
+
                                 gazeY = inf;
                             end
 
@@ -794,13 +820,23 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                                 fixRect = [0 0 10 10];
                                 fixRect = CenterRectOnPointd( fixRect, gazeX, gazeY );
                                 Screen('FillOval', graph.window,  [255 0 0], fixRect);
+
+                                % also show the initial fixation period average, which is the reference
+                                refRect = [0 0 10 10];
+                                refRect = CenterRectOnPointd( refRect, eyePos_FixationPeriod(1), eyePos_FixationPeriod(2) );
+                                Screen('FillOval', graph.window,  [255 255 0], refRect);
+
+                                fix_bounds_rect = [0 0 2*this.ExperimentOptions.Fixation_Check_WinSize_pix 2*this.ExperimentOptions.Fixation_Check_WinSize_pix];
+                                fix_bounds_rect = CenterRectOnPointd(fix_bounds_rect, eyePos_FixationPeriod(1), eyePos_FixationPeriod(2));
+                                Screen('FrameRect', graph.window, [255 255 0], fix_bounds_rect, 3);
                             end
                         end
 
                         % 
                         % this.gazedata.PTBtime(nframesctr) = PBT_Time;
                         % this.gazedata.ELtime(nframesctr) = eyeData.time;
-                        % this.gazedata.LGazeX(nframesctr) = eyeData.gx(1);
+                        % this.gazedata.LGazeX(nframesctr) =
+                        % eyeData.gx(1);2
                         % this.gazedata.RGazeX(nframesctr) = eyeData.gx(2);
                         % this.gazedata.LGazeY(nframesctr) = eyeData.gy(1);
                         % this.gazedata.RGazeY(nframesctr) = eyeData.gy(2);
@@ -810,7 +846,12 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                         % Check to make sure that the participant is looking where they're supposed to look
                         % I think the Fixation_Check_WinSize_pix is like the "radius" of the rectangle, so the actual
                         % bounding box is 2x this measurement
-                        this.checkFixation(fixRect([1 2]), this.ExperimentOptions.Fixation_Check_WinSize_pix, this.ExperimentOptions.Fixation_Check_TimeOut)
+
+                        % only need to do fixation check if during experiment time
+                        if secondsElapsed < this.ExperimentOptions.Initial_Fixation_Duration + this.ExperimentOptions.Motion_Duration
+                            this.checkFixation(eyePos_FixationPeriod, this.ExperimentOptions.Fixation_Check_WinSize_pix, this.ExperimentOptions.Fixation_Check_TimeOut)
+                            % this.checkFixation(fixRect([1 2]), this.ExperimentOptions.Fixation_Check_WinSize_pix, this.ExperimentOptions.Fixation_Check_TimeOut)
+                        end
 
 
 

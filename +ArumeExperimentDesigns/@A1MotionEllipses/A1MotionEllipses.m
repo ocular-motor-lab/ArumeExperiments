@@ -590,6 +590,10 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 eyePos_FixationPeriod = [0, 0];
                 N=1; % counter for how many have been added to the average
 
+                % how much do we want the fixation position calc to cut
+                % into the actual trial?
+                cut_in = 0.2;
+
 
                 while secondsRemaining > 0
 
@@ -600,6 +604,24 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     % -----------------------------------------------------------------
                     % --- Drawing of stimulus -----------------------------------------
                     % -----------------------------------------------------------------
+                       
+
+                    % Add to the average IF using eyetracker and above
+                    % the Initial_Fixation_Buffer_Duration time
+                    if (this.ExperimentOptions.UseEyeTracker && ...
+                            secondsElapsed < this.ExperimentOptions.Initial_Fixation_Duration + cut_in && ...
+                            secondsElapsed > this.ExperimentOptions.Initial_Fixation_Buffer_Duration)
+                        % Get the eye tracking data to know where the eye is looking at
+                        eyeData = this.eyeTracker.GetCurrentData();
+
+                        % add to the average - just using the first one bc ultimately relative
+                        eyePos_FixationPeriod(1) = eyeData.gx(1)*(1/N) + eyePos_FixationPeriod(1)*((N-1)/N);
+                        eyePos_FixationPeriod(2) = eyeData.gy(1)*(1/N) + eyePos_FixationPeriod(2)*((N-1)/N);
+                        fprintf('\n[0.2%f,0.2%f]', eyePos_FixationPeriod(1), eyePos_FixationPeriod(2));
+
+                        % increment counter
+                        N=N+1;
+                    end
 
 
                     % Fixation Period:
@@ -611,20 +633,6 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                         this.lots_dots3.move();
                         
                         %fprintf('\n[0.2%f]', secondsElapsed);
-                        % Add to the average IF using eyetracker and above
-                        % the Initial_Fixation_Buffer_Duration time
-                        if this.ExperimentOptions.UseEyeTracker && secondsElapsed > this.ExperimentOptions.Initial_Fixation_Buffer_Duration
-                            % Get the eye tracking data to know where the eye is looking at
-                            eyeData = this.eyeTracker.GetCurrentData();
-
-                            % add to the average - just using the first one bc ultimately relative
-                            eyePos_FixationPeriod(1) = eyeData.gx(1)*(1/N) + eyePos_FixationPeriod(1)*((N-1)/N);
-                            eyePos_FixationPeriod(2) = eyeData.gy(1)*(1/N) + eyePos_FixationPeriod(2)*((N-1)/N);
-                            fprintf('\n[0.2%f,0.2%f]', eyePos_FixationPeriod(1), eyePos_FixationPeriod(2));
-
-                            % increment counter
-                            N=N+1;
-                        end
 
                     % Stimulus Presentation Period:
                     elseif ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration ...
@@ -796,7 +804,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     % --- Check Fixation  ---------------------------------------
                     % -----------------------------------------------------------------
 
-                    if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration + this.ExperimentOptions.Min_Motion_Duration_Before_Response)
+                    if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration + max(cut_in, this.ExperimentOptions.Min_Motion_Duration_Before_Response))2
 
                         if ( ~isempty(this.eyeTracker) && this.ExperimentOptions.UseEyeTracker)
 
@@ -816,9 +824,10 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                             end
 
                             % only show fixation tracking dot if ClaraDebug
-                            if this.ExperimentOptions.ClaraDebug
+                            if this.ExperimentOptions.ClaraDebug 
                                 fixRect = [0 0 10 10];
                                 fixRect = CenterRectOnPointd( fixRect, gazeX, gazeY );
+
                                 Screen('FillOval', graph.window,  [255 0 0], fixRect);
 
                                 % also show the initial fixation period average, which is the reference

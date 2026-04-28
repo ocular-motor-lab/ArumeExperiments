@@ -83,7 +83,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 50000000; % Very large to prevent skipping forward
-            dlg.TrialsBeforeBreak = 15;
+            dlg.TrialsBeforeBreak = 500; % big break
+            dlg.TrialsBeforeBreakSmall = 25; % small break
             dlg.TrialAbortAction = 'Delay';
 
             dlg.EyeTrackerCalibProportion = {[.30,.30],'Calibration Area (width, height)',[0.05,1],1};
@@ -960,6 +961,62 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     % -----------------------------------------------------------------
                     % --- Check Fixation  -----------------------------------
                     % -----------------------------------------------------------------
+                end
+
+                % ============================================================
+                % --- Break screen every N trials -----------------------------
+                % ============================================================
+                TrialsBeforeBreakSmall = this.ExperimentOptions.TrialsBeforeBreakSmall; % e.g., set this in options
+                
+                if mod(thisTrialData.TrialNumber, TrialsBeforeBreakSmall) == 0
+                
+                    % Flush any previous key presses
+                    KbReleaseWait;
+                
+                    waitingForKey = true;
+                
+                    while waitingForKey
+                
+                        % --- Draw your break text ---
+                        Screen('TextSize', graph.window, 40);
+                        breakText = 'Break time!\n\nPress SPACE to continue'; % <-- replace later
+                        DrawFormattedText(graph.window, breakText, 'center', 'center', ...
+                            this.ExperimentOptions.DisplayOptions.white_col);
+                
+                        % --- Draw fixation (same style as your trial) ---
+                        [mx, my] = RectCenter(graph.wRect);
+                
+                        % central dot
+                        fixRect = [0 0 10 10];
+                        fixRect = CenterRectOnPointd(fixRect, mx, my);
+                        Screen('FillOval', graph.window, this.fixColor, fixRect);
+                
+                        % optional fixation type
+                        if strcmp(fixation_type, 'circle')
+                            fixation_rect = [screenCenterX - fixation_size/2, screenCenterY - fixation_size/2, ...
+                                             screenCenterX + fixation_size/2, screenCenterY + fixation_size/2];
+                            Screen('FillOval', graph.window, fixation_color, fixation_rect);
+                
+                        elseif strcmp(fixation_type, 'cross')
+                            cross_coords = [
+                                screenCenterX - fixation_size/2, screenCenterY, screenCenterX + fixation_size/2, screenCenterY;
+                                screenCenterX, screenCenterY - fixation_size/2, screenCenterX, screenCenterY + fixation_size/2
+                            ];
+                            Screen('DrawLines', graph.window, cross_coords', fixation_line_width, fixation_color, [0 0], 2);
+                        end
+                
+                        % --- Flip to screen ---
+                        Screen('Flip', graph.window);
+                
+                        % --- Wait for SPACE ---
+                        [keyIsDown, ~, keyCode] = KbCheck;
+                        if keyIsDown
+                            if any(strcmp(KbName(find(keyCode)), {'space', 'SPACE'}))
+                                waitingForKey = false;
+                                KbReleaseWait;
+                            end
+                        end
+                    end
                 end
             
             catch ex

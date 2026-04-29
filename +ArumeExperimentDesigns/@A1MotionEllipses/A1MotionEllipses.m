@@ -236,6 +236,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             final_comp_mult   = zeros(trials_per_rep, 1);
             
             counter = 1;
+            % if 0,0
+            base_speed = 0.25;
             for r = 1:num_refs
                 v_ref = ref_vecs(r, :);
                 ref_speed = norm(v_ref);
@@ -247,6 +249,10 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     if comp_rel_bool
                         % offset_percentage * speed_ref
                         actual_offset = comp_offsets(c, :) .* ref_speed;
+                        if ref_speed == 0
+                            actual_offset = comp_offsets(c, :) .* base_speed
+                            2;
+                        end
                     else
                         % offset_absolute
                         actual_offset = comp_offsets(c, :);

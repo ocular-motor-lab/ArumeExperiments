@@ -128,7 +128,6 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             num_ref_pts = this.ExperimentOptions.num_ref_gridpts;
             ref_mode    = this.ExperimentOptions.ref_cart_or_polar; 
             ref_log_or_lin = this.ExperimentOptions.ref_log_or_lin;
-
             % These define the "Local" difference between the reference and the comparison.
             comp_lb        = this.ExperimentOptions.comp_lb; 
             if isempty(comp_lb)
@@ -139,27 +138,29 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             comp_axes      = this.ExperimentOptions.comp_num_axes;
             comp_mode      = this.ExperimentOptions.comp_cart_or_polar; 
             comp_rel_bool  = this.ExperimentOptions.comp_rel_bool; % Toggle for relative vs absolute
-
             % Jitter adds small noise to the comparison to prevent grid-learning.
             do_jitter   = this.ExperimentOptions.Do_Jitter; 
             jitter_mult = this.ExperimentOptions.Jitter_Multiplier; 
-
             num_repeats = this.ExperimentOptions.Num_Repeats_Per_Combo;
-
+            
             %% 2. Seed RNG for Pseudo-Randomization
             % Seeding with the subject code ensures that the trial table is unique to the 
             % participant but reproducible if the same session is re-generated.
             rng(keyHash(this.Session.subjectCode)/10^10)
-
+            
             %% 3. Generate Global Reference Vectors
             % This step creates the set of baseline motion vectors (x_ref).
             if strcmpi(ref_mode, 'cartesian')
-                % Create a square grid and mask it to form a circular frame/ring.
+                % Create a square grid
                 ref_ax = linspace(-ub_ref, ub_ref, num_ref_pts);
                 [rvx, rvy] = meshgrid(ref_ax, ref_ax);
                 base_refs = [rvx(:), rvy(:)];
-                mags = sqrt(sum(base_refs.^2, 2));
-                ref_vecs = base_refs(mags >= lb_ref & mags <= ub_ref, :);
+                
+                % MODIFIED TO MATCH PYTHON: 
+                % Python commented out the magnitude masking, using all grid points.
+                % mags = sqrt(sum(base_refs.^2, 2));
+                % ref_vecs = base_refs(mags >= lb_ref & mags <= ub_ref, :);
+                ref_vecs = base_refs; 
             else 
                 num_ref_spokes = this.ExperimentOptions.num_ref_spokes;
                 % Create spokes of a wheel (Polar).
@@ -174,15 +175,15 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 [vx, vy] = pol2cart(A(:), R(:));
                 ref_vecs = [vx, vy];
             end
-
+            
             %% 3.1 Force inclusion of [0,0] Reference
             % Check if a zero-velocity vector already exists (using a small epsilon)
             if ~any(sqrt(sum(ref_vecs.^2, 2)) < 1e-10)
                 ref_vecs = [0, 0; ref_vecs];
-                num_refs = size(ref_vecs, 1); % Update the count for later steps
             end
-
-
+            % Update the count for later steps
+            num_refs = size(ref_vecs, 1); 
+            
             %% 4. Generate Local Comparison Offsets (dx, dy)
             % Here we define the "delta" or the shape of the MOCS-like intervals.
             % If comp_rel_bool is true, these are treated as unit-less scaling factors.
@@ -219,7 +220,6 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             
             %% 5. Combine and Build the Trial Table
             % This is the cross-product of all references and all local offsets.
-            num_refs = size(ref_vecs, 1);
             num_comps = size(comp_offsets, 1);
             trials_per_rep = num_refs * num_comps;
             
@@ -250,8 +250,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                         % offset_percentage * speed_ref
                         actual_offset = comp_offsets(c, :) .* ref_speed;
                         if ref_speed == 0
-                            actual_offset = comp_offsets(c, :) .* base_speed
-                            2;
+                            actual_offset = comp_offsets(c, :) .* base_speed;
+                            % MODIFIED TO MATCH PYTHON: Removed stray "2;" typo here
                         end
                     else
                         % offset_absolute
@@ -297,115 +297,359 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             trialTable.CompOffsetAxis   = final_comp_axis(idx);
             trialTable.CompOffsetRadiusIndex = final_comp_rad_idx(idx);
             trialTable.CompOffsetMultiplier = final_comp_mult(idx);
-
-
-            % %% 4. Generate Local Comparison Offsets (dx, dy)
-            % % Here we define the "delta" or the shape of the MOCS-like intervals.
-            % % If comp_rel_bool is true, these are treated as unit-less scaling factors.
-            % if strcmpi(comp_mode, 'cartesian')
-            %     comp_ax = linspace(-comp_ub, comp_ub, comp_intervals);
-            %     [cvx, cvy] = meshgrid(comp_ax, comp_ax);
-            %     base_comps = [cvx(:), cvy(:)];
-            %     c_mags = sqrt(sum(base_comps.^2, 2));
-            %     % Filter offsets to stay within the local bounds
-            %     comp_offsets = base_comps(c_mags >= comp_lb & c_mags <= comp_ub, :);
-            % else 
-            %     % Circular spokes centered on the reference point
-            %     comp_angles = linspace(0, 2*pi, comp_axes + 1);
-            %     comp_angles(end) = [];
-            %     comp_radii = linspace(comp_lb, comp_ub, comp_intervals);
-            %     [cA, cR] = meshgrid(comp_angles, comp_radii);
-            %     [cvx, cvy] = pol2cart(cA(:), cR(:));
-            %     comp_offsets = [cvx, cvy];
-            % end
-            % 
-            % %% 5. Combine and Build the Trial Table
-            % % This is the cross-product of all references and all local offsets.
-            % num_refs = size(ref_vecs, 1);
-            % num_comps = size(comp_offsets, 1);
-            % trials_per_rep = num_refs * num_comps;
-            % 
-            % final_ref = cell(trials_per_rep, 1);
-            % final_comp_base = cell(trials_per_rep, 1);
-            % 
-            % % Pre-allocate metric tracking arrays ---
-            % final_comp_offset = cell(trials_per_rep, 1); % 1x2 vectors need cell arrays
-            % final_comp_offset_rel = cell(trials_per_rep, 1);
-            % final_comp_radius = zeros(trials_per_rep, 1); % Scalars can be standard numeric arrays
-            % final_comp_radius_rel = zeros(trials_per_rep, 1);
-            % final_comp_axis   = zeros(trials_per_rep, 1); 
-            % 
-            % counter = 1;
-            % for r = 1:num_refs
-            %     v_ref = ref_vecs(r, :);
-            %     ref_speed = norm(v_ref);
-            % 
-            %     for c = 1:num_comps
-            %         final_ref{counter} = v_ref;
-            % 
-            %         % Determine the actual offset being added
-            %         if comp_rel_bool
-            %             % offset_percentage * speed_ref
-            %             actual_offset = comp_offsets(c, :) .* ref_speed;
-            %         else
-            %             % offset_absolute
-            %             actual_offset = comp_offsets(c, :);
-            %         end
-            % 
-            %         final_comp_base{counter} = v_ref + actual_offset;
-            % 
-            %         % --- NEW: Record the metrics ---
-            %         final_comp_offset{counter} = actual_offset;
-            %         final_comp_offset_rel{counter} = comp_offsets(c, :);
-            %         final_comp_radius(counter) = norm(actual_offset);
-            %         final_comp_radius_rel(counter) = norm(comp_offsets(c, :));
-            %         % Calculate angle using atan2, convert to degrees, and wrap 0-360
-            %         final_comp_axis(counter)   = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
-            % 
-            %         counter = counter + 1;
-            %     end
-            % end
-            % 
-            % % Use Arume's TrialTableBuilder to handle shuffling and repeats.
-            % t = ArumeCore.TrialTableBuilder();
-            % t.AddConditionVariable('RefCompPair', (1:trials_per_rep));
-            % trialTable = t.GenerateTrialTable('Random', 'Sequential', num_repeats, 'Delay');
-            % 
-            % % Randomly assign 1, 2, or 3 to each trial
-            % trialTable.OddballWindow = randi([1, 3], height(trialTable), 1);
-            % 
-            % % Map the generated IDs back to the actual velocity pairs.
-            % idx = trialTable.RefCompPair;
-            % trialTable.ReferenceVelocity = final_ref(idx);
-            % comp_vels = final_comp_base(idx);
-            % 
-            % % Map the offset metrics to the trial table ---
-            % trialTable.CompOffsetVector = final_comp_offset(idx);
-            % trialTable.CompOffsetVectorRel = final_comp_offset_rel(idx);
-            % trialTable.CompOffsetRadius = final_comp_radius(idx); % unsure if this is actually useful - it's the radius of the comp vector from origin.
-            % trialTable.CompOffsetRadiusRel = final_comp_radius_rel(idx);
-            % trialTable.CompOffsetAxis   = final_comp_axis(idx);
-
-
+            
             %% 6. Apply Pseudo-Random Jitter
             % We apply jitter after expanding the table so every repeat is slightly unique.
             if do_jitter
                 for i = 1:height(trialTable)
                     v_base = comp_vels{i};
                     speed = norm(v_base);
-
                     % Small floor for speed to ensure 0-velocity points can still jitter.
                     if speed == 0, speed = 0.1; end 
-
                     % The jitter is a random (x,y) shift proportional to the vector's speed.
                     jx = (2*rand() - 1) * jitter_mult * speed;
                     jy = (2*rand() - 1) * jitter_mult * speed;
-
                     comp_vels{i} = v_base + [jx, jy];
                 end
             end
+            
+            % MODIFIED TO MATCH PYTHON: removed the "(idx)" at the end. 
+            % comp_vels was already indexed at line 144, indexing it again shuffles it wrongly.
+            trialTable.ComparisonVelocity = comp_vels; 
 
-            trialTable.ComparisonVelocity = comp_vels(idx);
+            %% 7. Print Experiment Summary
+            % MODIFIED TO MATCH PYTHON: Added readout matching python script
+            fprintf('\n============================================================\n');
+            fprintf('           STIMULUS CONFIGURATION SUMMARY                 \n');
+            fprintf('============================================================\n');
+            
+            if strcmpi(ref_mode, 'cartesian')
+                fprintf('REFERENCE VECTORS: [CARTESIAN GRID]\n');
+                fprintf('  - Grid Axis Steps:   [%s] deg/s\n', num2str(ref_ax, '%.2f '));
+                fprintf('  - Frame Bounds:      %.2f to %.2f deg/s (Magnitude)\n', lb_ref, ub_ref);
+            else
+                fprintf('REFERENCE VECTORS: [POLAR WHEEL]\n');
+                fprintf('  - Reference Radii:   [%s] deg/s\n', num2str(radii, '%.2f '));
+                fprintf('  - Number of Spokes:  %d\n', num_ref_spokes);
+            end
+            
+            fprintf('  - Total Unique Refs: %d\n', num_refs);
+            fprintf('------------------------------------------------------------\n');
+            
+            if comp_rel_bool
+                comp_type_str = 'RELATIVE (% of ref speed)';
+            else
+                comp_type_str = 'ABSOLUTE (deg/s)';
+            end
+            
+            if strcmpi(comp_mode, 'cartesian')
+                fprintf('COMPARISON VECTORS: [CARTESIAN LOCAL GRID]\n');
+                fprintf('  - Offset Type:       %s\n', comp_type_str);
+                fprintf('  - Grid Axis Steps:   [%s]\n', num2str(comp_ax, '%.2f '));
+                fprintf('  - Local Bounds:      %.2f to %.2f (Magnitude)\n', comp_lb, comp_ub);
+            else
+                fprintf('COMPARISON VECTORS: [POLAR LOCAL SPOKES]\n');
+                fprintf('  - Offset Type:       %s\n', comp_type_str);
+                fprintf('  - Comparison Radii:  [%s]\n', num2str(comp_radii, '%.2f '));
+                fprintf('  - Comparison Axes:   %d\n', comp_axes);
+            end
+            
+            fprintf('  - Total Unique Comps: %d (per reference)\n', num_comps);
+            fprintf('------------------------------------------------------------\n');
+            fprintf('  - Repetitions / Combo: %d\n', num_repeats);
+            fprintf('  - Total N Trials:      %d\n', height(trialTable));
+            fprintf('============================================================\n\n');
+        end
+
+        % function trialTable = SetUpTrialTable(this)
+        %     %% 1. Parameter Extraction
+        %     % These variables define the "Global" space where our reference stimuli live.
+        %     lb_ref      = this.ExperimentOptions.lb_screen;
+        %     if isempty(lb_ref)
+        %         lb_ref = 0;
+        %     end
+        %     ub_ref      = this.ExperimentOptions.ub_screen;
+        %     num_ref_pts = this.ExperimentOptions.num_ref_gridpts;
+        %     ref_mode    = this.ExperimentOptions.ref_cart_or_polar; 
+        %     ref_log_or_lin = this.ExperimentOptions.ref_log_or_lin;
+        % 
+        %     % These define the "Local" difference between the reference and the comparison.
+        %     comp_lb        = this.ExperimentOptions.comp_lb; 
+        %     if isempty(comp_lb)
+        %         comp_lb = 0;
+        %     end
+        %     comp_ub        = this.ExperimentOptions.comp_ub; 
+        %     comp_intervals = this.ExperimentOptions.comp_num_intervals;
+        %     comp_axes      = this.ExperimentOptions.comp_num_axes;
+        %     comp_mode      = this.ExperimentOptions.comp_cart_or_polar; 
+        %     comp_rel_bool  = this.ExperimentOptions.comp_rel_bool; % Toggle for relative vs absolute
+        % 
+        %     % Jitter adds small noise to the comparison to prevent grid-learning.
+        %     do_jitter   = this.ExperimentOptions.Do_Jitter; 
+        %     jitter_mult = this.ExperimentOptions.Jitter_Multiplier; 
+        % 
+        %     num_repeats = this.ExperimentOptions.Num_Repeats_Per_Combo;
+        % 
+        %     %% 2. Seed RNG for Pseudo-Randomization
+        %     % Seeding with the subject code ensures that the trial table is unique to the 
+        %     % participant but reproducible if the same session is re-generated.
+        %     rng(keyHash(this.Session.subjectCode)/10^10)
+        % 
+        %     %% 3. Generate Global Reference Vectors
+        %     % This step creates the set of baseline motion vectors (x_ref).
+        %     if strcmpi(ref_mode, 'cartesian')
+        %         % Create a square grid and mask it to form a circular frame/ring.
+        %         ref_ax = linspace(-ub_ref, ub_ref, num_ref_pts);
+        %         [rvx, rvy] = meshgrid(ref_ax, ref_ax);
+        %         base_refs = [rvx(:), rvy(:)];
+        %         mags = sqrt(sum(base_refs.^2, 2));
+        %         ref_vecs = base_refs(mags >= lb_ref & mags <= ub_ref, :);
+        %     else 
+        %         num_ref_spokes = this.ExperimentOptions.num_ref_spokes;
+        %         % Create spokes of a wheel (Polar).
+        %         angles = linspace(0, 2*pi, num_ref_spokes + 1);
+        %         angles(end) = []; % Remove overlap
+        %         if strcmpi(ref_log_or_lin, 'log')
+        %             radii = logspace(log10(lb_ref), log10(ub_ref), max(1, num_ref_pts));
+        %         else
+        %             radii = linspace(lb_ref, ub_ref, max(1, num_ref_pts));
+        %         end
+        %         [A, R] = meshgrid(angles, radii);
+        %         [vx, vy] = pol2cart(A(:), R(:));
+        %         ref_vecs = [vx, vy];
+        %     end
+        % 
+        %     %% 3.1 Force inclusion of [0,0] Reference
+        %     % Check if a zero-velocity vector already exists (using a small epsilon)
+        %     if ~any(sqrt(sum(ref_vecs.^2, 2)) < 1e-10)
+        %         ref_vecs = [0, 0; ref_vecs];
+        %         num_refs = size(ref_vecs, 1); % Update the count for later steps
+        %     end
+        % 
+        % 
+        %     %% 4. Generate Local Comparison Offsets (dx, dy)
+        %     % Here we define the "delta" or the shape of the MOCS-like intervals.
+        %     % If comp_rel_bool is true, these are treated as unit-less scaling factors.
+        %     if strcmpi(comp_mode, 'cartesian')
+        %         comp_ax = linspace(-comp_ub, comp_ub, comp_intervals);
+        %         [cvx, cvy] = meshgrid(comp_ax, comp_ax);
+        %         base_comps = [cvx(:), cvy(:)];
+        %         c_mags = sqrt(sum(base_comps.^2, 2));
+        % 
+        %         % Filter offsets to stay within the local bounds
+        %         valid_idx = c_mags >= comp_lb & c_mags <= comp_ub;
+        %         comp_offsets = base_comps(valid_idx, :);
+        %         comp_offset_multipliers = c_mags(valid_idx);
+        % 
+        %         % Map Cartesian magnitudes to an index (1 = smallest, N = largest)
+        %         [~, ~, comp_offset_radius_idx] = unique(round(c_mags(valid_idx), 4));
+        %     else 
+        %         % Circular spokes centered on the reference point
+        %         comp_angles = linspace(0, 2*pi, comp_axes + 1);
+        %         comp_angles(end) = [];
+        %         comp_radii = linspace(comp_lb, comp_ub, comp_intervals);
+        % 
+        %         % Create a matching grid of indices (1 to comp_intervals)
+        %         radius_indices = 1:comp_intervals;
+        %         [cA, cR] = meshgrid(comp_angles, comp_radii);
+        %         [~, cR_idx] = meshgrid(comp_angles, radius_indices);
+        % 
+        % 
+        %         [cvx, cvy] = pol2cart(cA(:), cR(:));
+        %         comp_offsets = [cvx, cvy];
+        %         comp_offset_radius_idx = cR_idx(:); % Flattened index array
+        %         comp_offset_multipliers = cR(:); % Flattened array
+        %     end
+        % 
+        %     %% 5. Combine and Build the Trial Table
+        %     % This is the cross-product of all references and all local offsets.
+        %     num_refs = size(ref_vecs, 1);
+        %     num_comps = size(comp_offsets, 1);
+        %     trials_per_rep = num_refs * num_comps;
+        % 
+        %     final_ref = cell(trials_per_rep, 1);
+        %     final_comp_base = cell(trials_per_rep, 1);
+        % 
+        %     % Pre-allocate metric tracking arrays
+        %     final_comp_offset = cell(trials_per_rep, 1); % 1x2 vectors need cell arrays
+        %     final_comp_offset_rel = cell(trials_per_rep, 1);
+        %     final_comp_radius = zeros(trials_per_rep, 1); % Scalars can be standard numeric arrays
+        %     final_comp_radius_rel = zeros(trials_per_rep, 1);
+        %     final_comp_axis   = zeros(trials_per_rep, 1); 
+        %     final_comp_rad_idx = zeros(trials_per_rep, 1); % Index array for different levels
+        %     final_comp_mult   = zeros(trials_per_rep, 1);
+        % 
+        %     counter = 1;
+        %     % if 0,0
+        %     base_speed = 0.25;
+        %     for r = 1:num_refs
+        %         v_ref = ref_vecs(r, :);
+        %         ref_speed = norm(v_ref);
+        % 
+        %         for c = 1:num_comps
+        %             final_ref{counter} = v_ref;
+        % 
+        %             % Determine the actual offset being added
+        %             if comp_rel_bool
+        %                 % offset_percentage * speed_ref
+        %                 actual_offset = comp_offsets(c, :) .* ref_speed;
+        %                 if ref_speed == 0
+        %                     actual_offset = comp_offsets(c, :) .* base_speed
+        %                     2;
+        %                 end
+        %             else
+        %                 % offset_absolute
+        %                 actual_offset = comp_offsets(c, :);
+        %             end
+        % 
+        %             final_comp_base{counter} = v_ref + actual_offset;
+        % 
+        %             % Record the metrics
+        %             final_comp_offset{counter} = actual_offset;
+        %             final_comp_offset_rel{counter} = comp_offsets(c, :);
+        %             final_comp_radius(counter) = norm(actual_offset);
+        %             final_comp_radius_rel(counter) = norm(comp_offsets(c, :));
+        %             % Calculate angle using atan2, convert to degrees, and wrap 0-360
+        %             final_comp_axis(counter)   = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
+        % 
+        %             % Record the discrete MOCS radius index
+        %             final_comp_rad_idx(counter) = comp_offset_radius_idx(c); 
+        %             final_comp_mult(counter) = comp_offset_multipliers(c);
+        % 
+        %             counter = counter + 1;
+        %         end
+        %     end
+        % 
+        %     % Use Arume's TrialTableBuilder to handle shuffling and repeats.
+        %     t = ArumeCore.TrialTableBuilder();
+        %     t.AddConditionVariable('RefCompPair', (1:trials_per_rep));
+        %     trialTable = t.GenerateTrialTable('Random', 'Sequential', num_repeats, 'Delay');
+        % 
+        %     % Randomly assign 1, 2, or 3 to each trial
+        %     trialTable.OddballWindow = randi([1, 3], height(trialTable), 1);
+        % 
+        %     % Map the generated IDs back to the actual velocity pairs.
+        %     idx = trialTable.RefCompPair;
+        %     trialTable.ReferenceVelocity = final_ref(idx);
+        %     comp_vels = final_comp_base(idx);
+        % 
+        %     % Map the offset metrics to the trial table
+        %     trialTable.CompOffsetVector = final_comp_offset(idx);
+        %     trialTable.CompOffsetVectorRel = final_comp_offset_rel(idx);
+        %     trialTable.CompOffsetRadius = final_comp_radius(idx); 
+        %     trialTable.CompOffsetRadiusRel = final_comp_radius_rel(idx);
+        %     trialTable.CompOffsetAxis   = final_comp_axis(idx);
+        %     trialTable.CompOffsetRadiusIndex = final_comp_rad_idx(idx);
+        %     trialTable.CompOffsetMultiplier = final_comp_mult(idx);
+        % 
+        % 
+        %     % %% 4. Generate Local Comparison Offsets (dx, dy)
+        %     % % Here we define the "delta" or the shape of the MOCS-like intervals.
+        %     % % If comp_rel_bool is true, these are treated as unit-less scaling factors.
+        %     % if strcmpi(comp_mode, 'cartesian')
+        %     %     comp_ax = linspace(-comp_ub, comp_ub, comp_intervals);
+        %     %     [cvx, cvy] = meshgrid(comp_ax, comp_ax);
+        %     %     base_comps = [cvx(:), cvy(:)];
+        %     %     c_mags = sqrt(sum(base_comps.^2, 2));
+        %     %     % Filter offsets to stay within the local bounds
+        %     %     comp_offsets = base_comps(c_mags >= comp_lb & c_mags <= comp_ub, :);
+        %     % else 
+        %     %     % Circular spokes centered on the reference point
+        %     %     comp_angles = linspace(0, 2*pi, comp_axes + 1);
+        %     %     comp_angles(end) = [];
+        %     %     comp_radii = linspace(comp_lb, comp_ub, comp_intervals);
+        %     %     [cA, cR] = meshgrid(comp_angles, comp_radii);
+        %     %     [cvx, cvy] = pol2cart(cA(:), cR(:));
+        %     %     comp_offsets = [cvx, cvy];
+        %     % end
+        %     % 
+        %     % %% 5. Combine and Build the Trial Table
+        %     % % This is the cross-product of all references and all local offsets.
+        %     % num_refs = size(ref_vecs, 1);
+        %     % num_comps = size(comp_offsets, 1);
+        %     % trials_per_rep = num_refs * num_comps;
+        %     % 
+        %     % final_ref = cell(trials_per_rep, 1);
+        %     % final_comp_base = cell(trials_per_rep, 1);
+        %     % 
+        %     % % Pre-allocate metric tracking arrays ---
+        %     % final_comp_offset = cell(trials_per_rep, 1); % 1x2 vectors need cell arrays
+        %     % final_comp_offset_rel = cell(trials_per_rep, 1);
+        %     % final_comp_radius = zeros(trials_per_rep, 1); % Scalars can be standard numeric arrays
+        %     % final_comp_radius_rel = zeros(trials_per_rep, 1);
+        %     % final_comp_axis   = zeros(trials_per_rep, 1); 
+        %     % 
+        %     % counter = 1;
+        %     % for r = 1:num_refs
+        %     %     v_ref = ref_vecs(r, :);
+        %     %     ref_speed = norm(v_ref);
+        %     % 
+        %     %     for c = 1:num_comps
+        %     %         final_ref{counter} = v_ref;
+        %     % 
+        %     %         % Determine the actual offset being added
+        %     %         if comp_rel_bool
+        %     %             % offset_percentage * speed_ref
+        %     %             actual_offset = comp_offsets(c, :) .* ref_speed;
+        %     %         else
+        %     %             % offset_absolute
+        %     %             actual_offset = comp_offsets(c, :);
+        %     %         end
+        %     % 
+        %     %         final_comp_base{counter} = v_ref + actual_offset;
+        %     % 
+        %     %         % --- NEW: Record the metrics ---
+        %     %         final_comp_offset{counter} = actual_offset;
+        %     %         final_comp_offset_rel{counter} = comp_offsets(c, :);
+        %     %         final_comp_radius(counter) = norm(actual_offset);
+        %     %         final_comp_radius_rel(counter) = norm(comp_offsets(c, :));
+        %     %         % Calculate angle using atan2, convert to degrees, and wrap 0-360
+        %     %         final_comp_axis(counter)   = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
+        %     % 
+        %     %         counter = counter + 1;
+        %     %     end
+        %     % end
+        %     % 
+        %     % % Use Arume's TrialTableBuilder to handle shuffling and repeats.
+        %     % t = ArumeCore.TrialTableBuilder();
+        %     % t.AddConditionVariable('RefCompPair', (1:trials_per_rep));
+        %     % trialTable = t.GenerateTrialTable('Random', 'Sequential', num_repeats, 'Delay');
+        %     % 
+        %     % % Randomly assign 1, 2, or 3 to each trial
+        %     % trialTable.OddballWindow = randi([1, 3], height(trialTable), 1);
+        %     % 
+        %     % % Map the generated IDs back to the actual velocity pairs.
+        %     % idx = trialTable.RefCompPair;
+        %     % trialTable.ReferenceVelocity = final_ref(idx);
+        %     % comp_vels = final_comp_base(idx);
+        %     % 
+        %     % % Map the offset metrics to the trial table ---
+        %     % trialTable.CompOffsetVector = final_comp_offset(idx);
+        %     % trialTable.CompOffsetVectorRel = final_comp_offset_rel(idx);
+        %     % trialTable.CompOffsetRadius = final_comp_radius(idx); % unsure if this is actually useful - it's the radius of the comp vector from origin.
+        %     % trialTable.CompOffsetRadiusRel = final_comp_radius_rel(idx);
+        %     % trialTable.CompOffsetAxis   = final_comp_axis(idx);
+        % 
+        % 
+        %     %% 6. Apply Pseudo-Random Jitter
+        %     % We apply jitter after expanding the table so every repeat is slightly unique.
+        %     if do_jitter
+        %         for i = 1:height(trialTable)
+        %             v_base = comp_vels{i};
+        %             speed = norm(v_base);
+        % 
+        %             % Small floor for speed to ensure 0-velocity points can still jitter.
+        %             if speed == 0, speed = 0.1; end 
+        % 
+        %             % The jitter is a random (x,y) shift proportional to the vector's speed.
+        %             jx = (2*rand() - 1) * jitter_mult * speed;
+        %             jy = (2*rand() - 1) * jitter_mult * speed;
+        % 
+        %             comp_vels{i} = v_base + [jx, jy];
+        %         end
+        %     end
+        % 
+        %     trialTable.ComparisonVelocity = comp_vels(idx);
 
             %% 7. Final Window Assignment
             % Initialize all apertures with the reference velocity.

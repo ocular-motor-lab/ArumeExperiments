@@ -1,6 +1,6 @@
 classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
     % Motion Ellipses foveal threshold exp.
-    %     
+    %
     properties
         fixRad = 20;
         fixColor = [255 0 0];
@@ -13,26 +13,26 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
         gazedata
     end
-    
+
     % ---------------------------------------------------------------------
     % Experiment design methods
     % ---------------------------------------------------------------------
     methods ( Access = protected )
         function dlg = GetOptionsDialog( this, importing )
             dlg = GetOptionsDialog@ArumeExperimentDesigns.EyeTracking(this, importing);
-            
+
             %% Options for stimulus
-            dlg.Max_Increment_Speed_Percent = { 100 '* (%)' [0.1 100] };
-            dlg.Max_Increment_Direction_Angle = { 60 '* (deg)' [0.1 100] };
-            dlg.Number_Of_Increments = 9;
-            dlg.Stimulus_Type = { {'{both}' 'speed' 'direction'} };
+            % dlg.Max_Increment_Speed_Percent = { 100 '* (%)' [0.1 100] };
+            % dlg.Max_Increment_Direction_Angle = { 60 '* (deg)' [0.1 100] };
+            % dlg.Number_Of_Increments = 9;
+            % dlg.Stimulus_Type = { {'{both}' 'speed' 'direction'} };
 
-            dlg.Max_RefVelocityComponent = { 2 '* (deg/s)' [0.01 100] };
-            dlg.Num_RefVelocitiesPerComponent = 5;
+            %dlg.Max_RefVelocityComponent = { 2 '* (deg/s)' [0.01 100] };
+            %dlg.Num_RefVelocitiesPerComponent = 5;
 
 
-            dlg.Do_Full_Grid = { {'0','{1}'} };
-            dlg.Num_Repeats = {8 '* (N)' [1 100] };
+            %dlg.Do_Full_Grid = { {'0','{1}'} };
+            %dlg.Num_Repeats = {8 '* (N)' [1 100] };
 
             dlg.Dots_Per_Window = 700;
             dlg.Dots_Diameter   = { 1.5 '* (pix)' [0.01 100] };
@@ -42,8 +42,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.Window_Radius_Deg   = { 0.5 '* (deg)' [0.01 100] };
             dlg.Window_Eccentricity_Deg   = { 0.75 '* (deg)' [0.01 100] };
 
-            dlg.Fixation_Check_WinSize = {1 '* (deg)' [0.01 100]};
-            dlg.Fixation_Check_TimeOut = 0.3;
+            dlg.Fixation_Check_WinSize = {1.25 '* (deg)' [0.01 100]};
+            dlg.Fixation_Check_TimeOut = 0.5;
 
             %% Fixation Configuration
             dlg.Fixation_Type =  { {'none', '{circle}', 'cross'} };
@@ -58,12 +58,12 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.Min_Motion_Duration_Before_Response = { 0.2 '* (sec)' [0.01 100] };
 
             dlg.BackgroundBrightness = 0;
-            
+
             %% Eye tracking options
 
             dlg.UseEyeTracker = 1;
             dlg.EyeTracker = { {'{Eyelink}', 'OpenIris', 'Fove', 'Mouse sim'} };
-            dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult Speed Stimulus'; % which variables to display every trial in the command line separated by spaces
+            dlg.Debug.DisplayVariableSelection = 'TrialNumber TrialResult OddballWindow ReferenceVelocity CompOffsetVector'; % which variables to display every trial in the command line separated by spaces
 
             %% Display options
             % SamsungOLED
@@ -81,43 +81,47 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             %     % case 'ClaraDesk'
             % screen_dims_mm = [596.74, 335.66]; %https://dl.dell.com/manuals/all-products/esuprt_electronics_accessories/esuprt_electronics_accessories_monitors/dell-p2721q-monitor_user's-guide_en-us.pdf
             % distance_from_screen = 0.5; %meters
-            
+
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 50000000; % Very large to prevent skipping forward
-            dlg.TrialsBeforeBreak = 500; % big break
+            dlg.TrialsBeforeBreak = 200; % big break; also controls how many trials in a row will have the same mickey-mouse orientation
             dlg.TrialsBeforeBreakSmall = 25; % small break
             dlg.TrialAbortAction = 'Delay';
 
-            %% Reference Vector Options
+
+           %% Reference Vector Options
             % Global Ref Parameters
             dlg.lb_screen = { 0.5 '* (deg/s)' [0 300] };
             dlg.ub_screen = { 8 '* (deg/s)' [0 300] };
-            dlg.num_ref_gridpts =  { 4 '*' [1 3000] };
-            dlg.ref_cart_or_polar = { {'{polar}' 'cartesian'} }; 
+            dlg.num_ref_gridpts =  { 11 '*' [1 3000] };
+            dlg.ref_cart_or_polar = { {'polar' '{cartesian}'} };
             dlg.num_ref_spokes = {8 '*' [1 3000] };
-            dlg.ref_log_or_lin = { {'{log}' 'lin'} }; 
+            dlg.ref_log_or_lin = { {'log' '{lin}'} };
 
             % Local Comp Parameters (The relative offsets)
-            dlg.comp_lb = { 0 '* (x ref_vec speed)' [0 300] }; 
-            dlg.comp_ub = { 0.8 '* (x ref_vec speed)' [0 300] };
-            dlg.comp_num_intervals = { 8 '* ' [1 300] };  
-            dlg.comp_num_axes = { 8 '* ' [1 300] }; 
-            dlg.comp_cart_or_polar = { {'{polar}' 'cartesian'} };  
+            dlg.comp_lb = { 0 '* (x ref_vec speed)' [0 300] };
+            dlg.comp_ub = { 1 '* (x ref_vec speed)' [0 300] };
+            dlg.comp_num_intervals = { 8 '* ' [1 300] };
+            dlg.comp_num_axes = { 8 '* ' [1 300] };
+            dlg.comp_cart_or_polar = { {'polar' '{cartesian}'} };
             dlg.comp_rel_bool = { {'0','{1}'} };
 
             % Jitter Parameters
             dlg.Do_Jitter = { {'0','{1}'} }; % Boolean toggle
             dlg.Jitter_Multiplier = { 0.05 '* (x comp_vec speed)' [0 300] }; % e.g., 0.05 for 5% jitter
 
-            dlg.Num_Repeats_Per_Combo = {2  '* ' [0 300]}; 
+            dlg.Num_Repeats_Per_Combo = {1  '* ' [0 300]};
 
             dlg.EyeTrackerCalibProportion = {[.30,.30],'Calibration Area (width, height)',[0.05,1],1};
 
             dlg.ClaraDebug = { {'1','{0}'} };
-            
+
         end
 
+
+
         function trialTable = SetUpTrialTable(this)
+
             %% 1. Parameter Extraction
             % These variables define the "Global" space where our reference stimuli live.
             lb_ref      = this.ExperimentOptions.lb_screen;
@@ -126,42 +130,41 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             end
             ub_ref      = this.ExperimentOptions.ub_screen;
             num_ref_pts = this.ExperimentOptions.num_ref_gridpts;
-            ref_mode    = this.ExperimentOptions.ref_cart_or_polar; 
+            ref_mode    = this.ExperimentOptions.ref_cart_or_polar;
             ref_log_or_lin = this.ExperimentOptions.ref_log_or_lin;
             % These define the "Local" difference between the reference and the comparison.
-            comp_lb        = this.ExperimentOptions.comp_lb; 
+            comp_lb        = this.ExperimentOptions.comp_lb;
             if isempty(comp_lb)
                 comp_lb = 0;
             end
-            comp_ub        = this.ExperimentOptions.comp_ub; 
+            comp_ub        = this.ExperimentOptions.comp_ub;
             comp_intervals = this.ExperimentOptions.comp_num_intervals;
             comp_axes      = this.ExperimentOptions.comp_num_axes;
-            comp_mode      = this.ExperimentOptions.comp_cart_or_polar; 
+            comp_mode      = this.ExperimentOptions.comp_cart_or_polar;
             comp_rel_bool  = this.ExperimentOptions.comp_rel_bool; % Toggle for relative vs absolute
             % Jitter adds small noise to the comparison to prevent grid-learning.
-            do_jitter   = this.ExperimentOptions.Do_Jitter; 
-            jitter_mult = this.ExperimentOptions.Jitter_Multiplier; 
+            do_jitter   = this.ExperimentOptions.Do_Jitter;
+            jitter_mult = this.ExperimentOptions.Jitter_Multiplier;
             num_repeats = this.ExperimentOptions.Num_Repeats_Per_Combo;
-            
+
             %% 2. Seed RNG for Pseudo-Randomization
-            % Seeding with the subject code ensures that the trial table is unique to the 
+            % Seeding with the subject code ensures that the trial table is unique to the
             % participant but reproducible if the same session is re-generated.
             rng(keyHash(this.Session.subjectCode)/10^10)
-            
+
             %% 3. Generate Global Reference Vectors
             % This step creates the set of baseline motion vectors (x_ref).
             if strcmpi(ref_mode, 'cartesian')
-                % Create a square grid
+                % Create a square grid and mask it to form a circular frame/ring.
                 ref_ax = linspace(-ub_ref, ub_ref, num_ref_pts);
                 [rvx, rvy] = meshgrid(ref_ax, ref_ax);
                 base_refs = [rvx(:), rvy(:)];
-                
-                % MODIFIED TO MATCH PYTHON: 
-                % Python commented out the magnitude masking, using all grid points.
+
+                % MODIFIED TO MATCH PYTHON: use full grid instead of masking by magnitude
                 % mags = sqrt(sum(base_refs.^2, 2));
                 % ref_vecs = base_refs(mags >= lb_ref & mags <= ub_ref, :);
-                ref_vecs = base_refs; 
-            else 
+                ref_vecs = base_refs;
+            else
                 num_ref_spokes = this.ExperimentOptions.num_ref_spokes;
                 % Create spokes of a wheel (Polar).
                 angles = linspace(0, 2*pi, num_ref_spokes + 1);
@@ -175,15 +178,14 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 [vx, vy] = pol2cart(A(:), R(:));
                 ref_vecs = [vx, vy];
             end
-            
+
             %% 3.1 Force inclusion of [0,0] Reference
             % Check if a zero-velocity vector already exists (using a small epsilon)
             if ~any(sqrt(sum(ref_vecs.^2, 2)) < 1e-10)
                 ref_vecs = [0, 0; ref_vecs];
+                num_refs = size(ref_vecs, 1); % Update the count for later steps
             end
-            % Update the count for later steps
-            num_refs = size(ref_vecs, 1); 
-            
+
             %% 4. Generate Local Comparison Offsets (dx, dy)
             % Here we define the "delta" or the shape of the MOCS-like intervals.
             % If comp_rel_bool is true, these are treated as unit-less scaling factors.
@@ -192,112 +194,104 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 [cvx, cvy] = meshgrid(comp_ax, comp_ax);
                 base_comps = [cvx(:), cvy(:)];
                 c_mags = sqrt(sum(base_comps.^2, 2));
-                
                 % Filter offsets to stay within the local bounds
                 valid_idx = c_mags >= comp_lb & c_mags <= comp_ub;
                 comp_offsets = base_comps(valid_idx, :);
                 comp_offset_multipliers = c_mags(valid_idx);
-                
                 % Map Cartesian magnitudes to an index (1 = smallest, N = largest)
                 [~, ~, comp_offset_radius_idx] = unique(round(c_mags(valid_idx), 4));
-            else 
+            else
                 % Circular spokes centered on the reference point
                 comp_angles = linspace(0, 2*pi, comp_axes + 1);
                 comp_angles(end) = [];
                 comp_radii = linspace(comp_lb, comp_ub, comp_intervals);
-                
                 % Create a matching grid of indices (1 to comp_intervals)
                 radius_indices = 1:comp_intervals;
                 [cA, cR] = meshgrid(comp_angles, comp_radii);
                 [~, cR_idx] = meshgrid(comp_angles, radius_indices);
-                
-                
                 [cvx, cvy] = pol2cart(cA(:), cR(:));
                 comp_offsets = [cvx, cvy];
                 comp_offset_radius_idx = cR_idx(:); % Flattened index array
                 comp_offset_multipliers = cR(:); % Flattened array
             end
-            
+
             %% 5. Combine and Build the Trial Table
             % This is the cross-product of all references and all local offsets.
+            num_refs = size(ref_vecs, 1);
             num_comps = size(comp_offsets, 1);
             trials_per_rep = num_refs * num_comps;
-            
             final_ref = cell(trials_per_rep, 1);
             final_comp_base = cell(trials_per_rep, 1);
-            
+
             % Pre-allocate metric tracking arrays
             final_comp_offset = cell(trials_per_rep, 1); % 1x2 vectors need cell arrays
             final_comp_offset_rel = cell(trials_per_rep, 1);
             final_comp_radius = zeros(trials_per_rep, 1); % Scalars can be standard numeric arrays
             final_comp_radius_rel = zeros(trials_per_rep, 1);
-            final_comp_axis   = zeros(trials_per_rep, 1); 
+            final_comp_axis   = zeros(trials_per_rep, 1);
             final_comp_rad_idx = zeros(trials_per_rep, 1); % Index array for different levels
             final_comp_mult   = zeros(trials_per_rep, 1);
-            
+
             counter = 1;
             % if 0,0
             base_speed = 0.25;
             for r = 1:num_refs
                 v_ref = ref_vecs(r, :);
                 ref_speed = norm(v_ref);
-                
                 for c = 1:num_comps
                     final_ref{counter} = v_ref;
-                    
                     % Determine the actual offset being added
                     if comp_rel_bool
                         % offset_percentage * speed_ref
                         actual_offset = comp_offsets(c, :) .* ref_speed;
                         if ref_speed == 0
                             actual_offset = comp_offsets(c, :) .* base_speed;
-                            % MODIFIED TO MATCH PYTHON: Removed stray "2;" typo here
+                            % MODIFIED TO MATCH PYTHON: removed stray 2;
                         end
                     else
                         % offset_absolute
                         actual_offset = comp_offsets(c, :);
                     end
-                    
                     final_comp_base{counter} = v_ref + actual_offset;
-                    
+
                     % Record the metrics
                     final_comp_offset{counter} = actual_offset;
                     final_comp_offset_rel{counter} = comp_offsets(c, :);
                     final_comp_radius(counter) = norm(actual_offset);
                     final_comp_radius_rel(counter) = norm(comp_offsets(c, :));
+
                     % Calculate angle using atan2, convert to degrees, and wrap 0-360
                     final_comp_axis(counter)   = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
-                    
+
                     % Record the discrete MOCS radius index
-                    final_comp_rad_idx(counter) = comp_offset_radius_idx(c); 
+                    final_comp_rad_idx(counter) = comp_offset_radius_idx(c);
                     final_comp_mult(counter) = comp_offset_multipliers(c);
-                    
                     counter = counter + 1;
                 end
             end
-            
+
             % Use Arume's TrialTableBuilder to handle shuffling and repeats.
             t = ArumeCore.TrialTableBuilder();
             t.AddConditionVariable('RefCompPair', (1:trials_per_rep));
             trialTable = t.GenerateTrialTable('Random', 'Sequential', num_repeats, 'Delay');
-            
+
             % Randomly assign 1, 2, or 3 to each trial
             trialTable.OddballWindow = randi([1, 3], height(trialTable), 1);
-            
+
             % Map the generated IDs back to the actual velocity pairs.
             idx = trialTable.RefCompPair;
             trialTable.ReferenceVelocity = final_ref(idx);
             comp_vels = final_comp_base(idx);
-            
+
             % Map the offset metrics to the trial table
             trialTable.CompOffsetVector = final_comp_offset(idx);
             trialTable.CompOffsetVectorRel = final_comp_offset_rel(idx);
-            trialTable.CompOffsetRadius = final_comp_radius(idx); 
+            trialTable.CompOffsetRadius = final_comp_radius(idx);
             trialTable.CompOffsetRadiusRel = final_comp_radius_rel(idx);
             trialTable.CompOffsetAxis   = final_comp_axis(idx);
             trialTable.CompOffsetRadiusIndex = final_comp_rad_idx(idx);
             trialTable.CompOffsetMultiplier = final_comp_mult(idx);
-            
+
             %% 6. Apply Pseudo-Random Jitter
             % We apply jitter after expanding the table so every repeat is slightly unique.
             if do_jitter
@@ -305,24 +299,64 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     v_base = comp_vels{i};
                     speed = norm(v_base);
                     % Small floor for speed to ensure 0-velocity points can still jitter.
-                    if speed == 0, speed = 0.1; end 
+                    if speed == 0, speed = 0.1; end
                     % The jitter is a random (x,y) shift proportional to the vector's speed.
                     jx = (2*rand() - 1) * jitter_mult * speed;
                     jy = (2*rand() - 1) * jitter_mult * speed;
                     comp_vels{i} = v_base + [jx, jy];
                 end
             end
-            
-            % MODIFIED TO MATCH PYTHON: removed the "(idx)" at the end. 
-            % comp_vels was already indexed at line 144, indexing it again shuffles it wrongly.
-            trialTable.ComparisonVelocity = comp_vels; 
 
-            %% 7. Print Experiment Summary
-            % MODIFIED TO MATCH PYTHON: Added readout matching python script
+            % MODIFIED TO MATCH PYTHON: removed the "(idx)" at the end.
+            % comp_vels was already indexed at line 147, indexing it again shuffles it wrongly.
+            trialTable.ComparisonVelocity = comp_vels;
+
+            %% 7. Final Window Assignment
+            % Initialize all apertures with the reference velocity.
+            trialTable.Window1_Velocity = trialTable.ReferenceVelocity;
+            trialTable.Window2_Velocity = trialTable.ReferenceVelocity;
+            trialTable.Window3_Velocity = trialTable.ReferenceVelocity;
+
+            % The 'Oddball' window is the only one that gets the comparison velocity.
+            trialTable.Window1_Velocity(trialTable.OddballWindow == 1) = comp_vels(trialTable.OddballWindow == 1);
+            trialTable.Window2_Velocity(trialTable.OddballWindow == 2) = comp_vels(trialTable.OddballWindow == 2);
+            trialTable.Window3_Velocity(trialTable.OddballWindow == 3) = comp_vels(trialTable.OddballWindow == 3);
+
+            %% 8.
+            %  Set the physical positions of the three apertures on the display.
+            % trialTable.Window1_Angle = 125 + 110 * rand(height(trialTable), 1);
+            % trialTable.Window2_Angle = wrapTo360(trialTable.Window1_Angle - 120);
+            % trialTable.Window3_Angle = wrapTo360(trialTable.Window1_Angle - 240);
+
+            % Determine the number of unique rotation blocks
+            total_trials = height(trialTable);
+            trials_per_block = this.ExperimentOptions.TrialsBeforeBreak;
+            num_blocks = floor(total_trials / trials_per_block) + 1;
+
+            % Generate evenly spaced offsets across 0 to 110, add the 125 base, and shuffle
+            angle_set = 125 + linspace(0, 110, num_blocks);
+            angle_set = angle_set(randperm(num_blocks));
+
+            % Map each trial sequentially to its corresponding block index
+            block_idx = floor((0:(total_trials-1)) / trials_per_block) + 1;
+
+            % Change the blocknumber and session columns manually to match
+            trialTable.BlockNumber = block_idx';
+            trialTable.BlockSequenceNumber = block_idx';
+
+
+            % Assign the angles
+            trialTable.Window1_Angle = angle_set(block_idx)';
+            trialTable.Window2_Angle = wrapTo360(trialTable.Window1_Angle - 120);
+            trialTable.Window3_Angle = wrapTo360(trialTable.Window1_Angle - 240);
+
+
+            %% --- Print Experiment Summary ---
+            % MODIFIED TO MATCH PYTHON: Formatted exactly like the python version
             fprintf('\n============================================================\n');
             fprintf('           STIMULUS CONFIGURATION SUMMARY                 \n');
             fprintf('============================================================\n');
-            
+
             if strcmpi(ref_mode, 'cartesian')
                 fprintf('REFERENCE VECTORS: [CARTESIAN GRID]\n');
                 fprintf('  - Grid Axis Steps:   [%s] deg/s\n', num2str(ref_ax, '%.2f '));
@@ -332,16 +366,16 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 fprintf('  - Reference Radii:   [%s] deg/s\n', num2str(radii, '%.2f '));
                 fprintf('  - Number of Spokes:  %d\n', num_ref_spokes);
             end
-            
+
             fprintf('  - Total Unique Refs: %d\n', num_refs);
             fprintf('------------------------------------------------------------\n');
-            
+
             if comp_rel_bool
-                comp_type_str = 'RELATIVE (% of ref speed)';
+                comp_type_str = 'RELATIVE (%% of ref speed)';
             else
                 comp_type_str = 'ABSOLUTE (deg/s)';
             end
-            
+
             if strcmpi(comp_mode, 'cartesian')
                 fprintf('COMPARISON VECTORS: [CARTESIAN LOCAL GRID]\n');
                 fprintf('  - Offset Type:       %s\n', comp_type_str);
@@ -353,12 +387,13 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 fprintf('  - Comparison Radii:  [%s]\n', num2str(comp_radii, '%.2f '));
                 fprintf('  - Comparison Axes:   %d\n', comp_axes);
             end
-            
+
             fprintf('  - Total Unique Comps: %d (per reference)\n', num_comps);
             fprintf('------------------------------------------------------------\n');
             fprintf('  - Repetitions / Combo: %d\n', num_repeats);
             fprintf('  - Total N Trials:      %d\n', height(trialTable));
             fprintf('============================================================\n\n');
+
         end
 
         % function trialTable = SetUpTrialTable(this)
@@ -370,31 +405,31 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         %     end
         %     ub_ref      = this.ExperimentOptions.ub_screen;
         %     num_ref_pts = this.ExperimentOptions.num_ref_gridpts;
-        %     ref_mode    = this.ExperimentOptions.ref_cart_or_polar; 
+        %     ref_mode    = this.ExperimentOptions.ref_cart_or_polar;
         %     ref_log_or_lin = this.ExperimentOptions.ref_log_or_lin;
-        % 
+        %
         %     % These define the "Local" difference between the reference and the comparison.
-        %     comp_lb        = this.ExperimentOptions.comp_lb; 
+        %     comp_lb        = this.ExperimentOptions.comp_lb;
         %     if isempty(comp_lb)
         %         comp_lb = 0;
         %     end
-        %     comp_ub        = this.ExperimentOptions.comp_ub; 
+        %     comp_ub        = this.ExperimentOptions.comp_ub;
         %     comp_intervals = this.ExperimentOptions.comp_num_intervals;
         %     comp_axes      = this.ExperimentOptions.comp_num_axes;
-        %     comp_mode      = this.ExperimentOptions.comp_cart_or_polar; 
+        %     comp_mode      = this.ExperimentOptions.comp_cart_or_polar;
         %     comp_rel_bool  = this.ExperimentOptions.comp_rel_bool; % Toggle for relative vs absolute
-        % 
+        %
         %     % Jitter adds small noise to the comparison to prevent grid-learning.
-        %     do_jitter   = this.ExperimentOptions.Do_Jitter; 
-        %     jitter_mult = this.ExperimentOptions.Jitter_Multiplier; 
-        % 
+        %     do_jitter   = this.ExperimentOptions.Do_Jitter;
+        %     jitter_mult = this.ExperimentOptions.Jitter_Multiplier;
+        %
         %     num_repeats = this.ExperimentOptions.Num_Repeats_Per_Combo;
-        % 
+        %
         %     %% 2. Seed RNG for Pseudo-Randomization
-        %     % Seeding with the subject code ensures that the trial table is unique to the 
+        %     % Seeding with the subject code ensures that the trial table is unique to the
         %     % participant but reproducible if the same session is re-generated.
         %     rng(keyHash(this.Session.subjectCode)/10^10)
-        % 
+        %
         %     %% 3. Generate Global Reference Vectors
         %     % This step creates the set of baseline motion vectors (x_ref).
         %     if strcmpi(ref_mode, 'cartesian')
@@ -404,7 +439,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         %         base_refs = [rvx(:), rvy(:)];
         %         mags = sqrt(sum(base_refs.^2, 2));
         %         ref_vecs = base_refs(mags >= lb_ref & mags <= ub_ref, :);
-        %     else 
+        %     else
         %         num_ref_spokes = this.ExperimentOptions.num_ref_spokes;
         %         % Create spokes of a wheel (Polar).
         %         angles = linspace(0, 2*pi, num_ref_spokes + 1);
@@ -418,15 +453,15 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         %         [vx, vy] = pol2cart(A(:), R(:));
         %         ref_vecs = [vx, vy];
         %     end
-        % 
+        %
         %     %% 3.1 Force inclusion of [0,0] Reference
         %     % Check if a zero-velocity vector already exists (using a small epsilon)
         %     if ~any(sqrt(sum(ref_vecs.^2, 2)) < 1e-10)
         %         ref_vecs = [0, 0; ref_vecs];
         %         num_refs = size(ref_vecs, 1); % Update the count for later steps
         %     end
-        % 
-        % 
+        %
+        %
         %     %% 4. Generate Local Comparison Offsets (dx, dy)
         %     % Here we define the "delta" or the shape of the MOCS-like intervals.
         %     % If comp_rel_bool is true, these are treated as unit-less scaling factors.
@@ -435,60 +470,60 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         %         [cvx, cvy] = meshgrid(comp_ax, comp_ax);
         %         base_comps = [cvx(:), cvy(:)];
         %         c_mags = sqrt(sum(base_comps.^2, 2));
-        % 
+        %
         %         % Filter offsets to stay within the local bounds
         %         valid_idx = c_mags >= comp_lb & c_mags <= comp_ub;
         %         comp_offsets = base_comps(valid_idx, :);
         %         comp_offset_multipliers = c_mags(valid_idx);
-        % 
+        %
         %         % Map Cartesian magnitudes to an index (1 = smallest, N = largest)
         %         [~, ~, comp_offset_radius_idx] = unique(round(c_mags(valid_idx), 4));
-        %     else 
+        %     else
         %         % Circular spokes centered on the reference point
         %         comp_angles = linspace(0, 2*pi, comp_axes + 1);
         %         comp_angles(end) = [];
         %         comp_radii = linspace(comp_lb, comp_ub, comp_intervals);
-        % 
+        %
         %         % Create a matching grid of indices (1 to comp_intervals)
         %         radius_indices = 1:comp_intervals;
         %         [cA, cR] = meshgrid(comp_angles, comp_radii);
         %         [~, cR_idx] = meshgrid(comp_angles, radius_indices);
-        % 
-        % 
+        %
+        %
         %         [cvx, cvy] = pol2cart(cA(:), cR(:));
         %         comp_offsets = [cvx, cvy];
         %         comp_offset_radius_idx = cR_idx(:); % Flattened index array
         %         comp_offset_multipliers = cR(:); % Flattened array
         %     end
-        % 
+        %
         %     %% 5. Combine and Build the Trial Table
         %     % This is the cross-product of all references and all local offsets.
         %     num_refs = size(ref_vecs, 1);
         %     num_comps = size(comp_offsets, 1);
         %     trials_per_rep = num_refs * num_comps;
-        % 
+        %
         %     final_ref = cell(trials_per_rep, 1);
         %     final_comp_base = cell(trials_per_rep, 1);
-        % 
+        %
         %     % Pre-allocate metric tracking arrays
         %     final_comp_offset = cell(trials_per_rep, 1); % 1x2 vectors need cell arrays
         %     final_comp_offset_rel = cell(trials_per_rep, 1);
         %     final_comp_radius = zeros(trials_per_rep, 1); % Scalars can be standard numeric arrays
         %     final_comp_radius_rel = zeros(trials_per_rep, 1);
-        %     final_comp_axis   = zeros(trials_per_rep, 1); 
+        %     final_comp_axis   = zeros(trials_per_rep, 1);
         %     final_comp_rad_idx = zeros(trials_per_rep, 1); % Index array for different levels
         %     final_comp_mult   = zeros(trials_per_rep, 1);
-        % 
+        %
         %     counter = 1;
         %     % if 0,0
         %     base_speed = 0.25;
         %     for r = 1:num_refs
         %         v_ref = ref_vecs(r, :);
         %         ref_speed = norm(v_ref);
-        % 
+        %
         %         for c = 1:num_comps
         %             final_ref{counter} = v_ref;
-        % 
+        %
         %             % Determine the actual offset being added
         %             if comp_rel_bool
         %                 % offset_percentage * speed_ref
@@ -501,9 +536,9 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         %                 % offset_absolute
         %                 actual_offset = comp_offsets(c, :);
         %             end
-        % 
+        %
         %             final_comp_base{counter} = v_ref + actual_offset;
-        % 
+        %
         %             % Record the metrics
         %             final_comp_offset{counter} = actual_offset;
         %             final_comp_offset_rel{counter} = comp_offsets(c, :);
@@ -511,38 +546,38 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         %             final_comp_radius_rel(counter) = norm(comp_offsets(c, :));
         %             % Calculate angle using atan2, convert to degrees, and wrap 0-360
         %             final_comp_axis(counter)   = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
-        % 
+        %
         %             % Record the discrete MOCS radius index
-        %             final_comp_rad_idx(counter) = comp_offset_radius_idx(c); 
+        %             final_comp_rad_idx(counter) = comp_offset_radius_idx(c);
         %             final_comp_mult(counter) = comp_offset_multipliers(c);
-        % 
+        %
         %             counter = counter + 1;
         %         end
         %     end
-        % 
+        %
         %     % Use Arume's TrialTableBuilder to handle shuffling and repeats.
         %     t = ArumeCore.TrialTableBuilder();
         %     t.AddConditionVariable('RefCompPair', (1:trials_per_rep));
         %     trialTable = t.GenerateTrialTable('Random', 'Sequential', num_repeats, 'Delay');
-        % 
+        %
         %     % Randomly assign 1, 2, or 3 to each trial
         %     trialTable.OddballWindow = randi([1, 3], height(trialTable), 1);
-        % 
+        %
         %     % Map the generated IDs back to the actual velocity pairs.
         %     idx = trialTable.RefCompPair;
         %     trialTable.ReferenceVelocity = final_ref(idx);
         %     comp_vels = final_comp_base(idx);
-        % 
+        %
         %     % Map the offset metrics to the trial table
         %     trialTable.CompOffsetVector = final_comp_offset(idx);
         %     trialTable.CompOffsetVectorRel = final_comp_offset_rel(idx);
-        %     trialTable.CompOffsetRadius = final_comp_radius(idx); 
+        %     trialTable.CompOffsetRadius = final_comp_radius(idx);
         %     trialTable.CompOffsetRadiusRel = final_comp_radius_rel(idx);
         %     trialTable.CompOffsetAxis   = final_comp_axis(idx);
         %     trialTable.CompOffsetRadiusIndex = final_comp_rad_idx(idx);
         %     trialTable.CompOffsetMultiplier = final_comp_mult(idx);
-        % 
-        % 
+        %
+        %
         %     % %% 4. Generate Local Comparison Offsets (dx, dy)
         %     % % Here we define the "delta" or the shape of the MOCS-like intervals.
         %     % % If comp_rel_bool is true, these are treated as unit-less scaling factors.
@@ -553,7 +588,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         %     %     c_mags = sqrt(sum(base_comps.^2, 2));
         %     %     % Filter offsets to stay within the local bounds
         %     %     comp_offsets = base_comps(c_mags >= comp_lb & c_mags <= comp_ub, :);
-        %     % else 
+        %     % else
         %     %     % Circular spokes centered on the reference point
         %     %     comp_angles = linspace(0, 2*pi, comp_axes + 1);
         %     %     comp_angles(end) = [];
@@ -562,31 +597,31 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         %     %     [cvx, cvy] = pol2cart(cA(:), cR(:));
         %     %     comp_offsets = [cvx, cvy];
         %     % end
-        %     % 
+        %     %
         %     % %% 5. Combine and Build the Trial Table
         %     % % This is the cross-product of all references and all local offsets.
         %     % num_refs = size(ref_vecs, 1);
         %     % num_comps = size(comp_offsets, 1);
         %     % trials_per_rep = num_refs * num_comps;
-        %     % 
+        %     %
         %     % final_ref = cell(trials_per_rep, 1);
         %     % final_comp_base = cell(trials_per_rep, 1);
-        %     % 
+        %     %
         %     % % Pre-allocate metric tracking arrays ---
         %     % final_comp_offset = cell(trials_per_rep, 1); % 1x2 vectors need cell arrays
         %     % final_comp_offset_rel = cell(trials_per_rep, 1);
         %     % final_comp_radius = zeros(trials_per_rep, 1); % Scalars can be standard numeric arrays
         %     % final_comp_radius_rel = zeros(trials_per_rep, 1);
-        %     % final_comp_axis   = zeros(trials_per_rep, 1); 
-        %     % 
+        %     % final_comp_axis   = zeros(trials_per_rep, 1);
+        %     %
         %     % counter = 1;
         %     % for r = 1:num_refs
         %     %     v_ref = ref_vecs(r, :);
         %     %     ref_speed = norm(v_ref);
-        %     % 
+        %     %
         %     %     for c = 1:num_comps
         %     %         final_ref{counter} = v_ref;
-        %     % 
+        %     %
         %     %         % Determine the actual offset being added
         %     %         if comp_rel_bool
         %     %             % offset_percentage * speed_ref
@@ -595,9 +630,9 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         %     %             % offset_absolute
         %     %             actual_offset = comp_offsets(c, :);
         %     %         end
-        %     % 
+        %     %
         %     %         final_comp_base{counter} = v_ref + actual_offset;
-        %     % 
+        %     %
         %     %         % --- NEW: Record the metrics ---
         %     %         final_comp_offset{counter} = actual_offset;
         %     %         final_comp_offset_rel{counter} = comp_offsets(c, :);
@@ -605,257 +640,127 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         %     %         final_comp_radius_rel(counter) = norm(comp_offsets(c, :));
         %     %         % Calculate angle using atan2, convert to degrees, and wrap 0-360
         %     %         final_comp_axis(counter)   = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
-        %     % 
+        %     %
         %     %         counter = counter + 1;
         %     %     end
         %     % end
-        %     % 
+        %     %
         %     % % Use Arume's TrialTableBuilder to handle shuffling and repeats.
         %     % t = ArumeCore.TrialTableBuilder();
         %     % t.AddConditionVariable('RefCompPair', (1:trials_per_rep));
         %     % trialTable = t.GenerateTrialTable('Random', 'Sequential', num_repeats, 'Delay');
-        %     % 
+        %     %
         %     % % Randomly assign 1, 2, or 3 to each trial
         %     % trialTable.OddballWindow = randi([1, 3], height(trialTable), 1);
-        %     % 
+        %     %
         %     % % Map the generated IDs back to the actual velocity pairs.
         %     % idx = trialTable.RefCompPair;
         %     % trialTable.ReferenceVelocity = final_ref(idx);
         %     % comp_vels = final_comp_base(idx);
-        %     % 
+        %     %
         %     % % Map the offset metrics to the trial table ---
         %     % trialTable.CompOffsetVector = final_comp_offset(idx);
         %     % trialTable.CompOffsetVectorRel = final_comp_offset_rel(idx);
         %     % trialTable.CompOffsetRadius = final_comp_radius(idx); % unsure if this is actually useful - it's the radius of the comp vector from origin.
         %     % trialTable.CompOffsetRadiusRel = final_comp_radius_rel(idx);
         %     % trialTable.CompOffsetAxis   = final_comp_axis(idx);
-        % 
-        % 
+        %
+        %
         %     %% 6. Apply Pseudo-Random Jitter
         %     % We apply jitter after expanding the table so every repeat is slightly unique.
         %     if do_jitter
         %         for i = 1:height(trialTable)
         %             v_base = comp_vels{i};
         %             speed = norm(v_base);
-        % 
+        %
         %             % Small floor for speed to ensure 0-velocity points can still jitter.
-        %             if speed == 0, speed = 0.1; end 
-        % 
+        %             if speed == 0, speed = 0.1; end
+        %
         %             % The jitter is a random (x,y) shift proportional to the vector's speed.
         %             jx = (2*rand() - 1) * jitter_mult * speed;
         %             jy = (2*rand() - 1) * jitter_mult * speed;
-        % 
+        %
         %             comp_vels{i} = v_base + [jx, jy];
         %         end
         %     end
-        % 
+        %
         %     trialTable.ComparisonVelocity = comp_vels(idx);
-
-            %% 7. Final Window Assignment
-            % Initialize all apertures with the reference velocity.
-            trialTable.Window1_Velocity = trialTable.ReferenceVelocity;
-            trialTable.Window2_Velocity = trialTable.ReferenceVelocity;
-            trialTable.Window3_Velocity = trialTable.ReferenceVelocity;
-
-            % The 'Oddball' window is the only one that gets the comparison velocity.
-            trialTable.Window1_Velocity(trialTable.OddballWindow == 1) = comp_vels(trialTable.OddballWindow == 1);
-            trialTable.Window2_Velocity(trialTable.OddballWindow == 2) = comp_vels(trialTable.OddballWindow == 2);
-            trialTable.Window3_Velocity(trialTable.OddballWindow == 3) = comp_vels(trialTable.OddballWindow == 3);
-
-            % Set the physical positions of the three apertures on the display.
-            trialTable.Window1_Angle = 125 + 110 * rand(height(trialTable), 1);
-            trialTable.Window2_Angle = wrapTo360(trialTable.Window1_Angle - 120);
-            trialTable.Window3_Angle = wrapTo360(trialTable.Window1_Angle - 240);
-
-            %% --- Print Experiment Summary ---
-            fprintf('\n============================================================\n');
-            fprintf('           STIMULUS CONFIGURATION SUMMARY                 \n');
-            fprintf('============================================================\n');
-            
-            % 1. Reference Vector Specs
-            if strcmpi(ref_mode, 'cartesian')
-                ref_ax_vals = linspace(-ub_ref, ub_ref, num_ref_pts);
-                ref_step_str = num2str(ref_ax_vals, '%0.2f ');
-                fprintf('REFERENCE VECTORS: [CARTESIAN GRID]\n');
-                fprintf('  - Grid Axis Steps:   [%s] deg/s\n', ref_step_str);
-                fprintf('  - Frame Bounds:      %0.2f to %0.2f deg/s (Magnitude)\n', lb_ref, ub_ref);
-            else
-                %ref_radii = linspace(lb_ref, ub_ref, max(1, num_ref_pts));
-                fprintf('REFERENCE VECTORS: [POLAR WHEEL]\n');
-                fprintf('  - Reference Radii:   [%s] deg/s\n', num2str(radii, '%0.2f '));
-                fprintf('  - Number of Spokes:  %d\n', num_ref_spokes);
-            end
-            fprintf('  - Total Unique Refs: %d\n', num_refs);
-            
-            fprintf('------------------------------------------------------------\n');
-            
-            % 2. Comparison Vector Specs
-            comp_type_str = 'ABSOLUTE (deg/s)';
-            if comp_rel_bool; comp_type_str = 'RELATIVE (%% of ref speed)'; end
-            
-            if strcmpi(comp_mode, 'cartesian')
-                comp_ax_vals = linspace(-comp_ub, comp_ub, comp_intervals);
-                fprintf('COMPARISON VECTORS: [CARTESIAN LOCAL GRID]\n');
-                fprintf('  - Offset Type:       %s\n', comp_type_str);
-                fprintf('  - Grid Axis Steps:   [%s]\n', num2str(comp_ax_vals, '%0.2f '));
-                fprintf('  - Local Bounds:      %0.2f to %0.2f (Magnitude)\n', comp_lb, comp_ub);
-            else
-                %comp_radii = linspace(comp_lb, comp_ub, comp_intervals);
-                fprintf('COMPARISON VECTORS: [POLAR LOCAL SPOKES]\n');
-                fprintf('  - Offset Type:       %s\n', comp_type_str);
-                fprintf('  - Comparison Radii:  [%s]\n', num2str(comp_radii, '%0.2f '));
-                fprintf('  - Comparison Axes:   %d\n', comp_axes);
-            end
-            fprintf('  - Total Unique Comps: %d (per reference)\n', num_comps);
-            
-            fprintf('------------------------------------------------------------\n');
-            
-            % 3. Jitter & Session Totals
-            if do_jitter
-                fprintf('JITTER: [ENABLED]\n');
-                fprintf('  - Multiplier:        %0.2f x velocity\n', jitter_mult);
-            else
-                fprintf('JITTER: [DISABLED]\n');
-            end
-            
-            fprintf('\nSESSION TOTALS:\n');
-            fprintf('  - Unique Combos:     %d (Refs * Comps)\n', trials_per_rep);
-            fprintf('  - Repetitions:       %d per combo\n', num_repeats);
-            fprintf('  - TOTAL TRIALS:      %d\n', height(trialTable));
-            fprintf('============================================================\n\n');
-
-        end
-        % function trialTable = SetUpTrialTable(this)
-        % 
-        %     max_degS = this.ExperimentOptions.Max_RefVelocityComponent;
-        % 
-        %     if ( this.ExperimentOptions.Do_Full_Grid )
-        %         % for entire grid of reference vectors:
-        %         % grid of reference speeds
-        %         [ref_Vx ref_Vy] = meshgrid(-max_degS:1:max_degS);
-        %         % zip together
-        %         ref_vecs = [ref_Vx(:), ref_Vy(:)];
-        % 
-        %     else
-        % 
-        %         %% BUT: I only want 9 of them: In a 3x3 square, but the direction (ie. signage of components) can be varying
-        %         % use participant_ID to seed the rng so it gets the same one everytime
-        %         rng(keyHash(this.Session.subjectCode)/10^10)
-        % 
-        %         % axis of the 
-        % 
-        %         % grid of reference speeds
-        %         [ref_Vx ref_Vy] = meshgrid(-max_degS:0);
-        %         [xxx yyy] = meshgrid(1:length(-max_degS:0));
-        % 
-        %         % flip some of the signs to randomize
-        %         flip_num_Vx = ceil(numel(ref_Vx)*rand);% random number of them to flip
-        %         flip_idx_Vx =  randperm(numel(ref_Vx), flip_num_Vx); % which ones to flip
-        %         ref_Vx(flip_idx_Vx) = -ref_Vx(flip_idx_Vx); % flip those SIGNS
-        % 
-        %         flip_num_Vy = ceil(numel(ref_Vy)*rand);% random number of them to flip
-        %         flip_idx_Vy =  randperm(numel(ref_Vy), flip_num_Vy); % which ones to flip
-        %         ref_Vy(flip_idx_Vy) = -ref_Vy(flip_idx_Vy); % flip those SIGNS
-        % 
-        %         % make a datetime
-        %         nowo = datetime("now");
-        %         % seed the random back to something random to make sure no duplicate trials
-        %         rng(second(nowo) + minute(nowo) + hour(nowo));
-        % 
-        % 
-        %         % zip together
-        %         ref_vecs = [ref_Vx(:), ref_Vy(:)];
-        %     end
-        % 
-        %     % build the table
-        %     t = ArumeCore.TrialTableBuilder();
-        % 
-        %     %all the reference vectors
-        %     celled_ref_vecs = {};
-        %     for n = 1:size(ref_vecs, 1)
-        %         celled_ref_vecs{n} = ref_vecs(n, :);
-        %     end
-        %     t.AddConditionVariable('ReferenceVelocity',celled_ref_vecs);
-        % 
-        %     % the condition table will generate the appropriate
-        %     % combinations itself
-        %     % t.AddConditionVariable('ReferenceVelocityY',ref_vecs(:, 1)');
-        %     % t.AddConditionVariable('ReferenceVelocityX',ref_vecs(:, 2)');
-        % 
-        %     % comparison vector - how much of an increment on the reference vector?
-        %     t.AddConditionVariable('Increment',-100:(200)/(this.ExperimentOptions.Number_Of_Increments - 1):100);
-        % 
-        %     % what stimulus type?
-        %     switch(this.ExperimentOptions.Stimulus_Type)
-        %         case 'both'
-        %             t.AddConditionVariable('TypeOfIncrement',{'Speed' 'Direction'});
-        %         case 'speed'
-        %             t.AddConditionVariable('TypeOfIncrement',{'Speed'});
-        %         case 'direction'
-        %             t.AddConditionVariable('TypeOfIncrement',{'Direction'});
-        %     end
-        %     t.AddConditionVariable('OddballWindow',[1 2 3]);
-        % 
-        %     % Example of how to do blocks if neecessary. Just filter the
-        %     % condition table to say which trials belong to that block
-        %     %
-        %     % t.AddBlock(find(t.ConditionTable.TypeOfIncrement=='Direction'), 1);
-        %     % t.AddBlock(find(t.ConditionTable.TypeOfIncrement=='Speed'), 1);
-        % 
-        %     %% Arume trials specs 
-        %     trialSequence = 'Random';
-        %     blockSequence =  'Sequential';
-        %     blockSequenceRepeatitions = this.ExperimentOptions.Num_Repeats;
-        %     abortAction = 'Delay';
-        %     trialsPerSession = 1000;
-        %     trialTable = t.GenerateTrialTable(trialSequence, blockSequence, blockSequenceRepeatitions, abortAction,trialsPerSession);
-        % 
-        %     % How are the windows positioned (angularly) to each other?
-        %     trialTable.Window1_Angle = 125 + 110*rand(height(trialTable),1); % TODO: comment what this means
-        %     trialTable.Window2_Angle = wrapTo360(trialTable.Window1_Angle-120);
-        %     trialTable.Window3_Angle = wrapTo360(trialTable.Window1_Angle-240);
-        % 
-        % 
-        %     compVelocity = cell(size(trialTable.ReferenceVelocity, 1), 1);
-        %     %compVelocity = trialTable.ReferenceVelocity;
-        %     %compVelocityXY = [trialTable.ReferenceVelocityX, trialTable.ReferenceVelocityY]; % init to something
-        % 
-        %     % Find the trials that are direction and the ones that are speed, and then 
-        %     directionTrials = t.ConditionTable.TypeOfIncrement=='Direction';
-        %     speedTrials = t.ConditionTable.TypeOfIncrement=='Speed';
-        % 
-        %     directionTrialsInds = find(directionTrials==1);
-        %     speedTrialsInds = find(speedTrials==1);
-        % 
-        %     % only want the increments for the direction trials
-        %     angleIncrement = this.ExperimentOptions.Max_Increment_Direction_Angle .* trialTable.Increment(directionTrials)/100;
-        % 
-        %     for i=1:size(directionTrialsInds, 1)
-        %         thisTrialAngle = angleIncrement(i);
-        %         rotation_matrix = [ cosd(thisTrialAngle), -sind(thisTrialAngle);
-        %             sind(thisTrialAngle), cosd(thisTrialAngle)];
-        % 
-        %         %compVelocity(directionTrialsInds(i),:) = (rotation_matrix * trialTable.ReferenceVelocity{directionTrialsInds(i),:}')';
-        %         compVelocity(directionTrialsInds(i)) = {(rotation_matrix * trialTable.ReferenceVelocity{directionTrialsInds(i),:}')'};
-        %     end
-        % 
-        %     for i = 1:size(speedTrialsInds, 1)
-        %         compVelocity(speedTrialsInds(i)) = {trialTable.ReferenceVelocity{speedTrialsInds(i),:} + ...
-        %             this.ExperimentOptions.Max_Increment_Speed_Percent/100 .* trialTable.Increment(speedTrialsInds(i))/100 .* trialTable.ReferenceVelocity{speedTrialsInds(i),:}};
-        % 
-        %     end
-        % 
-        % 
+        %
+        %     %% 7. Final Window Assignment
+        %     % Initialize all apertures with the reference velocity.
         %     trialTable.Window1_Velocity = trialTable.ReferenceVelocity;
         %     trialTable.Window2_Velocity = trialTable.ReferenceVelocity;
         %     trialTable.Window3_Velocity = trialTable.ReferenceVelocity;
-        % 
-        %     trialTable.Window1_Velocity(trialTable.OddballWindow == 1 ) = compVelocity(trialTable.OddballWindow == 1 );
-        %     trialTable.Window2_Velocity(trialTable.OddballWindow == 2 ) = compVelocity(trialTable.OddballWindow == 2 );
-        %     trialTable.Window3_Velocity(trialTable.OddballWindow == 3 ) = compVelocity(trialTable.OddballWindow == 3 );
-        % 
-        % 
+        %
+        %     % The 'Oddball' window is the only one that gets the comparison velocity.
+        %     trialTable.Window1_Velocity(trialTable.OddballWindow == 1) = comp_vels(trialTable.OddballWindow == 1);
+        %     trialTable.Window2_Velocity(trialTable.OddballWindow == 2) = comp_vels(trialTable.OddballWindow == 2);
+        %     trialTable.Window3_Velocity(trialTable.OddballWindow == 3) = comp_vels(trialTable.OddballWindow == 3);
+        %
+        %     % Set the physical positions of the three apertures on the display.
+        %     trialTable.Window1_Angle = 125 + 110 * rand(height(trialTable), 1);
+        %     trialTable.Window2_Angle = wrapTo360(trialTable.Window1_Angle - 120);
+        %     trialTable.Window3_Angle = wrapTo360(trialTable.Window1_Angle - 240);
+        %
+        %     %% --- Print Experiment Summary ---
+        %     fprintf('\n============================================================\n');
+        %     fprintf('           STIMULUS CONFIGURATION SUMMARY                 \n');
+        %     fprintf('============================================================\n');
+        %
+        %     % 1. Reference Vector Specs
+        %     if strcmpi(ref_mode, 'cartesian')
+        %         ref_ax_vals = linspace(-ub_ref, ub_ref, num_ref_pts);
+        %         ref_step_str = num2str(ref_ax_vals, '%0.2f ');
+        %         fprintf('REFERENCE VECTORS: [CARTESIAN GRID]\n');
+        %         fprintf('  - Grid Axis Steps:   [%s] deg/s\n', ref_step_str);
+        %         fprintf('  - Frame Bounds:      %0.2f to %0.2f deg/s (Magnitude)\n', lb_ref, ub_ref);
+        %     else
+        %         %ref_radii = linspace(lb_ref, ub_ref, max(1, num_ref_pts));
+        %         fprintf('REFERENCE VECTORS: [POLAR WHEEL]\n');
+        %         fprintf('  - Reference Radii:   [%s] deg/s\n', num2str(radii, '%0.2f '));
+        %         fprintf('  - Number of Spokes:  %d\n', num_ref_spokes);
+        %     end
+        %     fprintf('  - Total Unique Refs: %d\n', num_refs);
+        %
+        %     fprintf('------------------------------------------------------------\n');
+        %
+        %     % 2. Comparison Vector Specs
+        %     comp_type_str = 'ABSOLUTE (deg/s)';
+        %     if comp_rel_bool; comp_type_str = 'RELATIVE (%% of ref speed)'; end
+        %
+        %     if strcmpi(comp_mode, 'cartesian')
+        %         comp_ax_vals = linspace(-comp_ub, comp_ub, comp_intervals);
+        %         fprintf('COMPARISON VECTORS: [CARTESIAN LOCAL GRID]\n');
+        %         fprintf('  - Offset Type:       %s\n', comp_type_str);
+        %         fprintf('  - Grid Axis Steps:   [%s]\n', num2str(comp_ax_vals, '%0.2f '));
+        %         fprintf('  - Local Bounds:      %0.2f to %0.2f (Magnitude)\n', comp_lb, comp_ub);
+        %     else
+        %         %comp_radii = linspace(comp_lb, comp_ub, comp_intervals);
+        %         fprintf('COMPARISON VECTORS: [POLAR LOCAL SPOKES]\n');
+        %         fprintf('  - Offset Type:       %s\n', comp_type_str);
+        %         fprintf('  - Comparison Radii:  [%s]\n', num2str(comp_radii, '%0.2f '));
+        %         fprintf('  - Comparison Axes:   %d\n', comp_axes);
+        %     end
+        %     fprintf('  - Total Unique Comps: %d (per reference)\n', num_comps);
+        %
+        %     fprintf('------------------------------------------------------------\n');
+        %
+        %     % 3. Jitter & Session Totals
+        %     if do_jitter
+        %         fprintf('JITTER: [ENABLED]\n');
+        %         fprintf('  - Multiplier:        %0.2f x velocity\n', jitter_mult);
+        %     else
+        %         fprintf('JITTER: [DISABLED]\n');
+        %     end
+        %
+        %     fprintf('\nSESSION TOTALS:\n');
+        %     fprintf('  - Unique Combos:     %d (Refs * Comps)\n', trials_per_rep);
+        %     fprintf('  - Repetitions:       %d per combo\n', num_repeats);
+        %     fprintf('  - TOTAL TRIALS:      %d\n', height(trialTable));
+        %     fprintf('============================================================\n\n');
+        %
         % end
+
 
         % run initialization before the first trial is run
         % Use this function to initialize things that need to be
@@ -864,7 +769,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         function shouldContinue = initBeforeRunning( this )
 
             shouldContinue = 1;
-            % 
+            %
             % % the range that the comparison stimulus can increment from the reference
             % inc_range_perc = this.ExperimentOptions.Max_Increment_Speed_Percent/100*[-1 1];
             % inc_range_dir = this.ExperimentOptions.Max_Increment_Direction_Angle*[-1 1]; % in degrees
@@ -875,7 +780,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             this.ExperimentOptions.DisplayOptions.white_col = 255*[1 1 1] * WhiteIndex(this.ExperimentOptions.DisplayOptions.SelectedScreen);
             this.ExperimentOptions.DisplayOptions.black_col = [1 1 1] * BlackIndex(this.ExperimentOptions.DisplayOptions.SelectedScreen);
             this.ExperimentOptions.DisplayOptions.grey_col = this.ExperimentOptions.DisplayOptions.white_col * this.ExperimentOptions.Dots_Grey_Level;
-            
+
             % screen bg colour
             this.ExperimentOptions.DisplayOptions.BackgroundColor = 0;
             this.ExperimentOptions.DisplayOptions.ForegroundColor = 127;
@@ -891,7 +796,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             % Calculate window center positions
             this.ExperimentOptions.DisplayOptions.screenCenterX = windowRect(3) / 2;
             this.ExperimentOptions.DisplayOptions.screenCenterY = windowRect(4) / 2;
-            
+
             this.ExperimentOptions.DisplayOptions.screen_dims_mm = 10.*[this.ExperimentOptions.DisplayOptions.ScreenWidth, this.ExperimentOptions.DisplayOptions.ScreenHeight]; %https://www.displayspecifications.com/en/model/cd7a3130
             this.ExperimentOptions.DisplayOptions.distance_from_screen = this.ExperimentOptions.DisplayOptions.ScreenDistance/100; %meters
 
@@ -921,9 +826,9 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             % Number of trials
             this.ExperimentOptions.numTrials = size(this.TrialTable, 1);
 
-            % keeps track of trial duration 
+            % keeps track of trial duration
             actualDuration = min(this.ExperimentOptions.Motion_Duration, this.ExperimentOptions.TrialDuration);
-            
+
             % store all gaze contingent data
             nrows = ceil(this.Graph.frameRate*actualDuration)*1.5;
             gazedata = table;
@@ -970,16 +875,16 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             window1_vec2 = window1_vec1;    % Movement vector for second half of dots
             window1_colour1 = all_dots_colour;
             window1_colour2 = window1_colour1;
-            
+
             % Window 2 dot parameters
             window2_vec1 = this.ExperimentOptions.DisplayOptions.degS_to_pixFrame_convFactor(1)*this.TrialTable.Window2_Velocity{init_trial_num, :};
             window2_vec2 = window2_vec1;
             window2_colour1 = all_dots_colour;
             window2_colour2 = window2_colour1;
-            
+
             % Window 3 dot parameters
             window3_vec1 = this.ExperimentOptions.DisplayOptions.degS_to_pixFrame_convFactor(1)*this.TrialTable.Window3_Velocity{init_trial_num, :};
-            window3_vec2 = window3_vec1;  
+            window3_vec2 = window3_vec1;
             window3_colour1 = all_dots_colour;
             window3_colour2 = window3_colour1;
 
@@ -1153,11 +1058,12 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
 
         end
-        
+
         % runPreTrial
-        % use this to prepare things before the trial starts 
+        % use this to prepare things before the trial starts
         % This runs before EACH trial
-        function [trialResult, thisTrialData] = runPreTrial(this, thisTrialData )
+        function [trialResult, thisTrialData] = runPreTrial(this, thisTrialData)
+            %thisTrialData
             Enum = ArumeCore.ExperimentDesign.getEnum();
             trialResult = Enum.trialResult.CORRECT;
 
@@ -1178,38 +1084,54 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             window_centers = zeros(3, 2);
 
             % get the window_centers for this trial specifically
-            for w = 1:3
-                angle_rad = deg2rad(this.ExperimentOptions.window_angles(thisTrialData.TrialNumber, w));
-                window_centers(w, 1) = this.ExperimentOptions.DisplayOptions.screenCenterX + this.ExperimentOptions.window_eccentricity * cos(angle_rad);
-                window_centers(w, 2) = this.ExperimentOptions.DisplayOptions.screenCenterY - this.ExperimentOptions.window_eccentricity * sin(angle_rad);  % negative because Y increases downward
-            end
+            % for w = 1:3
+            %     angle_rad = deg2rad(this.ExperimentOptions.window_angles(thisTrialData.TrialNumber, w));
+            %     window_centers(w, 1) = this.ExperimentOptions.DisplayOptions.screenCenterX + this.ExperimentOptions.window_eccentricity * cos(angle_rad);
+            %     window_centers(w, 2) = this.ExperimentOptions.DisplayOptions.screenCenterY - this.ExperimentOptions.window_eccentricity * sin(angle_rad);  % negative because Y increases downward
+            % end
+
+            % get the window_centers for this trial specifically
+            angle_rad1 = deg2rad(thisTrialData.Window1_Angle);
+            window_centers(1, 1) = this.ExperimentOptions.DisplayOptions.screenCenterX + this.ExperimentOptions.window_eccentricity * cos(angle_rad1);
+            window_centers(1, 2) = this.ExperimentOptions.DisplayOptions.screenCenterY - this.ExperimentOptions.window_eccentricity * sin(angle_rad1);  % negative because Y increases downward
+            
+            angle_rad2 = deg2rad(thisTrialData.Window2_Angle);
+            window_centers(2, 1) = this.ExperimentOptions.DisplayOptions.screenCenterX + this.ExperimentOptions.window_eccentricity * cos(angle_rad2);
+            window_centers(2, 2) = this.ExperimentOptions.DisplayOptions.screenCenterY - this.ExperimentOptions.window_eccentricity * sin(angle_rad2);  % negative because Y increases downward
+
+            angle_rad3 = deg2rad(thisTrialData.Window3_Angle);
+            window_centers(3, 1) = this.ExperimentOptions.DisplayOptions.screenCenterX + this.ExperimentOptions.window_eccentricity * cos(angle_rad3);
+            window_centers(3, 2) = this.ExperimentOptions.DisplayOptions.screenCenterY - this.ExperimentOptions.window_eccentricity * sin(angle_rad3);  % negative because Y increases downward
+
 
 
             %% Assign the parameters to the different windows
             all_dots_colour = this.ExperimentOptions.DisplayOptions.grey_col;
 
             % Window 1 dot parameters - this structure keeps the functionality for simultaneous motion
-            window1_vec1 = this.ExperimentOptions.DisplayOptions.degS_to_pixFrame_convFactor(1)*this.TrialTable.Window1_Velocity{thisTrialData.TrialNumber, :};   % Movement vector for first half of dots
+            % QQ: Change all to thisTrialData, which is just the current
+            % row
+            window1_vec1 = thisTrialData.Window1_Velocity{1}*this.ExperimentOptions.DisplayOptions.degS_to_pixFrame_convFactor(1);   % Movement vector for first half of dots
             window1_vec2 = window1_vec1;    % Movement vector for second half of dots
             window1_colour1 = all_dots_colour;
             window1_colour2 = window1_colour1;
-            
+
             % Window 2 dot parameters
-            window2_vec1 = this.ExperimentOptions.DisplayOptions.degS_to_pixFrame_convFactor(1)*this.TrialTable.Window2_Velocity{thisTrialData.TrialNumber, :};
+            window2_vec1 = thisTrialData.Window2_Velocity{1}*this.ExperimentOptions.DisplayOptions.degS_to_pixFrame_convFactor(1);  %this.ExperimentOptions.DisplayOptions.degS_to_pixFrame_convFactor(1)*this.TrialTable.Window2_Velocity{thisTrialData.TrialNumber, :};
             window2_vec2 = window2_vec1;
             window2_colour1 = all_dots_colour;
             window2_colour2 = window2_colour1;
-            
+
             % Window 3 dot parameters
-            window3_vec1 = this.ExperimentOptions.DisplayOptions.degS_to_pixFrame_convFactor(1)*this.TrialTable.Window3_Velocity{thisTrialData.TrialNumber, :};
-            window3_vec2 = window3_vec1;  
+            window3_vec1 = thisTrialData.Window3_Velocity{1}*this.ExperimentOptions.DisplayOptions.degS_to_pixFrame_convFactor(1);
+            window3_vec2 = window3_vec1;
             window3_colour1 = all_dots_colour;
             window3_colour2 = window3_colour1;
 
             %% set_3windows_positions
             draw_bordersX1 = [window_centers(1, 1) - bord_marg*window_radii(1), window_centers(1, 1) + bord_marg*window_radii(1)];
             draw_bordersY1 = [window_centers(1, 2) - bord_marg*window_radii(1), window_centers(1, 2) + bord_marg*window_radii(1)];
-            
+
             draw_bordersX2 = [window_centers(2, 1) - bord_marg*window_radii(2), window_centers(2, 1) + bord_marg*window_radii(2)];
             draw_bordersY2 = [window_centers(2, 2) - bord_marg*window_radii(2), window_centers(2, 2) + bord_marg*window_radii(2)];
 
@@ -1222,12 +1144,12 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             this.lots_dots1.centerY = window_centers(1, 2);
             this.lots_dots1.bordersX = draw_bordersX1;
             this.lots_dots1.bordersY = draw_bordersY1;
-            
+
             this.lots_dots2.centerX = window_centers(2, 1);
             this.lots_dots2.centerY = window_centers(2, 2);
             this.lots_dots2.bordersX = draw_bordersX2;
             this.lots_dots2.bordersY = draw_bordersY2;
-            
+
             this.lots_dots3.centerX = window_centers(3, 1);
             this.lots_dots3.centerY = window_centers(3, 2);
             this.lots_dots3.bordersX = draw_bordersX3;
@@ -1246,52 +1168,35 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             time = 0;
             % Query the frame duration
             ifi = Screen('GetFlipInterval', this.Graph.window);
-            
+
             while prelim_run
-            
+
                 % Update stimulus screen
                 this.lots_dots1 = this.lots_dots1.move();
-       
+
                 this.lots_dots2 = this.lots_dots2.move();
                 this.lots_dots3 = this.lots_dots3.move();
-            
+
                 % Increment the time
                 time = time + ifi;
                 %timestamps(end+1) = time;
-            
+
                 if time > prelim_run_time
                     prelim_run = false;
                 end
             end
 
-            fprintf(['Trial: %0.0f | W_Vec1: [%0.1f, %0.1f]| W_Vec2: [%0.1f, %0.1f]| W_Vec3: [%0.' ...
-                '1f, %0.1f]'], ...
-                thisTrialData.TrialNumber, ...
-                window1_vec1(1), window1_vec1(2), ...
-                window2_vec1(1), window2_vec1(2), ...
-                window3_vec1(1), window3_vec1(2));
-
 
         end
-        
+
 
         function [trialResult, thisTrialData] = runTrial( this, thisTrialData )
 
             try
 
-                
-                if this.ExperimentOptions.UseEyeTracker
-                    nframesctr = 1;
-
-                    [framenumber, eyetrackertime] = this.eyeTracker.RecordEvent( ...
-                        sprintf('STIMULUS_ONSET [,trial=%d condition=%d]', ...
-                        thisTrialData.TrialNumber, thisTrialData.Condition) );
-                
-                    % matches the frame number to the eyetracker time at the start of the trial
-                    thisTrialData.EyeTrackerFrameNumberStimulusOnset = framenumber;
-                    thisTrialData.EyeTrackerTimeStimulusOnset = eyetrackertime;
-
-                end
+                % CHeck the this.Session.currentRun.pastTrialTable last
+                % row; if last one soft-abrted, make a pause screen
+                % spacebar next 
 
                 %% Fixation Configuration
                 fixation_type = this.ExperimentOptions.Fixation_Type;
@@ -1299,10 +1204,82 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 fixation_color = this.ExperimentOptions.Fixation_Color;
                 fixation_line_width = this.ExperimentOptions.Fixation_Line_Width;
 
+                screenCenterX = this.ExperimentOptions.DisplayOptions.screenCenterX;
+                screenCenterY = this.ExperimentOptions.DisplayOptions.screenCenterY;
+
                 Enum = ArumeCore.ExperimentDesign.getEnum();
                 graph = this.Graph;
                 trialResult = Enum.trialResult.CORRECT;
 
+
+
+                if (~isempty(this.Session.currentRun.pastTrialTable) && this.Session.currentRun.pastTrialTable(end, :).TrialResult == 'SOFTABORT')
+
+                    % Flush any previous key presses
+                    KbReleaseWait;
+
+                    waitingForKey = true;
+
+                    while waitingForKey
+
+                        % --- Draw your break text ---
+                        Screen('TextSize', graph.window, 40);
+                        breakText = ['Make sure you are fixating on the dot for the entire trial!\n\nPress space to continue']; % <-- replace later
+                        DrawFormattedText(graph.window, breakText, 'center', 'center', ...
+                            this.ExperimentOptions.DisplayOptions.white_col);
+
+                        % --- Draw fixation (same style as your trial) ---
+                        [mx, my] = RectCenter(graph.wRect);
+
+                        % central dot
+                        fixRect = [0 0 10 10];
+                        fixRect = CenterRectOnPointd(fixRect, mx, my);
+                        Screen('FillOval', graph.window, this.fixColor, fixRect);
+
+                        % optional fixation type
+                        if strcmp(fixation_type, 'circle')
+                            fixation_rect = [screenCenterX - fixation_size/2, screenCenterY - fixation_size/2, ...
+                                screenCenterX + fixation_size/2, screenCenterY + fixation_size/2];
+                            Screen('FillOval', graph.window, fixation_color, fixation_rect);
+
+                        elseif strcmp(fixation_type, 'cross')
+                            cross_coords = [
+                                screenCenterX - fixation_size/2, screenCenterY, screenCenterX + fixation_size/2, screenCenterY;
+                                screenCenterX, screenCenterY - fixation_size/2, screenCenterX, screenCenterY + fixation_size/2
+                                ];
+                            Screen('DrawLines', graph.window, cross_coords', fixation_line_width, fixation_color, [0 0], 2);
+                        end
+
+                        % --- Flip to screen ---
+                        Screen('Flip', graph.window);
+
+                        % --- Wait for SPACE ---
+                        [keyIsDown, ~, keyCode] = KbCheck;
+                        if keyIsDown
+                            if any(strcmp(KbName(find(keyCode)), {'space', 'SPACE'}))
+                                waitingForKey = false;
+                                KbReleaseWait;
+                            end
+                        end
+                    end
+                end
+
+
+
+                if this.ExperimentOptions.UseEyeTracker
+                    nframesctr = 1;
+
+                    [framenumber, eyetrackertime] = this.eyeTracker.RecordEvent( ...
+                        sprintf('STIMULUS_ONSET [,trial=%d condition=%d]', ...
+                        thisTrialData.TrialNumber, thisTrialData.Condition) );
+
+                    % matches the frame number to the eyetracker time at the start of the trial
+                    thisTrialData.EyeTrackerFrameNumberStimulusOnset = framenumber;
+                    thisTrialData.EyeTrackerTimeStimulusOnset = eyetrackertime;
+
+                end
+
+                
 
                 lastFlipTime        = GetSecs;
                 secondsRemaining    = this.ExperimentOptions.TrialDuration;
@@ -1312,9 +1289,6 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 %this.ExperimentOptions.Initial_Fixation_Duration = 0.5;
                 %this.ExperimentOptions.Motion_Duration = 1;
 
-                % make this a bit shorter
-                screenCenterX = this.ExperimentOptions.DisplayOptions.screenCenterX;
-                screenCenterY = this.ExperimentOptions.DisplayOptions.screenCenterY;
 
                 % Initialize the eyePos to be recorded and averaged during the trial
                 eyePos_FixationPeriod = [0, 0];
@@ -1334,7 +1308,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     % -----------------------------------------------------------------
                     % --- Drawing of stimulus -----------------------------------------
                     % -----------------------------------------------------------------
-                       
+
 
                     % Add to the average IF using eyetracker and above
                     % the Initial_Fixation_Buffer_Duration time
@@ -1347,24 +1321,27 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                         % add to the average - just using the first one bc ultimately relative
                         eyePos_FixationPeriod(1) = eyeData.gx(1)*(1/N) + eyePos_FixationPeriod(1)*((N-1)/N);
                         eyePos_FixationPeriod(2) = eyeData.gy(1)*(1/N) + eyePos_FixationPeriod(2)*((N-1)/N);
-                        fprintf('\n[0.2%f,0.2%f]', eyePos_FixationPeriod(1), eyePos_FixationPeriod(2));
+                        %fprintf('\n[0.2%f,0.2%f]', eyePos_FixationPeriod(1), eyePos_FixationPeriod(2));
 
                         % increment counter
                         N=N+1;
+
+                        % initial fixation colour
+                        fixation_color = [0.25 0.5 0.75]*255;
                     end
 
 
                     % Fixation Period:
                     if (secondsElapsed < this.ExperimentOptions.Initial_Fixation_Duration)
-                       
+
                         % Move the dots without showing them
                         this.lots_dots1.move();
                         this.lots_dots2.move();
                         this.lots_dots3.move();
-                        
+
                         %fprintf('\n[0.2%f]', secondsElapsed);
 
-                    % Stimulus Presentation Period:
+                        % Stimulus Presentation Period:
                     elseif ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration ...
                             && secondsElapsed < this.ExperimentOptions.Initial_Fixation_Duration + this.ExperimentOptions.Motion_Duration)
 
@@ -1383,41 +1360,43 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
                         % Draw the dots for window 3
                         Screen('DrawDots', graph.window, this.lots_dots3.location_array', this.lots_dots3.diameter_array, (this.lots_dots3.colour_array)', [], 2);
-                    
-                    % Draw numbers for responses
+
+                        fixation_color = this.ExperimentOptions.Fixation_Color;
+
+                        % Draw numbers for responses
                     elseif ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration ...
                             + this.ExperimentOptions.Motion_Duration)% ...
-                           % && secondsElapsed < this.ExperimentOptions.TrialDuration)
+                        % && secondsElapsed < this.ExperimentOptions.TrialDuration)
 
                         circleRadius = this.lots_dots1.radius; % adjust if needed
-    
+
                         circleCenters = [
                             this.lots_dots1.centerX, this.lots_dots1.centerY;
                             this.lots_dots2.centerX, this.lots_dots2.centerY;
                             this.lots_dots3.centerX, this.lots_dots3.centerY
                             ];
-    
+
                         Screen('TextSize', graph.window, 40);
-    
+
                         for i = 1:3
-    
+
                             % rect = CenterRectOnPointd([0 0 2*circleRadius 2*circleRadius], ...
                             %                           circleCenters(i,1), ...
                             %                           circleCenters(i,2));
                             %
                             % Screen('FrameOval', window, white_col, rect, 3);
-    
+
                             numberStr = num2str(i);
                             bounds = Screen('TextBounds', graph.window, numberStr);
                             textWidth  = bounds(3);
                             textHeight = bounds(4);
-    
+
                             Screen('DrawText', graph.window, numberStr, ...
                                 circleCenters(i,1) - textWidth/2, ...
                                 circleCenters(i,2) - textHeight/2, ...
                                 this.ExperimentOptions.DisplayOptions.white_col);
                         end
-                    
+
                     end
 
 
@@ -1462,7 +1441,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
                     % Get all gaze data
                     PBT_Time = this.Graph.Flip(this, thisTrialData, secondsRemaining);
-  
+
                     % -----------------------------------------------------------------
                     % -- Flip buffers to refresh screen -------------------------------
                     % -----------------------------------------------------------------
@@ -1480,7 +1459,11 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration + this.ExperimentOptions.Min_Motion_Duration_Before_Response)
 
                         if ( secondsElapsed > 0.2)
+                            % Flush any previous key presses
+                            %2KbReleaseWait;
+
                             response = [];
+
                             [keyIsDown, secs, keyCode, deltaSecs] = KbCheck();
                             if ( keyIsDown )
                                 keys = find(keyCode);
@@ -1501,21 +1484,32 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                                 thisTrialData.Response = response;
                                 thisTrialData.ResponseTime = GetSecs;
 
+                                fprintf(['\n\nTrial: %0.0f | %s | W_Vec1: [%0.1f, %0.1f]| W_Vec2: [%0.1f, %0.1f]| W_Vec3: [%0.' ...
+                                    '1f, %0.1f] | Oddball: %0.0f | Reponse: %0.0f \n'], ...
+                                    thisTrialData.TrialNumber, ...
+                                    thisTrialData.TrialResult, ...
+                                    thisTrialData.Window1_Velocity{1}(1), thisTrialData.Window1_Velocity{1}(2), ...
+                                    thisTrialData.Window2_Velocity{1}(1), thisTrialData.Window2_Velocity{1}(2), ...
+                                    thisTrialData.Window3_Velocity{1}(1), thisTrialData.Window3_Velocity{1}(2), ...
+                                    thisTrialData.OddballWindow, ...
+                                    thisTrialData.Response);
+
+
                                 if this.ExperimentOptions.UseEyeTracker
                                     [framenumber, eyetrackertime] = this.eyeTracker.RecordEvent( ...
                                         sprintf('STIMULUS_OFFSET [trial=%d, condition=%d]', ...
                                         thisTrialData.TrialNumber, thisTrialData.Condition) );
-                                
+
                                     thisTrialData.EyeTrackerFrameNumberStimulusOffset = framenumber;
                                     thisTrialData.EyeTrackerTimeStimulusOffset = eyetrackertime;
-            
+
                                     % truncate table to correct sz
                                     this.gazedata = this.gazedata(1:nframesctr-1,:);
                                     thisTrialData.gazedatatbl = {this.gazedata};
-                                    
+
                                     % establish how much time there were between frames
                                     thisTrialData.EmpiricalFPS = (nframesctr-2)/sum(diff(this.gazedata.PTBtime));
-            
+
                                 end
 
                                 break;
@@ -1527,14 +1521,16 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                     % --- END Collecting responses  -----------------------------------
                     % -----------------------------------------------------------------
 
-                    
+
 
 
                     % -----------------------------------------------------------------
                     % --- Check Fixation  ---------------------------------------
                     % -----------------------------------------------------------------
 
-                    if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration + max(cut_in, this.ExperimentOptions.Min_Motion_Duration_Before_Response))
+                    if ( secondsElapsed > this.ExperimentOptions.Initial_Fixation_Duration + max(cut_in, this.ExperimentOptions.Min_Motion_Duration_Before_Response) && ...
+                            secondsElapsed < this.ExperimentOptions.Initial_Fixation_Duration +       ...
+                            this.ExperimentOptions.Motion_Duration)
 
                         if ( ~isempty(this.eyeTracker) && this.ExperimentOptions.UseEyeTracker)
 
@@ -1552,7 +1548,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                             end
 
                             % only show fixation tracking dot if ClaraDebug
-                            if this.ExperimentOptions.ClaraDebug 
+                            if this.ExperimentOptions.ClaraDebug
                                 fixRect = [0 0 10 10];
                                 fixRect = CenterRectOnPointd( fixRect, gazeX, gazeY );
 
@@ -1569,7 +1565,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                             end
                         end
 
-                        % 
+                        %
                         % this.gazedata.PTBtime(nframesctr) = PBT_Time;
                         % this.gazedata.ELtime(nframesctr) = eyeData.time;
                         % this.gazedata.LGazeX(nframesctr) =
@@ -1577,7 +1573,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                         % this.gazedata.RGazeX(nframesctr) = eyeData.gx(2);
                         % this.gazedata.LGazeY(nframesctr) = eyeData.gy(1);
                         % this.gazedata.RGazeY(nframesctr) = eyeData.gy(2);
-                        % 
+                        %
                         % nframesctr = nframesctr+1;
 
                         % Check to make sure that the participant is looking where they're supposed to look
@@ -1586,7 +1582,23 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
                         % only need to do fixation check if during experiment time
                         if secondsElapsed < this.ExperimentOptions.Initial_Fixation_Duration + this.ExperimentOptions.Motion_Duration
+
+                            %% ADJUST WINSIZE_PIX HERE:
+                            % % default = 1deg
+                            % new_size_deg = 1.5;
+                            % this.ExperimentOptions.Fixation_Check_WinSize_pix = new_size_deg*this.ExperimentOptions.DisplayOptions.deg_to_pix_convFactor;
+                            % % % % default = 0.5
+                            % this.ExperimentOptions.Fixation_Check_TimeOut = 0.5;
+
                             this.checkFixation(eyePos_FixationPeriod, this.ExperimentOptions.Fixation_Check_WinSize_pix, this.ExperimentOptions.Fixation_Check_TimeOut);
+
+                            %
+                            % boolo = this.checkFixationClara(eyePos_FixationPeriod, this.ExperimentOptions.Fixation_Check_WinSize_pix, this.ExperimentOptions.Fixation_Check_TimeOut);
+                            % if boolo
+
+                            %     print('trial aborted from checkFixation')
+                            % end
+                            %
                             % this.checkFixation(fixRect([1 2]), this.ExperimentOptions.Fixation_Check_WinSize_pix, this.ExperimentOptions.Fixation_Check_TimeOut)
                         end
 
@@ -1599,50 +1611,50 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 end
 
                 % ============================================================
-                % --- Break screen every N trials -----------------------------
+                % --- Break screen every TrialsBeforeBreakSmall trials -----------------------------
                 % ============================================================
                 TrialsBeforeBreakSmall = this.ExperimentOptions.TrialsBeforeBreakSmall; % e.g., set this in options
-                
+
                 if mod(thisTrialData.TrialNumber, TrialsBeforeBreakSmall) == 0
-                
+
                     % Flush any previous key presses
                     KbReleaseWait;
-                
+
                     waitingForKey = true;
-                
+
                     while waitingForKey
-                
+
                         % --- Draw your break text ---
                         Screen('TextSize', graph.window, 40);
-                        breakText = 'Break time!\n\nPress SPACE to continue'; % <-- replace later
+                        breakText = ['Blink blink! \n\nPress space to continue']; % <-- replace later
                         DrawFormattedText(graph.window, breakText, 'center', 'center', ...
                             this.ExperimentOptions.DisplayOptions.white_col);
-                
+
                         % --- Draw fixation (same style as your trial) ---
                         [mx, my] = RectCenter(graph.wRect);
-                
+
                         % central dot
                         fixRect = [0 0 10 10];
                         fixRect = CenterRectOnPointd(fixRect, mx, my);
                         Screen('FillOval', graph.window, this.fixColor, fixRect);
-                
+
                         % optional fixation type
                         if strcmp(fixation_type, 'circle')
                             fixation_rect = [screenCenterX - fixation_size/2, screenCenterY - fixation_size/2, ...
-                                             screenCenterX + fixation_size/2, screenCenterY + fixation_size/2];
+                                screenCenterX + fixation_size/2, screenCenterY + fixation_size/2];
                             Screen('FillOval', graph.window, fixation_color, fixation_rect);
-                
+
                         elseif strcmp(fixation_type, 'cross')
                             cross_coords = [
                                 screenCenterX - fixation_size/2, screenCenterY, screenCenterX + fixation_size/2, screenCenterY;
                                 screenCenterX, screenCenterY - fixation_size/2, screenCenterX, screenCenterY + fixation_size/2
-                            ];
+                                ];
                             Screen('DrawLines', graph.window, cross_coords', fixation_line_width, fixation_color, [0 0], 2);
                         end
-                
+
                         % --- Flip to screen ---
                         Screen('Flip', graph.window);
-                
+
                         % --- Wait for SPACE ---
                         [keyIsDown, ~, keyCode] = KbCheck;
                         if keyIsDown
@@ -1653,13 +1665,13 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                         end
                     end
                 end
-            
+
             catch ex
                 rethrow(ex)
             end
-            
-        end        
+
+        end
     end
-    
+
 end
 

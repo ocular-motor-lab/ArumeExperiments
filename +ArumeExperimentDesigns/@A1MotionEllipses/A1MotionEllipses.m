@@ -90,23 +90,6 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
 
            %% Reference Vector Options
-            % % Global Ref Parameters
-            % dlg.lb_screen = { 0.5 '* (deg/s)' [0 300] };
-            % dlg.ub_screen = { 8 '* (deg/s)' [0 300] };
-            % dlg.num_ref_gridpts =  { 11 '*' [1 3000] };
-            % dlg.ref_cart_or_polar = { {'polar' '{cartesian}'} };
-            % dlg.num_ref_spokes = {8 '*' [1 3000] };
-            % dlg.ref_log_or_lin = { {'log' '{lin}'} };
-            % 
-            % % Local Comp Parameters (The relative offsets)
-            % dlg.comp_lb = { 0 '* (x ref_vec speed)' [0 300] };
-            % dlg.comp_ub = { 1 '* (x ref_vec speed)' [0 300] };
-            % dlg.comp_num_intervals = { 8 '* ' [1 300] };
-            % dlg.comp_num_axes = { 8 '* ' [1 300] };
-            % dlg.comp_cart_or_polar = { {'polar' '{cartesian}'} };
-            % dlg.comp_rel_bool = { {'0','{1}'} };
-
-
             % Global Ref Parameters
             dlg.lb_screen = { 0.5 '* (deg/s)' [0 300] };
             dlg.ub_screen = { 8 '* (deg/s)' [0 300] };
@@ -117,19 +100,39 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
             % Local Comp Parameters (The relative offsets)
             dlg.comp_lb = { 0 '* (x ref_vec speed)' [0 300] };
-            dlg.comp_ub = { 0.12 '* (x ref_vec speed)' [0 300] };
-            dlg.comp_num_intervals = { 5 '* ' [1 300] };
-            dlg.comp_num_axes = { 3 '* ' [1 300] };
+            dlg.comp_ub = { 1 '* (x ref_vec speed)' [0 300] };
+            dlg.comp_num_intervals = { 8 '* ' [1 300] };
+            dlg.comp_num_axes = { 8 '* ' [1 300] };
             dlg.comp_cart_or_polar = { {'polar' '{cartesian}'} };
             dlg.comp_rel_bool = { {'0','{1}'} };
-            dlg.spec_comp_intervals = {[-0.10, -0.05, 0, 0.075, 0.10]};
-            dlg.target_base_trials = {1400 '* ' [1 20000]};
+
+            dlg.nonzero_rand = { 0.25 '* (x ref_vec speed)' [0 300]};
+            dlg.low_speed = { 2 '* (x ref_vec speed)' [0 300]};
+
+
+            % Global Ref Parameters
+            dlg.lb_screen_hard = { 0.5 '* (deg/s)' [0 300] };
+            dlg.ub_screen_hard = { 8 '* (deg/s)' [0 300] };
+            dlg.num_ref_gridpts_hard =  { 11 '*' [1 3000] };
+            dlg.ref_cart_or_polar_hard = { {'polar' '{cartesian}'} };
+            dlg.num_ref_spokes_hard = {8 '*' [1 3000] };
+            dlg.ref_log_or_lin_hard = { {'log' '{lin}'} };
+
+            % Local Comp Parameters (The relative offsets)
+            dlg.comp_lb_hard = { 0 '* (x ref_vec speed)' [0 300] };
+            dlg.comp_ub_hard = { 0.12 '* (x ref_vec speed)' [0 300] };
+            dlg.comp_num_intervals_hard = { 5 '* ' [1 300] };
+            dlg.comp_num_axes_hard = { 3 '* ' [1 300] };
+            dlg.comp_cart_or_polar_hard = { {'polar' '{cartesian}'} };
+            dlg.comp_rel_bool_hard = { {'0','{1}'} };
+            dlg.spec_comp_intervals_hard = {[-0.10, -0.05, 0, 0.075, 0.10]};
+            dlg.target_base_trials_hard = {1400 '* ' [1 20000]};
 
 
             % random trials for easiness
-            dlg.num_random_trials = 200;
-            dlg.rand_comp_lb = 0.2;
-            dlg.rand_comp_ub = 0.8;
+            dlg.num_random_trials_hard = 0;%200;
+            dlg.rand_comp_lb_hard = 0.2;
+            dlg.rand_comp_ub_hard = 0.8;
 
             % Jitter Parameters
             dlg.Do_Jitter = { {'0','{1}'} }; % Boolean toggle
@@ -143,9 +146,32 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
         end
 
-
         function trialTable = SetUpTrialTable(this)
-            %% 1. Parameter Extraction
+        %% 1. Universal Parameter Extraction & Seed RNG
+            rng(keyHash(this.Session.subjectCode)/10^10)
+            
+            num_repeats = this.ExperimentOptions.Num_Repeats_Per_Combo;
+            do_jitter   = this.ExperimentOptions.Do_Jitter;
+            jitter_mult = this.ExperimentOptions.Jitter_Multiplier;
+            base_speed  = 0.25;
+
+            nonzero_rand = 0.05;
+            if isprop(this.ExperimentOptions, 'nonzero_rand') || isfield(this.ExperimentOptions, 'nonzero_rand')
+                if ~isempty(this.ExperimentOptions.nonzero_rand)
+                    nonzero_rand = this.ExperimentOptions.nonzero_rand;
+                end
+            end
+
+            low_speed = 0.1;
+            if isprop(this.ExperimentOptions, 'low_speed') || isfield(this.ExperimentOptions, 'low_speed')
+                if ~isempty(this.ExperimentOptions.low_speed)
+                    low_speed = this.ExperimentOptions.low_speed;
+                end
+            end
+
+            %% ====================================================================
+            %% SET 1: STANDARD TRIALS
+            %% ====================================================================
             lb_ref      = this.ExperimentOptions.lb_screen;
             if isempty(lb_ref), lb_ref = 0; end
             ub_ref      = this.ExperimentOptions.ub_screen;
@@ -161,47 +187,11 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             comp_mode      = this.ExperimentOptions.comp_cart_or_polar;
             comp_rel_bool  = this.ExperimentOptions.comp_rel_bool; 
             
-            % --- Optional Arrays and Injectors ---
-            custom_comp_intervals = [];
-            if isprop(this.ExperimentOptions, 'comp_intervals_list') || isfield(this.ExperimentOptions, 'comp_intervals_list')
-                custom_comp_intervals = this.ExperimentOptions.comp_intervals_list;
-            end
-            
-            % --- Base Trial Target Downsampler ---
-            target_base_trials = [];
-            if isprop(this.ExperimentOptions, 'target_base_trials') || isfield(this.ExperimentOptions, 'target_base_trials')
-                target_base_trials = this.ExperimentOptions.target_base_trials;
-            end
-            
-            num_random_trials = 0;
-            if isprop(this.ExperimentOptions, 'num_random_trials') || isfield(this.ExperimentOptions, 'num_random_trials')
-                num_random_trials = this.ExperimentOptions.num_random_trials;
-                if isempty(num_random_trials), num_random_trials = 0; end
-            end
-            
-            rand_comp_lb = comp_lb;
-            if isprop(this.ExperimentOptions, 'rand_comp_lb') || isfield(this.ExperimentOptions, 'rand_comp_lb')
-                if ~isempty(this.ExperimentOptions.rand_comp_lb), rand_comp_lb = this.ExperimentOptions.rand_comp_lb; end
-            end
-            
-            rand_comp_ub = comp_ub; 
-            if isprop(this.ExperimentOptions, 'rand_comp_ub') || isfield(this.ExperimentOptions, 'rand_comp_ub')
-                if ~isempty(this.ExperimentOptions.rand_comp_ub), rand_comp_ub = this.ExperimentOptions.rand_comp_ub; end
-            end
-            
-            do_jitter   = this.ExperimentOptions.Do_Jitter;
-            jitter_mult = this.ExperimentOptions.Jitter_Multiplier;
-            num_repeats = this.ExperimentOptions.Num_Repeats_Per_Combo;
-            
-            %% 2. Seed RNG 
-            rng(keyHash(this.Session.subjectCode)/10^10)
-            
-            %% 3. Generate Global Reference Vectors
+            % Generate Global Reference Vectors (Standard)
             if strcmpi(ref_mode, 'cartesian')
                 ref_ax = linspace(-ub_ref, ub_ref, num_ref_pts);
                 [rvx, rvy] = meshgrid(ref_ax, ref_ax);
-                base_refs = [rvx(:), rvy(:)];
-                ref_vecs = base_refs;
+                ref_vecs = [rvx(:), rvy(:)];
             else
                 num_ref_spokes = this.ExperimentOptions.num_ref_spokes;
                 angles = linspace(0, 2*pi, num_ref_spokes + 1);
@@ -221,128 +211,322 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             end
             num_refs = size(ref_vecs, 1);
             
-            %% 4. Generate Local Comparison Offsets (dx, dy)
+            % Generate Default Local Comparison Offsets (Standard)
             if strcmpi(comp_mode, 'cartesian')
-                if ~isempty(custom_comp_intervals)
-                    comp_ax = custom_comp_intervals;
-                else
-                    comp_ax = linspace(-comp_ub, comp_ub, comp_intervals);
-                end
+                comp_ax = linspace(-comp_ub, comp_ub, comp_intervals);
                 [cvx, cvy] = meshgrid(comp_ax, comp_ax);
                 base_comps = [cvx(:), cvy(:)];
                 c_mags = sqrt(sum(base_comps.^2, 2));
                 
                 valid_idx = c_mags >= comp_lb & c_mags <= comp_ub;
-                comp_offsets = base_comps(valid_idx, :);
-                comp_offset_multipliers = c_mags(valid_idx);
-                [~, ~, comp_offset_radius_idx] = unique(round(c_mags(valid_idx), 4));
+                std_comp_offsets_def = base_comps(valid_idx, :);
+                std_comp_offset_multipliers_def = c_mags(valid_idx);
+                [~, ~, std_comp_offset_radius_idx_def] = unique(round(c_mags(valid_idx), 4));
             else
                 comp_angles = linspace(0, 2*pi, comp_axes + 1);
                 comp_angles(end) = [];
+                comp_radii = linspace(comp_lb, comp_ub, comp_intervals);
                 
-                if ~isempty(custom_comp_intervals)
-                    comp_radii = custom_comp_intervals;
-                    actual_intervals = length(custom_comp_intervals);
-                else
-                    comp_radii = linspace(comp_lb, comp_ub, comp_intervals);
-                    actual_intervals = comp_intervals;
-                end
-                
-                radius_indices = 1:actual_intervals;
+                radius_indices = 1:comp_intervals;
                 [cA, cR] = meshgrid(comp_angles, comp_radii);
                 [~, cR_idx] = meshgrid(comp_angles, radius_indices);
                 [cvx, cvy] = pol2cart(cA(:), cR(:));
-                comp_offsets = [cvx, cvy];
-                comp_offset_radius_idx = cR_idx(:);
-                comp_offset_multipliers = cR(:);
+                std_comp_offsets_def = [cvx, cvy];
+                std_comp_offset_radius_idx_def = cR_idx(:);
+                std_comp_offset_multipliers_def = cR(:);
             end
             
-            %% 5. Combine and Build the Base Trial Arrays
-            num_comps = size(comp_offsets, 1);
-            trials_per_rep = num_refs * num_comps;
+            % Combine and Build Standard Base Trial Arrays
+            std_ref = {};
+            std_comp_base = {};
+            std_comp_offset = {};
+            std_comp_offset_rel = {};
+            std_comp_radius = [];
+            std_comp_radius_rel = [];
+            std_comp_axis   = [];
+            std_comp_rad_idx = [];
+            std_comp_mult   = [];
+            std_is_zero_ref = [];
             
-            final_ref = cell(trials_per_rep, 1);
-            final_comp_base = cell(trials_per_rep, 1);
-            final_comp_offset = cell(trials_per_rep, 1); 
-            final_comp_offset_rel = cell(trials_per_rep, 1);
-            final_comp_radius = zeros(trials_per_rep, 1); 
-            final_comp_radius_rel = zeros(trials_per_rep, 1);
-            final_comp_axis   = zeros(trials_per_rep, 1);
-            final_comp_rad_idx = zeros(trials_per_rep, 1); 
-            final_comp_mult   = zeros(trials_per_rep, 1);
-            
-            counter = 1;
-            base_speed = 0.25;
             for r = 1:num_refs
                 v_ref = ref_vecs(r, :);
                 ref_speed = norm(v_ref);
-                for c = 1:num_comps
-                    final_ref{counter} = v_ref;
-                    if comp_rel_bool
-                        actual_offset = comp_offsets(c, :) .* ref_speed;
-                        if ref_speed == 0
-                            actual_offset = comp_offsets(c, :) .* base_speed;
+                is_zero = (ref_speed < 1e-10);
+                
+                % Standard condition: low speed refs (EXCLUDING 0) with relative comp get an extra grid axis step
+                if comp_rel_bool && (ref_speed < low_speed) && ~is_zero
+                    if strcmpi(comp_mode, 'cartesian')
+                        comp_ax_base = linspace(-comp_ub, comp_ub, comp_intervals);
+                        step_sz = comp_ax_base(2) - comp_ax_base(1);
+                        
+                        if rand() > 0.5
+                            comp_ax_ext = [comp_ax_base, comp_ax_base(end) + step_sz];
+                        else
+                            comp_ax_ext = [comp_ax_base(1) - step_sz, comp_ax_base];
                         end
+                        
+                        [cvx, cvy] = meshgrid(comp_ax_ext, comp_ax_ext);
+                        base_comps_r = [cvx(:), cvy(:)];
+                        c_mags_r = sqrt(sum(base_comps_r.^2, 2));
+                        
+                        max_ub = max(abs(comp_ax_ext));
+                        valid_idx_r = c_mags_r >= comp_lb & c_mags_r <= (max_ub + 1e-5);
+                        comp_offsets_r = base_comps_r(valid_idx_r, :);
+                        comp_offset_multipliers_r = c_mags_r(valid_idx_r);
+                        [~, ~, comp_offset_radius_idx_r] = unique(round(c_mags_r(valid_idx_r), 4));
                     else
-                        actual_offset = comp_offsets(c, :);
+                        comp_angles = linspace(0, 2*pi, comp_axes + 1);
+                        comp_angles(end) = [];
+                        comp_radii_base = linspace(comp_lb, comp_ub, comp_intervals);
+                        step_sz = comp_radii_base(2) - comp_radii_base(1);
+                        
+                        if rand() > 0.5
+                            comp_radii_ext = [comp_radii_base, comp_radii_base(end) + step_sz];
+                        else
+                            comp_radii_ext = [max(0, comp_radii_base(1) - step_sz), comp_radii_base];
+                        end
+                        
+                        radius_indices_r = 1:length(comp_radii_ext);
+                        [cA, cR] = meshgrid(comp_angles, comp_radii_ext);
+                        [~, cR_idx] = meshgrid(comp_angles, radius_indices_r);
+                        [cvx, cvy] = pol2cart(cA(:), cR(:));
+                        comp_offsets_r = [cvx, cvy];
+                        comp_offset_radius_idx_r = cR_idx(:);
+                        comp_offset_multipliers_r = cR(:);
                     end
-                    final_comp_base{counter} = v_ref + actual_offset;
+                else
+                    comp_offsets_r = std_comp_offsets_def;
+                    comp_offset_multipliers_r = std_comp_offset_multipliers_def;
+                    comp_offset_radius_idx_r = std_comp_offset_radius_idx_def;
+                end
+                
+                num_comps_r = size(comp_offsets_r, 1);
+                for c = 1:num_comps_r
+                    std_ref{end+1, 1} = v_ref;
+                    std_is_zero_ref(end+1, 1) = is_zero;
                     
-                    final_comp_offset{counter} = actual_offset;
-                    final_comp_offset_rel{counter} = comp_offsets(c, :);
-                    final_comp_radius(counter) = norm(actual_offset);
-                    final_comp_radius_rel(counter) = norm(comp_offsets(c, :));
-                    final_comp_axis(counter)   = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
-                    final_comp_rad_idx(counter) = comp_offset_radius_idx(c);
-                    final_comp_mult(counter) = comp_offset_multipliers(c);
+                    if comp_rel_bool
+                        actual_offset = comp_offsets_r(c, :) .* ref_speed;
+                        if ref_speed == 0, actual_offset = comp_offsets_r(c, :) .* base_speed; end
+                    else
+                        actual_offset = comp_offsets_r(c, :);
+                    end
+                    
+                    std_comp_base{end+1, 1}       = v_ref + actual_offset;
+                    std_comp_offset{end+1, 1}     = actual_offset;
+                    std_comp_offset_rel{end+1, 1} = comp_offsets_r(c, :);
+                    std_comp_radius(end+1, 1)     = norm(actual_offset);
+                    std_comp_radius_rel(end+1, 1) = norm(comp_offsets_r(c, :));
+                    std_comp_axis(end+1, 1)       = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
+                    std_comp_rad_idx(end+1, 1)    = comp_offset_radius_idx_r(c);
+                    std_comp_mult(end+1, 1)       = comp_offset_multipliers_r(c);
+                end
+            end
+            
+            % Repeat Standard set manually for concatenation
+            std_ref = repmat(std_ref, num_repeats, 1);
+            std_is_zero_ref = repmat(std_is_zero_ref, num_repeats, 1);
+            std_comp_base = repmat(std_comp_base, num_repeats, 1);
+            std_comp_offset = repmat(std_comp_offset, num_repeats, 1);
+            std_comp_offset_rel = repmat(std_comp_offset_rel, num_repeats, 1);
+            std_comp_radius = repmat(std_comp_radius, num_repeats, 1);
+            std_comp_radius_rel = repmat(std_comp_radius_rel, num_repeats, 1);
+            std_comp_axis = repmat(std_comp_axis, num_repeats, 1);
+            std_comp_rad_idx = repmat(std_comp_rad_idx, num_repeats, 1);
+            std_comp_mult = repmat(std_comp_mult, num_repeats, 1);
+            %% ====================================================================
+            %% SET 2: HARD TRIALS (Using _hard suffix parameters)
+            %% ====================================================================
+            lb_ref_h      = this.ExperimentOptions.lb_screen_hard;
+            if isempty(lb_ref_h), lb_ref_h = 0; end
+            ub_ref_h      = this.ExperimentOptions.ub_screen_hard;
+            num_ref_pts_h = this.ExperimentOptions.num_ref_gridpts_hard;
+            ref_mode_h    = this.ExperimentOptions.ref_cart_or_polar_hard;
+            ref_log_or_lin_h = this.ExperimentOptions.ref_log_or_lin_hard;
+            
+            comp_lb_h        = this.ExperimentOptions.comp_lb_hard;
+            if isempty(comp_lb_h), comp_lb_h = 0; end
+            comp_ub_h        = this.ExperimentOptions.comp_ub_hard;
+            comp_intervals_h = this.ExperimentOptions.comp_num_intervals_hard;
+            comp_axes_h      = this.ExperimentOptions.comp_num_axes_hard;
+            comp_mode_h      = this.ExperimentOptions.comp_cart_or_polar_hard;
+            comp_rel_bool_h  = this.ExperimentOptions.comp_rel_bool_hard; 
+            
+            custom_comp_intervals_h = [];
+            if isprop(this.ExperimentOptions, 'spec_comp_intervals_hard') || isfield(this.ExperimentOptions, 'spec_comp_intervals_hard')
+                custom_comp_intervals_h = this.ExperimentOptions.spec_comp_intervals_hard;
+            end
+            
+            target_base_trials_h = [];
+            if isprop(this.ExperimentOptions, 'target_base_trials_hard') || isfield(this.ExperimentOptions, 'target_base_trials_hard')
+                target_base_trials_h = this.ExperimentOptions.target_base_trials_hard;
+            end
+            
+            num_random_trials_h = 0;
+            if isprop(this.ExperimentOptions, 'num_random_trials_hard') || isfield(this.ExperimentOptions, 'num_random_trials_hard')
+                num_random_trials_h = this.ExperimentOptions.num_random_trials_hard;
+                if isempty(num_random_trials_h), num_random_trials_h = 0; end
+            end
+            
+            rand_comp_lb_h = comp_lb_h;
+            if isprop(this.ExperimentOptions, 'rand_comp_lb_hard') || isfield(this.ExperimentOptions, 'rand_comp_lb_hard')
+                if ~isempty(this.ExperimentOptions.rand_comp_lb_hard), rand_comp_lb_h = this.ExperimentOptions.rand_comp_lb_hard; end
+            end
+            
+            rand_comp_ub_h = comp_ub_h; 
+            if isprop(this.ExperimentOptions, 'rand_comp_ub_hard') || isfield(this.ExperimentOptions, 'rand_comp_ub_hard')
+                if ~isempty(this.ExperimentOptions.rand_comp_ub_hard), rand_comp_ub_h = this.ExperimentOptions.rand_comp_ub_hard; end
+            end
+
+            % Generate Global Reference Vectors (Hard)
+            if strcmpi(ref_mode_h, 'cartesian')
+                ref_ax_h = linspace(-ub_ref_h, ub_ref_h, num_ref_pts_h);
+                [rvx, rvy] = meshgrid(ref_ax_h, ref_ax_h);
+                ref_vecs_h = [rvx(:), rvy(:)];
+            else
+                num_ref_spokes_h = this.ExperimentOptions.num_ref_spokes_hard;
+                angles = linspace(0, 2*pi, num_ref_spokes_h + 1);
+                angles(end) = []; 
+                if strcmpi(ref_log_or_lin_h, 'log')
+                    radii = logspace(log10(lb_ref_h), log10(ub_ref_h), max(1, num_ref_pts_h));
+                else
+                    radii = linspace(lb_ref_h, ub_ref_h, max(1, num_ref_pts_h));
+                end
+                [A, R] = meshgrid(angles, radii);
+                [vx, vy] = pol2cart(A(:), R(:));
+                ref_vecs_h = [vx, vy];
+            end
+            
+            if ~any(sqrt(sum(ref_vecs_h.^2, 2)) < 1e-10)
+                ref_vecs_h = [0, 0; ref_vecs_h];
+            end
+            num_refs_h = size(ref_vecs_h, 1);
+
+            % Generate Local Comparison Offsets (Hard)
+            if strcmpi(comp_mode_h, 'cartesian')
+                if ~isempty(custom_comp_intervals_h)
+                    comp_ax_h = custom_comp_intervals_h;
+                else
+                    comp_ax_h = linspace(-comp_ub_h, comp_ub_h, comp_intervals_h);
+                end
+                [cvx, cvy] = meshgrid(comp_ax_h, comp_ax_h);
+                base_comps_h = [cvx(:), cvy(:)];
+                c_mags_h = sqrt(sum(base_comps_h.^2, 2));
+                
+                valid_idx = c_mags_h >= comp_lb_h & c_mags_h <= comp_ub_h;
+                comp_offsets_h = base_comps_h(valid_idx, :);
+                comp_offset_multipliers_h = c_mags_h(valid_idx);
+                [~, ~, comp_offset_radius_idx_h] = unique(round(c_mags_h(valid_idx), 4));
+            else
+                comp_angles_h = linspace(0, 2*pi, comp_axes_h + 1);
+                comp_angles_h(end) = [];
+                
+                if ~isempty(custom_comp_intervals_h)
+                    comp_radii_h = custom_comp_intervals_h;
+                    actual_intervals_h = length(custom_comp_intervals_h);
+                else
+                    comp_radii_h = linspace(comp_lb_h, comp_ub_h, comp_intervals_h);
+                    actual_intervals_h = comp_intervals_h;
+                end
+                
+                radius_indices_h = 1:actual_intervals_h;
+                [cA, cR] = meshgrid(comp_angles_h, comp_radii_h);
+                [~, cR_idx] = meshgrid(comp_angles_h, radius_indices_h);
+                [cvx, cvy] = pol2cart(cA(:), cR(:));
+                comp_offsets_h = [cvx, cvy];
+                comp_offset_radius_idx_h = cR_idx(:);
+                comp_offset_multipliers_h = cR(:);
+            end
+
+            % Combine and Build Hard Trial Arrays
+            num_comps_h = size(comp_offsets_h, 1);
+            trials_per_rep_h = num_refs_h * num_comps_h;
+            
+            hard_ref = cell(trials_per_rep_h, 1);
+            hard_is_zero_ref = zeros(trials_per_rep_h, 1);
+            hard_comp_base = cell(trials_per_rep_h, 1);
+            hard_comp_offset = cell(trials_per_rep_h, 1); 
+            hard_comp_offset_rel = cell(trials_per_rep_h, 1);
+            hard_comp_radius = zeros(trials_per_rep_h, 1); 
+            hard_comp_radius_rel = zeros(trials_per_rep_h, 1);
+            hard_comp_axis   = zeros(trials_per_rep_h, 1);
+            hard_comp_rad_idx = zeros(trials_per_rep_h, 1); 
+            hard_comp_mult   = zeros(trials_per_rep_h, 1);
+            
+            counter = 1;
+            for r = 1:num_refs_h
+                v_ref = ref_vecs_h(r, :);
+                ref_speed = norm(v_ref);
+                is_zero = (ref_speed < 1e-10);
+                
+                for c = 1:num_comps_h
+                    hard_ref{counter} = v_ref;
+                    hard_is_zero_ref(counter) = is_zero;
+                    
+                    if comp_rel_bool_h
+                        actual_offset = comp_offsets_h(c, :) .* ref_speed;
+                        if ref_speed == 0, actual_offset = comp_offsets_h(c, :) .* base_speed; end
+                    else
+                        actual_offset = comp_offsets_h(c, :);
+                    end
+                    hard_comp_base{counter} = v_ref + actual_offset;
+                    hard_comp_offset{counter} = actual_offset;
+                    hard_comp_offset_rel{counter} = comp_offsets_h(c, :);
+                    hard_comp_radius(counter) = norm(actual_offset);
+                    hard_comp_radius_rel(counter) = norm(comp_offsets_h(c, :));
+                    hard_comp_axis(counter)   = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
+                    hard_comp_rad_idx(counter) = comp_offset_radius_idx_h(c);
+                    hard_comp_mult(counter) = comp_offset_multipliers_h(c);
                     counter = counter + 1;
                 end
             end
             
-            %% 5.1 Repeat and Downsample arrays manually
-            % Duplicate variables to account for num_repeats directly
-            final_ref = repmat(final_ref, num_repeats, 1);
-            final_comp_base = repmat(final_comp_base, num_repeats, 1);
-            final_comp_offset = repmat(final_comp_offset, num_repeats, 1);
-            final_comp_offset_rel = repmat(final_comp_offset_rel, num_repeats, 1);
-            final_comp_radius = repmat(final_comp_radius, num_repeats, 1);
-            final_comp_radius_rel = repmat(final_comp_radius_rel, num_repeats, 1);
-            final_comp_axis = repmat(final_comp_axis, num_repeats, 1);
-            final_comp_rad_idx = repmat(final_comp_rad_idx, num_repeats, 1);
-            final_comp_mult = repmat(final_comp_mult, num_repeats, 1);
+            % Repeat and Downsample arrays manually
+            hard_ref = repmat(hard_ref, num_repeats, 1);
+            hard_is_zero_ref = repmat(hard_is_zero_ref, num_repeats, 1);
+            hard_comp_base = repmat(hard_comp_base, num_repeats, 1);
+            hard_comp_offset = repmat(hard_comp_offset, num_repeats, 1);
+            hard_comp_offset_rel = repmat(hard_comp_offset_rel, num_repeats, 1);
+            hard_comp_radius = repmat(hard_comp_radius, num_repeats, 1);
+            hard_comp_radius_rel = repmat(hard_comp_radius_rel, num_repeats, 1);
+            hard_comp_axis = repmat(hard_comp_axis, num_repeats, 1);
+            hard_comp_rad_idx = repmat(hard_comp_rad_idx, num_repeats, 1);
+            hard_comp_mult = repmat(hard_comp_mult, num_repeats, 1);
         
-            base_generated = length(final_ref);
+            base_generated_h = length(hard_ref);
             
             % Randomly cull base variables if target exists
-            if ~isempty(target_base_trials) && target_base_trials < base_generated
-                keep_idx = randperm(base_generated, target_base_trials);
+            if ~isempty(target_base_trials_h) && target_base_trials_h < base_generated_h
+                keep_idx = randperm(base_generated_h, target_base_trials_h);
                 
-                final_ref = final_ref(keep_idx);
-                final_comp_base = final_comp_base(keep_idx);
-                final_comp_offset = final_comp_offset(keep_idx);
-                final_comp_offset_rel = final_comp_offset_rel(keep_idx);
-                final_comp_radius = final_comp_radius(keep_idx);
-                final_comp_radius_rel = final_comp_radius_rel(keep_idx);
-                final_comp_axis = final_comp_axis(keep_idx);
-                final_comp_rad_idx = final_comp_rad_idx(keep_idx);
-                final_comp_mult = final_comp_mult(keep_idx);
-                
-                base_kept = target_base_trials;
+                hard_ref = hard_ref(keep_idx);
+                hard_is_zero_ref = hard_is_zero_ref(keep_idx);
+                hard_comp_base = hard_comp_base(keep_idx);
+                hard_comp_offset = hard_comp_offset(keep_idx);
+                hard_comp_offset_rel = hard_comp_offset_rel(keep_idx);
+                hard_comp_radius = hard_comp_radius(keep_idx);
+                hard_comp_radius_rel = hard_comp_radius_rel(keep_idx);
+                hard_comp_axis = hard_comp_axis(keep_idx);
+                hard_comp_rad_idx = hard_comp_rad_idx(keep_idx);
+                hard_comp_mult = hard_comp_mult(keep_idx);
+                base_kept_h = target_base_trials_h;
+
             else
-                base_kept = base_generated;
+
+                base_kept_h = base_generated_h;
             end
             
-            %% 5.2 Inject Random Trial Arrays
-            if num_random_trials > 0
-                rand_ref_idx = randi([1, num_refs], num_random_trials, 1);
-                m_ref_rand = ref_vecs(rand_ref_idx, :);
+            % Inject Random Trial Arrays
+            if num_random_trials_h > 0
+                rand_ref_idx = randi([1, num_refs_h], num_random_trials_h, 1);
+                m_ref_rand = ref_vecs_h(rand_ref_idx, :);
                 
-                rand_r = rand_comp_lb + (rand_comp_ub - rand_comp_lb) * rand(num_random_trials, 1);
-                rand_theta = 2 * pi * rand(num_random_trials, 1);
+                rand_r = rand_comp_lb_h + (rand_comp_ub_h - rand_comp_lb_h) * rand(num_random_trials_h, 1);
+                rand_theta = 2 * pi * rand(num_random_trials_h, 1);
                 [dx, dy] = pol2cart(rand_theta, rand_r);
                 actual_rand_offsets = [dx, dy];
                 
-                if comp_rel_bool
+                if comp_rel_bool_h
                     ref_speeds_rand = sqrt(sum(m_ref_rand.^2, 2));
                     ref_speeds_rand(ref_speeds_rand == 0) = base_speed;
                     actual_rand_offsets_scaled = actual_rand_offsets .* ref_speeds_rand;
@@ -351,42 +535,112 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 end
                 m_comp_rand = m_ref_rand + actual_rand_offsets_scaled;
                 
-                % Convert to matching cell arrays and vectors
-                rand_ref_cell = mat2cell(m_ref_rand, ones(num_random_trials,1), 2);
-                rand_comp_base_cell = mat2cell(m_comp_rand, ones(num_random_trials,1), 2);
-                rand_comp_offset_cell = mat2cell(actual_rand_offsets_scaled, ones(num_random_trials,1), 2);
-                rand_comp_offset_rel_cell = mat2cell(actual_rand_offsets, ones(num_random_trials,1), 2);
+                rand_ref_cell = mat2cell(m_ref_rand, ones(num_random_trials_h,1), 2);
+                rand_is_zero_ref = (sqrt(sum(m_ref_rand.^2, 2)) < 1e-10);
+                rand_comp_base_cell = mat2cell(m_comp_rand, ones(num_random_trials_h,1), 2);
+                rand_comp_offset_cell = mat2cell(actual_rand_offsets_scaled, ones(num_random_trials_h,1), 2);
+                rand_comp_offset_rel_cell = mat2cell(actual_rand_offsets, ones(num_random_trials_h,1), 2);
                 
                 rand_comp_radius = sqrt(sum(actual_rand_offsets_scaled.^2, 2));
                 rand_comp_radius_rel = rand_r;
                 rand_comp_axis = wrapTo360(rad2deg(atan2(actual_rand_offsets_scaled(:,2), actual_rand_offsets_scaled(:,1))));
-                rand_comp_rad_idx = zeros(num_random_trials, 1); 
+                rand_comp_rad_idx = zeros(num_random_trials_h, 1); 
                 rand_comp_mult = rand_r;
                 
-                % Vertically concatenate directly to the downsampled base arrays
-                final_ref = [final_ref; rand_ref_cell];
-                final_comp_base = [final_comp_base; rand_comp_base_cell];
-                final_comp_offset = [final_comp_offset; rand_comp_offset_cell];
-                final_comp_offset_rel = [final_comp_offset_rel; rand_comp_offset_rel_cell];
-                final_comp_radius = [final_comp_radius; rand_comp_radius];
-                final_comp_radius_rel = [final_comp_radius_rel; rand_comp_radius_rel];
-                final_comp_axis = [final_comp_axis; rand_comp_axis];
-                final_comp_rad_idx = [final_comp_rad_idx; rand_comp_rad_idx];
-                final_comp_mult = [final_comp_mult; rand_comp_mult];
+                hard_ref = [hard_ref; rand_ref_cell];
+                hard_is_zero_ref = [hard_is_zero_ref; rand_is_zero_ref];
+                hard_comp_base = [hard_comp_base; rand_comp_base_cell];
+                hard_comp_offset = [hard_comp_offset; rand_comp_offset_cell];
+                hard_comp_offset_rel = [hard_comp_offset_rel; rand_comp_offset_rel_cell];
+                hard_comp_radius = [hard_comp_radius; rand_comp_radius];
+                hard_comp_radius_rel = [hard_comp_radius_rel; rand_comp_radius_rel];
+                hard_comp_axis = [hard_comp_axis; rand_comp_axis];
+                hard_comp_rad_idx = [hard_comp_rad_idx; rand_comp_rad_idx];
+                hard_comp_mult = [hard_comp_mult; rand_comp_mult];
             end
-        
-            %% 5.3 Generate Arume Table ONCE
+
+            %% ====================================================================
+            %% SET 3: RANDOMIZE ZERO REFERENCES BY TRIAL
+            %% ====================================================================
+            nz = nonzero_rand;
+            nz_options = [
+                -nz,   0;
+                 nz,   0;
+                  0, -nz;
+                  0,  nz;
+                -nz, -nz;
+                -nz,  nz;
+                 nz, -nz;
+                 nz,  nz
+            ];
+
+            % Standard trials zero-reference replacement
+            for i = 1:length(std_ref)
+                if std_is_zero_ref(i)
+                    v_rand = nz_options(randi(8), :);
+                    std_ref{i} = v_rand;
+                    v_rand_speed = norm(v_rand);
+                    
+                    rel_offset = std_comp_offset_rel{i};
+                    if comp_rel_bool
+                        actual_offset = rel_offset .* v_rand_speed;
+                    else
+                        actual_offset = rel_offset;
+                    end
+                    
+                    std_comp_base{i}       = v_rand + actual_offset;
+                    std_comp_offset{i}     = actual_offset;
+                    std_comp_radius(i)     = norm(actual_offset);
+                    std_comp_axis(i)       = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
+                end
+            end
+
+            % Hard trials zero-reference replacement
+            for i = 1:length(hard_ref)
+                if hard_is_zero_ref(i)
+                    v_rand = nz_options(randi(8), :);
+                    hard_ref{i} = v_rand;
+                    v_rand_speed = norm(v_rand);
+                    
+                    rel_offset = hard_comp_offset_rel{i};
+                    if comp_rel_bool_h
+                        actual_offset = rel_offset .* v_rand_speed;
+                    else
+                        actual_offset = rel_offset;
+                    end
+                    
+                    hard_comp_base{i}       = v_rand + actual_offset;
+                    hard_comp_offset{i}     = actual_offset;
+                    hard_comp_radius(i)     = norm(actual_offset);
+                    hard_comp_axis(i)       = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
+                end
+            end
+
+            %% ====================================================================
+            %% SET 4: COMBINE STANDARD AND HARD SETS & GENERATE TABLE
+            %% ====================================================================
+            final_ref = [std_ref; hard_ref];
+            final_comp_base = [std_comp_base; hard_comp_base];
+            final_comp_offset = [std_comp_offset; hard_comp_offset];
+            final_comp_offset_rel = [std_comp_offset_rel; hard_comp_offset_rel];
+            final_comp_radius = [std_comp_radius; hard_comp_radius];
+            final_comp_radius_rel = [std_comp_radius_rel; hard_comp_radius_rel];
+            final_comp_axis = [std_comp_axis; hard_comp_axis];
+            final_comp_rad_idx = [std_comp_rad_idx; hard_comp_rad_idx];
+            final_comp_mult = [std_comp_mult; hard_comp_mult];
+            
+            % Boolean vector indicating if the trial is from the hard condition
+            is_hard_trial = [zeros(length(std_ref), 1); ones(length(hard_ref), 1)];
+
             total_trials = length(final_ref);
             
             t = ArumeCore.TrialTableBuilder();
             t.AddConditionVariable('RefCompPair', (1:total_trials));
             
-            % Because we handled num_repeats manually, tell Arume to do exactly 1 sequence
+            % Generate Table - Arume will shuffle everything uniformly
             trialTable = t.GenerateTrialTable('Random', 'Sequential', 1, 'Delay');
-            
             trialTable.OddballWindow = randi([1, 3], total_trials, 1);
             
-            % The variable idx is a shuffled index of (1 to total_trials)
             idx = trialTable.RefCompPair;
             
             trialTable.ReferenceVelocity = final_ref(idx);
@@ -398,8 +652,9 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             trialTable.CompOffsetAxis   = final_comp_axis(idx);
             trialTable.CompOffsetRadiusIndex = final_comp_rad_idx(idx);
             trialTable.CompOffsetMultiplier = final_comp_mult(idx);
+            trialTable.IsHardTrial = is_hard_trial(idx);
         
-            %% 6. Apply Pseudo-Random Jitter
+            %% Apply Pseudo-Random Jitter
             comp_vels = trialTable.ComparisonVelocity;
             if do_jitter
                 for i = 1:height(trialTable)
@@ -414,7 +669,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             end
             trialTable.ComparisonVelocity = comp_vels; 
             
-            %% 7. Final Window Assignment
+            %% Final Window Assignment
             trialTable.Window1_Velocity = trialTable.ReferenceVelocity;
             trialTable.Window2_Velocity = trialTable.ReferenceVelocity;
             trialTable.Window3_Velocity = trialTable.ReferenceVelocity;
@@ -423,7 +678,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             trialTable.Window2_Velocity(trialTable.OddballWindow == 2) = comp_vels(trialTable.OddballWindow == 2);
             trialTable.Window3_Velocity(trialTable.OddballWindow == 3) = comp_vels(trialTable.OddballWindow == 3);
             
-            %% 8. Set the physical positions of the three apertures
+            %% Set the physical positions of the three apertures
             trials_per_block = this.ExperimentOptions.TrialsBeforeBreak;
             num_blocks = floor(total_trials / trials_per_block) + 1;
             
@@ -437,11 +692,11 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             trialTable.Window1_Angle = angle_set(block_idx)';
             trialTable.Window2_Angle = wrapTo360(trialTable.Window1_Angle - 120);
             trialTable.Window3_Angle = wrapTo360(trialTable.Window1_Angle - 240);
-
             
             %% --- Print Experiment Summary ---
+
             fprintf('\n============================================================\n');
-            fprintf('           STIMULUS CONFIGURATION SUMMARY                 \n');
+            fprintf('           STANDARD STIMULUS CONFIGURATION SUMMARY                 \n');
             fprintf('============================================================\n');
             if strcmpi(ref_mode, 'cartesian')
                 fprintf('REFERENCE VECTORS: [CARTESIAN GRID]\n');
@@ -454,41 +709,428 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             end
             fprintf('  - Total Unique Refs: %d\n', num_refs);
             fprintf('------------------------------------------------------------\n');
-            
             if comp_rel_bool
                 comp_type_str = 'RELATIVE (%% of ref speed)';
             else
                 comp_type_str = 'ABSOLUTE (deg/s)';
             end
-            
+
             if strcmpi(comp_mode, 'cartesian')
                 fprintf('COMPARISON VECTORS: [CARTESIAN LOCAL GRID]\n');
                 fprintf('  - Offset Type:       %s\n', comp_type_str);
-                fprintf('  - Grid Axis Steps:   [%s]\n', num2str(comp_ax, '%.4f '));
-                fprintf('  - Local Bounds:      %.4f to %.4f (Magnitude)\n', comp_lb, comp_ub);
+                fprintf('  - Grid Axis Steps:   [%s]\n', num2str(comp_ax, '%.2f '));
+                if exist('comp_ax_ext', 'var')
+                    fprintf('  - Grid Axis Steps for Refs w/ Speeds Lower than %s: %s\n',  num2str(low_speed, '%.2f '), num2str(comp_ax_ext, '%.2f '));
+                end
+                fprintf('  - Local Bounds:      %.2f to %.2f (Magnitude)\n', comp_lb, comp_ub);
+            else
+                fprintf('COMPARISON VECTORS: [POLAR LOCAL SPOKES]\n');
+                fprintf('  - Offset Type:       %s\n', comp_type_str);
+                fprintf('  - Comparison Radii:  [%s]\n', num2str(comp_radii, '%.2f '));
+                fprintf('  - Comparison Axes:   %d\n', comp_axes);
+            end
+            fprintf('  - Total Unique Comps: %d (per reference)\n', num_comps_r);
+
+            fprintf('\n============================================================\n');
+            fprintf('          HARD STIMULUS CONFIGURATION SUMMARY                 \n');
+            fprintf('============================================================\n');
+            if strcmpi(ref_mode, 'cartesian')
+                fprintf('REFERENCE VECTORS: [CARTESIAN GRID]\n');
+                fprintf('  - Grid Axis Steps:   [%s] deg/s\n', num2str(ref_ax_h, '%.4f '));
+                fprintf('  - Frame Bounds:      %.4f to %.4f deg/s (Magnitude)\n', lb_ref_h, ub_ref_h);
+            else
+                fprintf('REFERENCE VECTORS: [POLAR WHEEL]\n');
+                fprintf('  - Reference Radii:   [%s] deg/s\n', num2str(radii, '%.4f '));
+                fprintf('  - Number of Spokes:  %d\n', num_ref_spokes);
+            end
+            fprintf('  - Total Unique Refs: %d\n', num_refs_h);
+            fprintf('------------------------------------------------------------\n');
+
+            if comp_rel_bool
+                comp_type_str = 'RELATIVE (%% of ref speed)';
+            else
+                comp_type_str = 'ABSOLUTE (deg/s)';
+            end
+
+            if strcmpi(comp_mode, 'cartesian')
+                fprintf('COMPARISON VECTORS: [CARTESIAN LOCAL GRID]\n');
+                fprintf('  - Offset Type:       %s\n', comp_type_str);
+                fprintf('  - Grid Axis Steps:   [%s]\n', num2str(comp_ax_h, '%.4f '));
+                fprintf('  - Local Bounds:      %.4f to %.4f (Magnitude)\n', comp_lb_h, comp_ub_h);
             else
                 fprintf('COMPARISON VECTORS: [POLAR LOCAL SPOKES]\n');
                 fprintf('  - Offset Type:       %s\n', comp_type_str);
                 fprintf('  - Comparison Radii:  [%s]\n', num2str(comp_radii, '%.4f '));
                 fprintf('  - Comparison Axes:   %d\n', comp_axes);
             end
-            fprintf('  - Total Unique Comps: %d (per reference)\n', num_comps);
-            
-            if ~isempty(target_base_trials) && target_base_trials < base_generated
-                fprintf('  - Culled Base Trials:  %d (randomly kept)\n', base_kept);
+            fprintf('  - Total Unique Comps: %d (per reference)\n', num_comps_h);
+
+            if ~isempty(target_base_trials_h) && target_base_trials_h < base_generated_h
+                fprintf('  - Culled Base Trials:  %d (randomly kept)\n', base_kept_h);
             end
-            if num_random_trials > 0
+            if num_random_trials_h > 0
                 fprintf('------------------------------------------------------------\n');
-                fprintf('  - EXTRA INJECTIONS:    %d Random Offset Trials\n', num_random_trials);
-                fprintf('  - Random Offset Range: %.4f to %.4f\n', rand_comp_lb, rand_comp_ub);
+                fprintf('  - EXTRA INJECTIONS:    %d Random Offset Trials\n', num_random_trials_h);
+                fprintf('  - Random Offset Range: %.4f to %.4f\n', rand_comp_lb_h, rand_comp_ub_h);
             end
 
-            
+
+            fprintf('\n============================================================\n');
+            fprintf('           STIMULUS CONFIGURATION SUMMARY (MIXED)         \n');
+            fprintf('============================================================\n');
+            fprintf('  - Standard N Trials:   %d\n', length(std_ref));
+            fprintf('  - Hard N Trials:       %d\n', length(hard_ref));
             fprintf('------------------------------------------------------------\n');
-            fprintf('  - Repetitions / Combo: %d\n', num_repeats);
             fprintf('  - Total N Trials:      %d\n', height(trialTable));
             fprintf('============================================================\n\n');
         end
+
+
+        % function trialTable = SetUpTrialTable(this)
+        %     %% 1. Parameter Extraction
+        %     lb_ref      = this.ExperimentOptions.lb_screen;
+        %     if isempty(lb_ref), lb_ref = 0; end
+        %     ub_ref      = this.ExperimentOptions.ub_screen;
+        %     num_ref_pts = this.ExperimentOptions.num_ref_gridpts;
+        %     ref_mode    = this.ExperimentOptions.ref_cart_or_polar;
+        %     ref_log_or_lin = this.ExperimentOptions.ref_log_or_lin;
+        % 
+        %     comp_lb        = this.ExperimentOptions.comp_lb;
+        %     if isempty(comp_lb), comp_lb = 0; end
+        %     comp_ub        = this.ExperimentOptions.comp_ub;
+        %     comp_intervals = this.ExperimentOptions.comp_num_intervals;
+        %     comp_axes      = this.ExperimentOptions.comp_num_axes;
+        %     comp_mode      = this.ExperimentOptions.comp_cart_or_polar;
+        %     comp_rel_bool  = this.ExperimentOptions.comp_rel_bool; 
+        % 
+        %     % --- Optional Arrays and Injectors ---
+        %     custom_comp_intervals = [];
+        %     if isprop(this.ExperimentOptions, 'comp_intervals_list') || isfield(this.ExperimentOptions, 'comp_intervals_list')
+        %         custom_comp_intervals = this.ExperimentOptions.comp_intervals_list;
+        %     end
+        % 
+        %     % --- Base Trial Target Downsampler ---
+        %     target_base_trials = [];
+        %     if isprop(this.ExperimentOptions, 'target_base_trials') || isfield(this.ExperimentOptions, 'target_base_trials')
+        %         target_base_trials = this.ExperimentOptions.target_base_trials;
+        %     end
+        % 
+        %     num_random_trials = 0;
+        %     if isprop(this.ExperimentOptions, 'num_random_trials') || isfield(this.ExperimentOptions, 'num_random_trials')
+        %         num_random_trials = this.ExperimentOptions.num_random_trials;
+        %         if isempty(num_random_trials), num_random_trials = 0; end
+        %     end
+        % 
+        %     rand_comp_lb = comp_lb;
+        %     if isprop(this.ExperimentOptions, 'rand_comp_lb') || isfield(this.ExperimentOptions, 'rand_comp_lb')
+        %         if ~isempty(this.ExperimentOptions.rand_comp_lb), rand_comp_lb = this.ExperimentOptions.rand_comp_lb; end
+        %     end
+        % 
+        %     rand_comp_ub = comp_ub; 
+        %     if isprop(this.ExperimentOptions, 'rand_comp_ub') || isfield(this.ExperimentOptions, 'rand_comp_ub')
+        %         if ~isempty(this.ExperimentOptions.rand_comp_ub), rand_comp_ub = this.ExperimentOptions.rand_comp_ub; end
+        %     end
+        % 
+        %     do_jitter   = this.ExperimentOptions.Do_Jitter;
+        %     jitter_mult = this.ExperimentOptions.Jitter_Multiplier;
+        %     num_repeats = this.ExperimentOptions.Num_Repeats_Per_Combo;
+        % 
+        %     %% 2. Seed RNG 
+        %     rng(keyHash(this.Session.subjectCode)/10^10)
+        % 
+        %     %% 3. Generate Global Reference Vectors
+        %     if strcmpi(ref_mode, 'cartesian')
+        %         ref_ax = linspace(-ub_ref, ub_ref, num_ref_pts);
+        %         [rvx, rvy] = meshgrid(ref_ax, ref_ax);
+        %         base_refs = [rvx(:), rvy(:)];
+        %         ref_vecs = base_refs;
+        %     else
+        %         num_ref_spokes = this.ExperimentOptions.num_ref_spokes;
+        %         angles = linspace(0, 2*pi, num_ref_spokes + 1);
+        %         angles(end) = []; 
+        %         if strcmpi(ref_log_or_lin, 'log')
+        %             radii = logspace(log10(lb_ref), log10(ub_ref), max(1, num_ref_pts));
+        %         else
+        %             radii = linspace(lb_ref, ub_ref, max(1, num_ref_pts));
+        %         end
+        %         [A, R] = meshgrid(angles, radii);
+        %         [vx, vy] = pol2cart(A(:), R(:));
+        %         ref_vecs = [vx, vy];
+        %     end
+        % 
+        %     if ~any(sqrt(sum(ref_vecs.^2, 2)) < 1e-10)
+        %         ref_vecs = [0, 0; ref_vecs];
+        %     end
+        %     num_refs = size(ref_vecs, 1);
+        % 
+        %     %% 4. Generate Local Comparison Offsets (dx, dy)
+        %     if strcmpi(comp_mode, 'cartesian')
+        %         if ~isempty(custom_comp_intervals)
+        %             comp_ax = custom_comp_intervals;
+        %         else
+        %             comp_ax = linspace(-comp_ub, comp_ub, comp_intervals);
+        %         end
+        %         [cvx, cvy] = meshgrid(comp_ax, comp_ax);
+        %         base_comps = [cvx(:), cvy(:)];
+        %         c_mags = sqrt(sum(base_comps.^2, 2));
+        % 
+        %         valid_idx = c_mags >= comp_lb & c_mags <= comp_ub;
+        %         comp_offsets = base_comps(valid_idx, :);
+        %         comp_offset_multipliers = c_mags(valid_idx);
+        %         [~, ~, comp_offset_radius_idx] = unique(round(c_mags(valid_idx), 4));
+        %     else
+        %         comp_angles = linspace(0, 2*pi, comp_axes + 1);
+        %         comp_angles(end) = [];
+        % 
+        %         if ~isempty(custom_comp_intervals)
+        %             comp_radii = custom_comp_intervals;
+        %             actual_intervals = length(custom_comp_intervals);
+        %         else
+        %             comp_radii = linspace(comp_lb, comp_ub, comp_intervals);
+        %             actual_intervals = comp_intervals;
+        %         end
+        % 
+        %         radius_indices = 1:actual_intervals;
+        %         [cA, cR] = meshgrid(comp_angles, comp_radii);
+        %         [~, cR_idx] = meshgrid(comp_angles, radius_indices);
+        %         [cvx, cvy] = pol2cart(cA(:), cR(:));
+        %         comp_offsets = [cvx, cvy];
+        %         comp_offset_radius_idx = cR_idx(:);
+        %         comp_offset_multipliers = cR(:);
+        %     end
+        % 
+        %     %% 5. Combine and Build the Base Trial Arrays
+        %     num_comps = size(comp_offsets, 1);
+        %     trials_per_rep = num_refs * num_comps;
+        % 
+        %     final_ref = cell(trials_per_rep, 1);
+        %     final_comp_base = cell(trials_per_rep, 1);
+        %     final_comp_offset = cell(trials_per_rep, 1); 
+        %     final_comp_offset_rel = cell(trials_per_rep, 1);
+        %     final_comp_radius = zeros(trials_per_rep, 1); 
+        %     final_comp_radius_rel = zeros(trials_per_rep, 1);
+        %     final_comp_axis   = zeros(trials_per_rep, 1);
+        %     final_comp_rad_idx = zeros(trials_per_rep, 1); 
+        %     final_comp_mult   = zeros(trials_per_rep, 1);
+        % 
+        %     counter = 1;
+        %     base_speed = 0.25;
+        %     for r = 1:num_refs
+        %         v_ref = ref_vecs(r, :);
+        %         ref_speed = norm(v_ref);
+        %         for c = 1:num_comps
+        %             final_ref{counter} = v_ref;
+        %             if comp_rel_bool
+        %                 actual_offset = comp_offsets(c, :) .* ref_speed;
+        %                 if ref_speed == 0
+        %                     actual_offset = comp_offsets(c, :) .* base_speed;
+        %                 end
+        %             else
+        %                 actual_offset = comp_offsets(c, :);
+        %             end
+        %             final_comp_base{counter} = v_ref + actual_offset;
+        % 
+        %             final_comp_offset{counter} = actual_offset;
+        %             final_comp_offset_rel{counter} = comp_offsets(c, :);
+        %             final_comp_radius(counter) = norm(actual_offset);
+        %             final_comp_radius_rel(counter) = norm(comp_offsets(c, :));
+        %             final_comp_axis(counter)   = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
+        %             final_comp_rad_idx(counter) = comp_offset_radius_idx(c);
+        %             final_comp_mult(counter) = comp_offset_multipliers(c);
+        %             counter = counter + 1;
+        %         end
+        %     end
+        % 
+        %     %% 5.1 Repeat and Downsample arrays manually
+        %     % Duplicate variables to account for num_repeats directly
+        %     final_ref = repmat(final_ref, num_repeats, 1);
+        %     final_comp_base = repmat(final_comp_base, num_repeats, 1);
+        %     final_comp_offset = repmat(final_comp_offset, num_repeats, 1);
+        %     final_comp_offset_rel = repmat(final_comp_offset_rel, num_repeats, 1);
+        %     final_comp_radius = repmat(final_comp_radius, num_repeats, 1);
+        %     final_comp_radius_rel = repmat(final_comp_radius_rel, num_repeats, 1);
+        %     final_comp_axis = repmat(final_comp_axis, num_repeats, 1);
+        %     final_comp_rad_idx = repmat(final_comp_rad_idx, num_repeats, 1);
+        %     final_comp_mult = repmat(final_comp_mult, num_repeats, 1);
+        % 
+        %     base_generated = length(final_ref);
+        % 
+        %     % Randomly cull base variables if target exists
+        %     if ~isempty(target_base_trials) && target_base_trials < base_generated
+        %         keep_idx = randperm(base_generated, target_base_trials);
+        % 
+        %         final_ref = final_ref(keep_idx);
+        %         final_comp_base = final_comp_base(keep_idx);
+        %         final_comp_offset = final_comp_offset(keep_idx);
+        %         final_comp_offset_rel = final_comp_offset_rel(keep_idx);
+        %         final_comp_radius = final_comp_radius(keep_idx);
+        %         final_comp_radius_rel = final_comp_radius_rel(keep_idx);
+        %         final_comp_axis = final_comp_axis(keep_idx);
+        %         final_comp_rad_idx = final_comp_rad_idx(keep_idx);
+        %         final_comp_mult = final_comp_mult(keep_idx);
+        % 
+        %         base_kept = target_base_trials;
+        %     else
+        %         base_kept = base_generated;
+        %     end
+        % 
+        %     %% 5.2 Inject Random Trial Arrays
+        %     if num_random_trials > 0
+        %         rand_ref_idx = randi([1, num_refs], num_random_trials, 1);
+        %         m_ref_rand = ref_vecs(rand_ref_idx, :);
+        % 
+        %         rand_r = rand_comp_lb + (rand_comp_ub - rand_comp_lb) * rand(num_random_trials, 1);
+        %         rand_theta = 2 * pi * rand(num_random_trials, 1);
+        %         [dx, dy] = pol2cart(rand_theta, rand_r);
+        %         actual_rand_offsets = [dx, dy];
+        % 
+        %         if comp_rel_bool
+        %             ref_speeds_rand = sqrt(sum(m_ref_rand.^2, 2));
+        %             ref_speeds_rand(ref_speeds_rand == 0) = base_speed;
+        %             actual_rand_offsets_scaled = actual_rand_offsets .* ref_speeds_rand;
+        %         else
+        %             actual_rand_offsets_scaled = actual_rand_offsets;
+        %         end
+        %         m_comp_rand = m_ref_rand + actual_rand_offsets_scaled;
+        % 
+        %         % Convert to matching cell arrays and vectors
+        %         rand_ref_cell = mat2cell(m_ref_rand, ones(num_random_trials,1), 2);
+        %         rand_comp_base_cell = mat2cell(m_comp_rand, ones(num_random_trials,1), 2);
+        %         rand_comp_offset_cell = mat2cell(actual_rand_offsets_scaled, ones(num_random_trials,1), 2);
+        %         rand_comp_offset_rel_cell = mat2cell(actual_rand_offsets, ones(num_random_trials,1), 2);
+        % 
+        %         rand_comp_radius = sqrt(sum(actual_rand_offsets_scaled.^2, 2));
+        %         rand_comp_radius_rel = rand_r;
+        %         rand_comp_axis = wrapTo360(rad2deg(atan2(actual_rand_offsets_scaled(:,2), actual_rand_offsets_scaled(:,1))));
+        %         rand_comp_rad_idx = zeros(num_random_trials, 1); 
+        %         rand_comp_mult = rand_r;
+        % 
+        %         % Vertically concatenate directly to the downsampled base arrays
+        %         final_ref = [final_ref; rand_ref_cell];
+        %         final_comp_base = [final_comp_base; rand_comp_base_cell];
+        %         final_comp_offset = [final_comp_offset; rand_comp_offset_cell];
+        %         final_comp_offset_rel = [final_comp_offset_rel; rand_comp_offset_rel_cell];
+        %         final_comp_radius = [final_comp_radius; rand_comp_radius];
+        %         final_comp_radius_rel = [final_comp_radius_rel; rand_comp_radius_rel];
+        %         final_comp_axis = [final_comp_axis; rand_comp_axis];
+        %         final_comp_rad_idx = [final_comp_rad_idx; rand_comp_rad_idx];
+        %         final_comp_mult = [final_comp_mult; rand_comp_mult];
+        %     end
+        % 
+        %     %% 5.3 Generate Arume Table ONCE
+        %     total_trials = length(final_ref);
+        % 
+        %     t = ArumeCore.TrialTableBuilder();
+        %     t.AddConditionVariable('RefCompPair', (1:total_trials));
+        % 
+        %     % Because we handled num_repeats manually, tell Arume to do exactly 1 sequence
+        %     trialTable = t.GenerateTrialTable('Random', 'Sequential', 1, 'Delay');
+        % 
+        %     trialTable.OddballWindow = randi([1, 3], total_trials, 1);
+        % 
+        %     % The variable idx is a shuffled index of (1 to total_trials)
+        %     idx = trialTable.RefCompPair;
+        % 
+        %     trialTable.ReferenceVelocity = final_ref(idx);
+        %     trialTable.ComparisonVelocity = final_comp_base(idx);
+        %     trialTable.CompOffsetVector = final_comp_offset(idx);
+        %     trialTable.CompOffsetVectorRel = final_comp_offset_rel(idx);
+        %     trialTable.CompOffsetRadius = final_comp_radius(idx);
+        %     trialTable.CompOffsetRadiusRel = final_comp_radius_rel(idx);
+        %     trialTable.CompOffsetAxis   = final_comp_axis(idx);
+        %     trialTable.CompOffsetRadiusIndex = final_comp_rad_idx(idx);
+        %     trialTable.CompOffsetMultiplier = final_comp_mult(idx);
+        % 
+        %     %% 6. Apply Pseudo-Random Jitter
+        %     comp_vels = trialTable.ComparisonVelocity;
+        %     if do_jitter
+        %         for i = 1:height(trialTable)
+        %             v_base = comp_vels{i};
+        %             speed = norm(v_base);
+        %             if speed == 0, speed = 0.1; end
+        % 
+        %             jx = (2*rand() - 1) * jitter_mult * speed;
+        %             jy = (2*rand() - 1) * jitter_mult * speed;
+        %             comp_vels{i} = v_base + [jx, jy];
+        %         end
+        %     end
+        %     trialTable.ComparisonVelocity = comp_vels; 
+        % 
+        %     %% 7. Final Window Assignment
+        %     trialTable.Window1_Velocity = trialTable.ReferenceVelocity;
+        %     trialTable.Window2_Velocity = trialTable.ReferenceVelocity;
+        %     trialTable.Window3_Velocity = trialTable.ReferenceVelocity;
+        % 
+        %     trialTable.Window1_Velocity(trialTable.OddballWindow == 1) = comp_vels(trialTable.OddballWindow == 1);
+        %     trialTable.Window2_Velocity(trialTable.OddballWindow == 2) = comp_vels(trialTable.OddballWindow == 2);
+        %     trialTable.Window3_Velocity(trialTable.OddballWindow == 3) = comp_vels(trialTable.OddballWindow == 3);
+        % 
+        %     %% 8. Set the physical positions of the three apertures
+        %     trials_per_block = this.ExperimentOptions.TrialsBeforeBreak;
+        %     num_blocks = floor(total_trials / trials_per_block) + 1;
+        % 
+        %     angle_set = 125 + linspace(0, 110, num_blocks);
+        %     angle_set = angle_set(randperm(num_blocks));
+        % 
+        %     block_idx = floor((0:(total_trials-1)) / trials_per_block) + 1;
+        %     trialTable.BlockNumber = block_idx';
+        %     trialTable.BlockSequenceNumber = block_idx';
+        % 
+        %     trialTable.Window1_Angle = angle_set(block_idx)';
+        %     trialTable.Window2_Angle = wrapTo360(trialTable.Window1_Angle - 120);
+        %     trialTable.Window3_Angle = wrapTo360(trialTable.Window1_Angle - 240);
+        % 
+        % 
+        %     %% --- Print Experiment Summary ---
+        %     fprintf('\n============================================================\n');
+        %     fprintf('           STIMULUS CONFIGURATION SUMMARY                 \n');
+        %     fprintf('============================================================\n');
+        %     if strcmpi(ref_mode, 'cartesian')
+        %         fprintf('REFERENCE VECTORS: [CARTESIAN GRID]\n');
+        %         fprintf('  - Grid Axis Steps:   [%s] deg/s\n', num2str(ref_ax, '%.4f '));
+        %         fprintf('  - Frame Bounds:      %.4f to %.4f deg/s (Magnitude)\n', lb_ref, ub_ref);
+        %     else
+        %         fprintf('REFERENCE VECTORS: [POLAR WHEEL]\n');
+        %         fprintf('  - Reference Radii:   [%s] deg/s\n', num2str(radii, '%.4f '));
+        %         fprintf('  - Number of Spokes:  %d\n', num_ref_spokes);
+        %     end
+        %     fprintf('  - Total Unique Refs: %d\n', num_refs);
+        %     fprintf('------------------------------------------------------------\n');
+        % 
+        %     if comp_rel_bool
+        %         comp_type_str = 'RELATIVE (%% of ref speed)';
+        %     else
+        %         comp_type_str = 'ABSOLUTE (deg/s)';
+        %     end
+        % 
+        %     if strcmpi(comp_mode, 'cartesian')
+        %         fprintf('COMPARISON VECTORS: [CARTESIAN LOCAL GRID]\n');
+        %         fprintf('  - Offset Type:       %s\n', comp_type_str);
+        %         fprintf('  - Grid Axis Steps:   [%s]\n', num2str(comp_ax, '%.4f '));
+        %         fprintf('  - Local Bounds:      %.4f to %.4f (Magnitude)\n', comp_lb, comp_ub);
+        %     else
+        %         fprintf('COMPARISON VECTORS: [POLAR LOCAL SPOKES]\n');
+        %         fprintf('  - Offset Type:       %s\n', comp_type_str);
+        %         fprintf('  - Comparison Radii:  [%s]\n', num2str(comp_radii, '%.4f '));
+        %         fprintf('  - Comparison Axes:   %d\n', comp_axes);
+        %     end
+        %     fprintf('  - Total Unique Comps: %d (per reference)\n', num_comps);
+        % 
+        %     if ~isempty(target_base_trials) && target_base_trials < base_generated
+        %         fprintf('  - Culled Base Trials:  %d (randomly kept)\n', base_kept);
+        %     end
+        %     if num_random_trials > 0
+        %         fprintf('------------------------------------------------------------\n');
+        %         fprintf('  - EXTRA INJECTIONS:    %d Random Offset Trials\n', num_random_trials);
+        %         fprintf('  - Random Offset Range: %.4f to %.4f\n', rand_comp_lb, rand_comp_ub);
+        %     end
+        % 
+        % 
+        %     fprintf('------------------------------------------------------------\n');
+        %     fprintf('  - Repetitions / Combo: %d\n', num_repeats);
+        %     fprintf('  - Total N Trials:      %d\n', height(trialTable));
+        %     fprintf('============================================================\n\n');
+        % end
 
         % 
         % function trialTable = SetUpTrialTable(this)

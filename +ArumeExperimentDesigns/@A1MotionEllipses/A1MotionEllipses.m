@@ -104,10 +104,14 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.comp_num_intervals = { 8 '* ' [1 300] };
             dlg.comp_num_axes = { 8 '* ' [1 300] };
             dlg.comp_cart_or_polar = { {'polar' '{cartesian}'} };
-            dlg.comp_rel_bool = { {'0','{1}'} };
+            dlg.comp_rel_bool = { {'0',['{ ' ...
+                '' ...
+                '' ...
+                '                                1}']} };
 
             dlg.nonzero_rand = { 0.25 '* (x ref_vec speed)' [0 300]};
-            dlg.low_speed = { 2 '* (x ref_vec speed)' [0 300]};
+            dlg.low_speed = { 3.1 '* (x ref_vec speed)' [0 300]};
+            dlg.outer_downsample_n = { 2 '* (x ref_vec speed)' [0 300]};
 
 
             % Global Ref Parameters
@@ -169,6 +173,14 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 end
             end
 
+            % Downsampling factor for extra low-speed trial components (default 2 -> half)
+            outer_downsample_n = 2;
+            if isprop(this.ExperimentOptions, 'outer_downsample_n') || isfield(this.ExperimentOptions, 'outer_downsample_n')
+                if ~isempty(this.ExperimentOptions.outer_downsample_n)
+                    outer_downsample_n = this.ExperimentOptions.outer_downsample_n; 
+                end
+            end             
+           
             %% ====================================================================
             %% SET 1: STANDARD TRIALS
             %% ====================================================================
@@ -247,6 +259,33 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             std_comp_rad_idx = [];
             std_comp_mult   = [];
             std_is_zero_ref = [];
+
+            % --- PRECOMPUTE BALANCED & RANDOMIZED OFFSETS ---
+            start_offsets = zeros(num_refs, 1);
+            
+            % Identify which reference vectors meet the qualifying criteria
+            qualifying_mask = false(num_refs, 1);
+            if comp_rel_bool && strcmpi(comp_mode, 'cartesian')
+                for r = 1:num_refs
+                    sp = norm(ref_vecs(r, :));
+                    if (sp < low_speed) && (sp >= 1e-10)
+                        qualifying_mask(r) = true;
+                    end
+                end
+            end
+            
+            num_qual = sum(qualifying_mask);
+            
+            if num_qual > 0
+                % Create an evenly balanced pool of offsets [1, 2, ..., N, 1, 2, ..., N]
+                offset_pool = mod(0:num_qual-1, outer_downsample_n) + 1;
+                
+                % Shuffle the pool randomly
+                offset_pool = offset_pool(randperm(num_qual));
+                
+                % Assign to the qualifying refs
+                start_offsets(qualifying_mask) = offset_pool;
+            end
             
             for r = 1:num_refs
                 v_ref = ref_vecs(r, :);
@@ -256,24 +295,70 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 % Standard condition: low speed refs (EXCLUDING 0) with relative comp get an extra grid axis step
                 if comp_rel_bool && (ref_speed < low_speed) && ~is_zero
                     if strcmpi(comp_mode, 'cartesian')
+                        % comp_ax_base = linspace(-comp_ub, comp_ub, comp_intervals);
+                        % step_sz = comp_ax_base(2) - comp_ax_base(1);
+                        % 
+                        % if rand() > 0.5
+                        %     comp_ax_ext = [comp_ax_base, comp_ax_base(end) + step_sz];
+                        % else
+                        %     comp_ax_ext = [comp_ax_base(1) - step_sz, comp_ax_base];
+                        % end
+                        % 
+                        % [cvx, cvy] = meshgrid(comp_ax_ext, comp_ax_ext);
+                        % base_comps_r = [cvx(:), cvy(:)];
+                        % c_mags_r = sqrt(sum(base_comps_r.^2, 2));
+                        % 
+                        % max_ub = max(abs(comp_ax_ext));
+                        % valid_idx_r = c_mags_r >= comp_lb & c_mags_r <= (max_ub + 1e-5);
+                        % comp_offsets_r = base_comps_r(valid_idx_r, :);
+                        % comp_offset_multipliers_r = c_mags_r(valid_idx_r);
+                        % [~, ~, comp_offset_radius_idx_r] = unique(round(c_mags_r(valid_idx_r), 4));
                         comp_ax_base = linspace(-comp_ub, comp_ub, comp_intervals);
                         step_sz = comp_ax_base(2) - comp_ax_base(1);
                         
-                        if rand() > 0.5
-                            comp_ax_ext = [comp_ax_base, comp_ax_base(end) + step_sz];
-                        else
-                            comp_ax_ext = [comp_ax_base(1) - step_sz, comp_ax_base];
-                        end
+                        % Add both lower and upper extra steps
+                        comp_ax_ext = [comp_ax_base(1) - step_sz, comp_ax_base, comp_ax_base(end) + step_sz];
                         
                         [cvx, cvy] = meshgrid(comp_ax_ext, comp_ax_ext);
                         base_comps_r = [cvx(:), cvy(:)];
                         c_mags_r = sqrt(sum(base_comps_r.^2, 2));
                         
-                        max_ub = max(abs(comp_ax_ext));
-                        valid_idx_r = c_mags_r >= comp_lb & c_mags_r <= (max_ub + 1e-5);
-                        comp_offsets_r = base_comps_r(valid_idx_r, :);
-                        comp_offset_multipliers_r = c_mags_r(valid_idx_r);
-                        [~, ~, comp_offset_radius_idx_r] = unique(round(c_mags_r(valid_idx_r), 4));
+                        % FIX: Expand outer boundary safely to capture the 2D radius of the new ring
+                        outer_radius_limit = comp_ub + (step_sz * 1.00001); 
+                        
+                        % Isolate the strict original circle and the new outer ring (annulus)
+                        is_inner = c_mags_r >= comp_lb & c_mags_r <= (comp_ub + 1e-5);
+                        is_outer = c_mags_r > (comp_ub + 1e-5) & c_mags_r <= outer_radius_limit;
+                        
+                        inner_idx = find(is_inner);
+                        outer_idx = find(is_outer);
+                        
+                        if ~isempty(outer_idx)
+                            start_offset = start_offsets(r);
+                            %outer_kept = outer_idx(start_offset : outer_downsample_n : end);
+
+                            % snake draft
+                            % 1. Define the full range of potential indices you care about
+                            idx_range = start_offset : length(outer_idx);
+                            
+                            % 2. Create a 0-based step counter (0, 1, 2, 3...)
+                            steps = 0 : length(idx_range) - 1;
+                            
+                            % 3. Create a logical mask: floor(steps / n) groups them into chunks of n
+                            % mod(..., 2) == 0 keeps the even chunks (keep), and drops the odd chunks (skip)
+                            keep_mask = mod(floor(steps / outer_downsample_n), 2) == 0;
+                            
+                            % 4. Apply the mask to index your array
+                            outer_kept = outer_idx(idx_range(keep_mask));
+                        else
+                            outer_kept = [];
+                        end
+                        
+                        final_idx = [inner_idx; outer_kept];
+                        
+                        comp_offsets_r = base_comps_r(final_idx, :);
+                        comp_offset_multipliers_r = c_mags_r(final_idx);
+                        [~, ~, comp_offset_radius_idx_r] = unique(round(c_mags_r(final_idx), 4));
                     else
                         comp_angles = linspace(0, 2*pi, comp_axes + 1);
                         comp_angles(end) = [];
@@ -334,6 +419,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             std_comp_axis = repmat(std_comp_axis, num_repeats, 1);
             std_comp_rad_idx = repmat(std_comp_rad_idx, num_repeats, 1);
             std_comp_mult = repmat(std_comp_mult, num_repeats, 1);
+
             %% ====================================================================
             %% SET 2: HARD TRIALS (Using _hard suffix parameters)
             %% ====================================================================
@@ -495,10 +581,63 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
         
             base_generated_h = length(hard_ref);
             
-            % Randomly cull base variables if target exists
+            % % Randomly cull base variables if target exists
+            % if ~isempty(target_base_trials_h) && target_base_trials_h < base_generated_h
+            %     keep_idx = randperm(base_generated_h, target_base_trials_h);
+            % 
+            %     hard_ref = hard_ref(keep_idx);
+            %     hard_is_zero_ref = hard_is_zero_ref(keep_idx);
+            %     hard_comp_base = hard_comp_base(keep_idx);
+            %     hard_comp_offset = hard_comp_offset(keep_idx);
+            %     hard_comp_offset_rel = hard_comp_offset_rel(keep_idx);
+            %     hard_comp_radius = hard_comp_radius(keep_idx);
+            %     hard_comp_radius_rel = hard_comp_radius_rel(keep_idx);
+            %     hard_comp_axis = hard_comp_axis(keep_idx);
+            %     hard_comp_rad_idx = hard_comp_rad_idx(keep_idx);
+            %     hard_comp_mult = hard_comp_mult(keep_idx);
+            %     base_kept_h = target_base_trials_h;
+
+            % Randomly cull base variables if target exists, evenly distributed by reference vector
             if ~isempty(target_base_trials_h) && target_base_trials_h < base_generated_h
-                keep_idx = randperm(base_generated_h, target_base_trials_h);
                 
+                % Convert cell array to matrix to group by unique reference vectors
+                ref_mat = cell2mat(hard_ref);
+                
+                % Find unique reference vectors (rounding to 4 decimals to avoid floating point issues)
+                [~, ~, ref_group_idx] = unique(round(ref_mat, 4), 'rows');
+                num_groups = max(ref_group_idx);
+                
+                % Calculate how many trials to keep per unique reference vector
+                trials_per_group = floor(target_base_trials_h / num_groups);
+                remainder = mod(target_base_trials_h, num_groups);
+                
+                % Randomly decide which groups get the +1 remainder trials
+                groups_with_extra = randperm(num_groups, remainder);
+                
+                keep_idx = [];
+                
+                for g = 1:num_groups
+                    % Find all trial indices belonging to this specific reference vector
+                    idx_for_group = find(ref_group_idx == g);
+                    
+                    % Determine the target number to keep for this group
+                    num_to_keep_g = trials_per_group;
+                    if ismember(g, groups_with_extra)
+                        num_to_keep_g = num_to_keep_g + 1;
+                    end
+                    
+                    % Fail-safe: don't try to keep more trials than actually exist in the group
+                    num_to_keep_g = min(num_to_keep_g, length(idx_for_group));
+                    
+                    % Randomly select the specific trials to keep for this reference vector
+                    rand_subset = randperm(length(idx_for_group), num_to_keep_g);
+                    keep_idx = [keep_idx; idx_for_group(rand_subset)];
+                end
+                
+                % Sort the indices to maintain the original relative generation order
+                keep_idx = sort(keep_idx);
+                
+                % Apply the final curated indices
                 hard_ref = hard_ref(keep_idx);
                 hard_is_zero_ref = hard_is_zero_ref(keep_idx);
                 hard_comp_base = hard_comp_base(keep_idx);
@@ -509,8 +648,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 hard_comp_axis = hard_comp_axis(keep_idx);
                 hard_comp_rad_idx = hard_comp_rad_idx(keep_idx);
                 hard_comp_mult = hard_comp_mult(keep_idx);
-                base_kept_h = target_base_trials_h;
-
+                
+                base_kept_h = length(keep_idx); % Ensures accuracy if the min() fail-safe triggered
             else
 
                 base_kept_h = base_generated_h;
@@ -2234,9 +2373,19 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                             %% ADJUST WINSIZE_PIX HERE:
                             % % default = 1deg QQ
                             new_size_deg = 1.25;
-                            this.ExperimentOptions.Fixation_Check_WinSize_pix = new_size_deg*this.ExperimentOptions.DisplayOptions.deg_to_pix_convFactor;
+
+
+
+
+
+
+
+                            
+                            
+                            %       
+                            %this.ExperimentOptions.Fixation_Check_WinSize_pix = new_size_deg*this.ExperimentOptions.DisplayOptions.deg_to_pix_convFactor;
                             % % % % default = 0.5
-                            % this.ExperimentOptions.Fix1ation_Check_TimeOut = 0.5;
+                            % this.ExperimentOptions.Fixation_Check_TimeOut = 0.5;
 
                             this.checkFixation(eyePos_FixationPeriod, this.ExperimentOptions.Fixation_Check_WinSize_pix, this.ExperimentOptions.Fixation_Check_TimeOut);
 

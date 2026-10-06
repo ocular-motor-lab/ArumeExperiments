@@ -102,8 +102,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
             % Local Comp Parameters (The relative offsets)
             dlg.comp_lb = { 0 '* (x ref_vec speed)' [0 300] };
-            dlg.comp_ub = { 0.8 '* (x ref_vec speed)' [0 300] };
-            dlg.comp_num_intervals = { 6 '* ' [1 300] };
+            dlg.comp_ub = { 1 '* (x ref_vec speed)' [0 300] };
+            dlg.comp_num_intervals = { 8 '* ' [1 300] };
             dlg.comp_num_axes = { 8 '* ' [1 300] };
             dlg.comp_cart_or_polar = { {'polar' '{cartesian}'} };
             dlg.comp_rel_bool = { {'0','{1}'} };
@@ -114,9 +114,9 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
             % HARD TRIALS -------------------------------------------------------
             % Global Ref Parameters
-            dlg.lb_screen_hard = { 2 '* (deg/s)' [0 300] };%0.5
-            dlg.ub_screen_hard = { 8 '* (deg/s)' [0 300] };
-            dlg.num_ref_gridpts_hard =  { 11 '*' [1 3000] };
+            dlg.lb_screen_hard = { 0.5 '* (deg/s)' [0 300] };%0.5
+            dlg.ub_screen_hard = { 1.5 '* (deg/s)' [0 300] };
+            dlg.num_ref_gridpts_hard =  { 7 '*' [1 3000] };
             dlg.ref_cart_or_polar_hard = { {'polar' '{cartesian}'} };
             dlg.num_ref_spokes_hard = {8 '*' [1 3000] };
             dlg.ref_log_or_lin_hard = { {'log' '{lin}'} };
@@ -129,11 +129,13 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.comp_cart_or_polar_hard = { {'polar' '{cartesian}'} };
             dlg.comp_rel_bool_hard = { {'0','{1}'} };
             dlg.spec_comp_intervals_hard = {[-0.10, -0.05, 0, 0.075, 0.10]};
-            dlg.target_base_trials_hard = {0 '* ' [0 20000]};
+
+
+            dlg.target_base_trials_hard = {520 '* ' [0 20000]};
 
 
             % random trials for easiness
-            dlg.num_random_trials_hard = 200;%200;
+            dlg.num_random_trials_hard = 0;%200;
             dlg.rand_comp_lb_hard = 0.05;%0.2
 
             dlg.rand_comp_ub_hard = 0.5;%0.8

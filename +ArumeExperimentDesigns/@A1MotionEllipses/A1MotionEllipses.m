@@ -90,29 +90,31 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
 
            %% Reference Vector Options
+
+           % STANDARD TRIALS -------------------------------------------------------
             % Global Ref Parameters
             dlg.lb_screen = { 0.5 '* (deg/s)' [0 300] };
-            dlg.ub_screen = { 8 '* (deg/s)' [0 300] };
-            dlg.num_ref_gridpts =  { 11 '*' [1 3000] };
+            dlg.ub_screen = { 1.5 '* (deg/s)' [0 300] };
+            dlg.num_ref_gridpts =  { 7 '*' [1 3000] };
             dlg.ref_cart_or_polar = { {'polar' '{cartesian}'} };
             dlg.num_ref_spokes = {8 '*' [1 3000] };
             dlg.ref_log_or_lin = { {'log' '{lin}'} };
 
             % Local Comp Parameters (The relative offsets)
             dlg.comp_lb = { 0 '* (x ref_vec speed)' [0 300] };
-            dlg.comp_ub = { 1 '* (x ref_vec speed)' [0 300] };
-            dlg.comp_num_intervals = { 8 '* ' [1 300] };
+            dlg.comp_ub = { 0.8 '* (x ref_vec speed)' [0 300] };
+            dlg.comp_num_intervals = { 6 '* ' [1 300] };
             dlg.comp_num_axes = { 8 '* ' [1 300] };
             dlg.comp_cart_or_polar = { {'polar' '{cartesian}'} };
             dlg.comp_rel_bool = { {'0','{1}'} };
 
             dlg.nonzero_rand = { 0.25 '* (x ref_vec speed)' [0 300]};
-            dlg.low_speed = { 3.1 '* (x ref_vec speed)' [0 300]};
+            dlg.low_speed = { 0 '* (x ref_vec speed)' [0 300]};
             dlg.outer_downsample_n = { 2 '* (x ref_vec speed)' [0 300]};
 
-
+            % HARD TRIALS -------------------------------------------------------
             % Global Ref Parameters
-            dlg.lb_screen_hard = { 0.5 '* (deg/s)' [0 300] };
+            dlg.lb_screen_hard = { 2 '* (deg/s)' [0 300] };%0.5
             dlg.ub_screen_hard = { 8 '* (deg/s)' [0 300] };
             dlg.num_ref_gridpts_hard =  { 11 '*' [1 3000] };
             dlg.ref_cart_or_polar_hard = { {'polar' '{cartesian}'} };
@@ -127,13 +129,14 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             dlg.comp_cart_or_polar_hard = { {'polar' '{cartesian}'} };
             dlg.comp_rel_bool_hard = { {'0','{1}'} };
             dlg.spec_comp_intervals_hard = {[-0.10, -0.05, 0, 0.075, 0.10]};
-            dlg.target_base_trials_hard = {1400 '* ' [1 20000]};
+            dlg.target_base_trials_hard = {0 '* ' [0 20000]};
 
 
             % random trials for easiness
-            dlg.num_random_trials_hard = 0;%200;
-            dlg.rand_comp_lb_hard = 0.2;
-            dlg.rand_comp_ub_hard = 0.8;
+            dlg.num_random_trials_hard = 200;%200;
+            dlg.rand_comp_lb_hard = 0.05;%0.2
+
+            dlg.rand_comp_ub_hard = 0.5;%0.8
 
             % Jitter Parameters
             dlg.Do_Jitter = { {'0','{1}'} }; % Boolean toggle
@@ -662,7 +665,7 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 [dx, dy] = pol2cart(rand_theta, rand_r);
                 actual_rand_offsets = [dx, dy];
                 
-                if comp_rel_bool_h
+                if comp_rel_bool_h3
                     ref_speeds_rand = sqrt(sum(m_ref_rand.^2, 2));
                     ref_speeds_rand(ref_speeds_rand == 0) = base_speed;
                     actual_rand_offsets_scaled = actual_rand_offsets .* ref_speeds_rand;

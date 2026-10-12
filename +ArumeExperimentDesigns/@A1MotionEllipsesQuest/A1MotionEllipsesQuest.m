@@ -158,8 +158,8 @@ classdef A1MotionEllipsesQuest < ArumeExperimentDesigns.EyeTracking
             % Reference vectors (deg/s), paired element-wise:
             %   ref k = [Quest_Ref_Vx(k), Quest_Ref_Vy(k)]
             % A [0 0] ref is randomized per trial using nonzero_rand (as in the original).
-            dlg.Quest_Ref_Vx = {[0.25  0.25 -2  -3   -2  0  8]};
-            dlg.Quest_Ref_Vy = {[0     1    -1   1.5 -4 -6  -5 ]};
+            dlg.Quest_Ref_Vx = {[0.25  0.25 -2  -3   0 -2  -1  7]};
+            dlg.Quest_Ref_Vy = {[0     1     0   1.5 3 -4  -6  -5 ]};
             % QUEST: 1 = treat Quest_Ref_Vx/Vy as absolute values and draw the sign of
             % every component from the participant ID hash (same subject -> same signs).
             % 0 = use Quest_Ref_Vx/Vy exactly as entered.
@@ -175,7 +175,7 @@ classdef A1MotionEllipsesQuest < ArumeExperimentDesigns.EyeTracking
             % dlg.Quest_Comp_Num_Axes        = { 8 '* (N)' [1 360] };  % QUEST: replaced by Quest_Comp_Angles
             % dlg.Quest_Comp_Angles          = {[0 90 180 270] '* deg'}; % QUEST: replaced by the equi-spaced pool below
             dlg.Quest_Comp_Angles_Per_Ref  = { 1 '* (N)' [1 360] };
-            dlg.Quest_Reps_Per_Combo       = { 2 '* (N staircases per ref/angle combo)' [1 100] };
+            dlg.Quest_Reps_Per_Combo       = { 3 '* (N staircases per ref/angle combo)' [1 100] };
             dlg.Quest_Comp_Axis_Offset_Deg = { 0 '* (deg)' [0 360] };
             dlg.Quest_Trials_Per_Staircase = { 25 '* (N)' [1 1000] };
 
@@ -184,7 +184,7 @@ classdef A1MotionEllipsesQuest < ArumeExperimentDesigns.EyeTracking
             dlg.Quest_tGuess     = { -1 '* (log10 rel offset)' [-5 2] };   % prior guess: 10% of ref speed
             dlg.Quest_tGuessSd   = { 2 '* (log10 units)' [0.01 10] };      % wide prior
             dlg.Quest_pThreshold = { 0.6667 '* (prop correct)' [0.34 0.99] }; % midway between 3AFC chance (1/3) and 1
-            dlg.Quest_beta       = { 3.5 '*' [0.1 20] };
+            dlg.Quest_beta       = { 2.5 '*' [0.1 20] }; % default 3.5
             dlg.Quest_delta      = { 0.02 '* (lapse rate)' [0 0.5] };
             dlg.Quest_gamma      = { 0.3333 '* (chance, 3AFC oddity)' [0 1] };
             dlg.Quest_grain      = { 0.01 '*' [0.0001 1] };

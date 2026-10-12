@@ -164,7 +164,7 @@ classdef A1MotionEllipsesQuest < ArumeExperimentDesigns.EyeTracking
             % every component from the participant ID hash (same subject -> same signs).
             % 0 = use Quest_Ref_Vx/Vy exactly as entered.
             dlg.Quest_Random_Ref_Signs = { {'{0}','1'} }; 
-            
+
 
             % QUEST: comparison angles come from one common pool of equi-spaced
             % absolute screen directions (deg). Pool size = (N refs) x Quest_Comp_Angles_Per_Ref,

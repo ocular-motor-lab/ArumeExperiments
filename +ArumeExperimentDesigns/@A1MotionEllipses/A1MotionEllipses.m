@@ -1,4 +1,6 @@
-classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
+classdef A1MotionEllipsesQuest < ArumeExperimentDesigns.EyeTracking
+    % QUEST: QUEST-staircase version of A1MotionEllipses. Every change from the
+    % original is marked with a 'QUEST:' comment.
     % Motion Ellipses foveal threshold exp.
     %
     properties
@@ -12,6 +14,14 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
 
         gazedata
+
+        % QUEST: one QUEST struct per staircase (created in initBeforeRunning,
+        % updated in runTrial after each response)
+        questStates
+
+        % QUEST SAVE: condition info per staircase (ref, comparison angle, ...),
+        % built in initBeforeRunning and saved with the staircases
+        questInfo
     end
 
     % ---------------------------------------------------------------------
@@ -84,67 +94,134 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
             dlg.HitKeyBeforeTrial = 0;
             dlg.TrialDuration = 50000000; % Very large to prevent skipping forward
-            dlg.TrialsBeforeBreak = 200; % big break; also controls how many trials in a row will have the same mickey-mouse orientation
+            dlg.TrialsBeforeBreak = 100;
+            %200; % big break; also controls how many trials in a row will have the same mickey-mouse orientation
             dlg.TrialsBeforeBreakSmall = 25; % small break
             dlg.TrialAbortAction = 'Delay';
 
 
-           %% Reference Vector Options
+            % QUEST: the MOCS grid options below (standard + hard sets) are no longer used.
+            % They are commented out rather than deleted; the QUEST options follow them.
+           % %% Reference Vector Options
+            % % Global Ref Parameters
+            % dlg.lb_screen = { 0.5 '* (deg/s)' [0 300] };
+            % dlg.ub_screen = { 8 '* (deg/s)' [0 300] };
+            % dlg.num_ref_gridpts =  { 11 '*' [1 3000] };
+            % dlg.ref_cart_or_polar = { {'polar' '{cartesian}'} };
+            % dlg.num_ref_spokes = {8 '*' [1 3000] };
+            % dlg.ref_log_or_lin = { {'log' '{lin}'} };
 
-           % STANDARD TRIALS -------------------------------------------------------
-            % Global Ref Parameters
-            dlg.lb_screen = { 0.5 '* (deg/s)' [0 300] };
-            dlg.ub_screen = { 1.5 '* (deg/s)' [0 300] };
-            dlg.num_ref_gridpts =  { 7 '*' [0 3000] };
-            dlg.ref_cart_or_polar = { {'polar' '{cartesian}'} };
-            dlg.num_ref_spokes = {8 '*' [1 3000] };
-            dlg.ref_log_or_lin = { {'log' '{lin}'} };
+            % % Local Comp Parameters (The relative offsets)
+            % dlg.comp_lb = { 0 '* (x ref_vec speed)' [0 300] };
+            % dlg.comp_ub = { 1 '* (x ref_vec speed)' [0 300] };
+            % dlg.comp_num_intervals = { 8 '* ' [1 300] };
+            % dlg.comp_num_axes = { 8 '* ' [1 300] };
+            % dlg.comp_cart_or_polar = { {'polar' '{cartesian}'} };
+            % dlg.comp_rel_bool = { {'0',['{ ' ...
+                % '' ...
+                % '' ...
+                % '                                1}']} };
 
-            % Local Comp Parameters (The relative offsets)
-            dlg.comp_lb = { 0 '* (x ref_vec speed)' [0 300] };
-            dlg.comp_ub = { 0.8 '* (x ref_vec speed)' [0 300] };
-            dlg.comp_num_intervals = { 6 '* ' [0 300] };
-            dlg.comp_num_axes = { 8 '* ' [1 300] };
-            dlg.comp_cart_or_polar = { {'polar' '{cartesian}'} };
-            dlg.comp_rel_bool = { {'0','{1}'} };
-
-            dlg.nonzero_rand = { 0.25 '* (x ref_vec speed)' [0 300]};
-            dlg.low_speed = { 0 '* (x ref_vec speed)' [0 300]};
-            dlg.outer_downsample_n = { 2 '* (x ref_vec speed)' [0 300]};
-
-            % HARD TRIALS -------------------------------------------------------
-            % Global Ref Parameters
-            dlg.lb_screen_hard = { 0.5 '* (deg/s)' [0 300] };%0.5
-            dlg.ub_screen_hard = { 1.5 '* (deg/s)' [0 300] };
-            dlg.num_ref_gridpts_hard =  { 7 '*' [1 3000] };
-            dlg.ref_cart_or_polar_hard = { {'polar' '{cartesian}'} };
-            dlg.num_ref_spokes_hard = {8 '*' [1 3000] };
-            dlg.ref_log_or_lin_hard = { {'log' '{lin}'} };
-
-            % Local Comp Parameters (The relative offsets)
-            dlg.comp_lb_hard = { 0 '* (x ref_vec speed)' [0 300] };
-            dlg.comp_ub_hard = { 0.12 '* (x ref_vec speed)' [0 300] };
-            dlg.comp_num_intervals_hard = { 5 '* ' [1 300] };
-            dlg.comp_num_axes_hard = { 3 '* ' [1 300] };
-            dlg.comp_cart_or_polar_hard = { {'polar' '{cartesian}'} };
-            dlg.comp_rel_bool_hard = { {'0','{1}'} };
-            dlg.spec_comp_intervals_hard = {[-0.10, -0.05, 0, 0.075, 0.10]};
+            dlg.nonzero_rand = { 0.25 '* (x ref_vec speed)' [0 300]};  % QUEST: kept (still used to randomize [0 0] refs)
+            % dlg.low_speed = { 3.1 '* (x ref_vec speed)' [0 300]};
+            % dlg.outer_downsample_n = { 2 '* (x ref_vec speed)' [0 300]};
 
 
-            dlg.target_base_trials_hard = {200 '* ' [0 20000]};
+            % % Global Ref Parameters
+            % dlg.lb_screen_hard = { 0.5 '* (deg/s)' [0 300] };
+            % dlg.ub_screen_hard = { 8 '* (deg/s)' [0 300] };
+            % dlg.num_ref_gridpts_hard =  { 11 '*' [1 3000] };
+            % dlg.ref_cart_or_polar_hard = { {'polar' '{cartesian}'} };
+            % dlg.num_ref_spokes_hard = {8 '*' [1 3000] };
+            % dlg.ref_log_or_lin_hard = { {'log' '{lin}'} };
+
+            % % Local Comp Parameters (The relative offsets)
+            % dlg.comp_lb_hard = { 0 '* (x ref_vec speed)' [0 300] };
+            % dlg.comp_ub_hard = { 0.12 '* (x ref_vec speed)' [0 300] };
+            % dlg.comp_num_intervals_hard = { 5 '* ' [1 300] };
+            % dlg.comp_num_axes_hard = { 3 '* ' [1 300] };
+            % dlg.comp_cart_or_polar_hard = { {'polar' '{cartesian}'} };
+            % dlg.comp_rel_bool_hard = { {'0','{1}'} };
+            % dlg.spec_comp_intervals_hard = {[-0.10, -0.05, 0, 0.075, 0.10]};
+            % dlg.target_base_trials_hard = {1400 '* ' [1 20000]};
 
 
-            % random trials for easiness
-            dlg.num_random_trials_hard = 0;%200;
-            dlg.rand_comp_lb_hard = 0.05;%0.2
+            % % random trials for easiness
+            % dlg.num_random_trials_hard = 0;%200;
+            % dlg.rand_comp_lb_hard = 0.2;
+            % dlg.rand_comp_ub_hard = 0.8;
 
-            dlg.rand_comp_ub_hard = 0.5;%0.8
+            %% ====================================================================
+            %% QUEST Staircase Options (QUEST: new section; replaces the MOCS grid
+            %% options commented out above)
+            %% ====================================================================
+            % QUEST: 1 = draw the reference vectors per participant (options below);
+            % 0 = use Quest_Ref_Vx/Vy exactly as entered.
+            dlg.Quest_Random_Refs = { {'0','{1}'} };
+            % QUEST: random references (used when Quest_Random_Refs = 1). The speed range
+            % and the direction range are each split into Quest_Ref_Num equal bins; each
+            % reference gets one speed bin and one direction bin, paired at random, at a
+            % random spot inside each bin (drawn from the participant ID hash).
+            % Directions are 0-90 deg; turn on Quest_Random_Ref_Signs to spread them
+            % (QUEST: component limits below can narrow the usable speeds and directions)
+            % over all four quadrants.
+            dlg.Quest_Ref_Num           = { 8 '* (N refs)' [1 100] };
+            dlg.Quest_Ref_Speed_Min     = { 0.25 '* (deg/s)' [0 100] };
+            dlg.Quest_Ref_Speed_Max     = { 8 '* (deg/s)' [0 100] };
+            dlg.Quest_Ref_Speed_Spacing = { {'Linear','{Log}'} }; % equal-width bins in deg/s or in log10(deg/s)
+            dlg.Quest_Ref_Dir_Min       = { 0 '* (deg)' [0 90] };
+            dlg.Quest_Ref_Dir_Max       = { 90 '* (deg)' [0 90] };
+            % QUEST: limits on each component, |Vx| and |Vy| (deg/s). Together with the
+            % speed range this keeps refs inside the region you can test, e.g. speed max 10
+            % with component max 7 allows [7 7] (speed 9.9) but not [0 10].
+            % Directions are only drawn where both components fit at that speed.
+            dlg.Quest_Ref_Comp_Min      = { 0 '* (deg/s, |Vx| and |Vy|)' [0 100] };
+            dlg.Quest_Ref_Comp_Max      = { 8 '* (deg/s, |Vx| and |Vy|)' [0 100] };
+
+            % Reference vectors (deg/s), paired element-wise (used when Quest_Random_Refs = 0):
+            %   ref k = [Quest_Ref_Vx(k), Quest_Ref_Vy(k)]
+            % A [0 0] ref is randomized per trial using nonzero_rand (as in the original).
+            dlg.Quest_Ref_Vx = {[0.25  0.25 -2  -3   0 -2  -1  7]};
+            dlg.Quest_Ref_Vy = {[0     1     0   1.5 3 -4  -6  -5 ]};
+            % QUEST: 1 = treat Quest_Ref_Vx/Vy as absolute values and draw the sign of
+            % every component from the participant ID hash (same subject -> same signs).
+            % 0 = use Quest_Ref_Vx/Vy exactly as entered.
+            dlg.Quest_Random_Ref_Signs = { {'{0}','1'} }; 
+
+
+            % QUEST: comparison angles come from one common pool of equi-spaced
+            % absolute screen directions (deg). Pool size = (N refs) x Quest_Comp_Angles_Per_Ref,
+            % rotated by Quest_Comp_Axis_Offset_Deg. The pool is shuffled with the
+            % participant ID hash and dealt out, so each reference gets
+            % Quest_Comp_Angles_Per_Ref different angles and every pool angle is used once.
+            % Each (reference, angle) combo gets Quest_Reps_Per_Combo separate staircases.
+            % dlg.Quest_Comp_Num_Axes        = { 8 '* (N)' [1 360] };  % QUEST: replaced by Quest_Comp_Angles
+            % dlg.Quest_Comp_Angles          = {[0 90 180 270] '* deg'}; % QUEST: replaced by the equi-spaced pool below
+            dlg.Quest_Comp_Angles_Per_Ref  = { 1 '* (N)' [1 360] };
+            dlg.Quest_Reps_Per_Combo       = { 3 '* (N staircases per ref/angle combo)' [1 100] };
+            dlg.Quest_Comp_Axis_Offset_Deg = { 0 '* (deg)' [0 360] };
+            dlg.Quest_Trials_Per_Staircase = { 25 '* (N)' [1 1000] };
+
+            % Psychtoolbox QuestCreate parameters.
+            % Intensity = log10( |comp - ref| / |ref| ), i.e. log10 of the relative offset.
+            dlg.Quest_tGuess     = { -1 '* (log10 rel offset)' [-5 2] };   % prior guess: 10% of ref speed
+            dlg.Quest_tGuessSd   = { 2 '* (log10 units)' [0.01 10] };      % wide prior
+            dlg.Quest_pThreshold = { 0.6667 '* (prop correct)' [0.34 0.99] }; % midway between 3AFC chance (1/3) and 1
+            dlg.Quest_beta       = { 2.5 '*' [0.1 20] }; % default 3.5
+            dlg.Quest_delta      = { 0.02 '* (lapse rate)' [0 0.5] };
+            dlg.Quest_gamma      = { 0.3333 '* (chance, 3AFC oddity)' [0 1] };
+            dlg.Quest_grain      = { 0.01 '*' [0.0001 1] };
+            dlg.Quest_range      = { 5 '* (log10 units)' [0.1 20] };
+
+            % Hard limits on the relative offset actually shown (QUEST suggestions are clamped)
+            dlg.Quest_Min_Rel_Offset = { 0.005 '* (x ref_vec speed)' [0.0001 10] };
+            dlg.Quest_Max_Rel_Offset = { 1 '* (x ref_vec speed)' [0.0001 10] };
 
             % Jitter Parameters
             dlg.Do_Jitter = { {'0','{1}'} }; % Boolean toggle
-            dlg.Jitter_Multiplier = { 0.05 '* (x comp_vec speed)' [0 300] }; % e.g., 0.05 for 5% jitter
+            dlg.Jitter_Multiplier = { 0.0 '* (x comp_vec speed)' [0 300] }; % e.g., 0.05 for 5% jitter
 
-            dlg.Num_Repeats_Per_Combo = {1  '* ' [0 300]};
+            % dlg.Num_Repeats_Per_Combo = {1  '* ' [0 300]};  % QUEST: unused (staircases set trial counts)
 
             dlg.EyeTrackerCalibProportion = {[.30,.30],'Calibration Area (width, height)',[0.05,1],1};
 
@@ -152,15 +229,25 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
         end
 
+        % =====================================================================
+        % QUEST: NEW SetUpTrialTable.
+        % Replaces the fixed MOCS grid (standard + hard sets) with interleaved
+        % QUEST staircases: one staircase per (reference vector x comparison
+        % axis), all defined in GetOptionsDialog. The table only fixes WHICH
+        % staircase each trial belongs to (plus ref, axis, oddball window and
+        % aperture angles). The offset magnitude is chosen adaptively in
+        % runPreTrial, and the staircase is updated with the response in runTrial.
+        % The original SetUpTrialTable is kept below, fully commented out.
+        % =====================================================================
         function trialTable = SetUpTrialTable(this)
         %% 1. Universal Parameter Extraction & Seed RNG
             rng(keyHash(this.Session.subjectCode)/10^10)
-            
-            num_repeats = this.ExperimentOptions.Num_Repeats_Per_Combo;
-            do_jitter   = this.ExperimentOptions.Do_Jitter;
-            jitter_mult = this.ExperimentOptions.Jitter_Multiplier;
-            base_speed  = 0.25;
 
+            % QUEST: num_repeats / do_jitter / jitter_mult / base_speed / low_speed /
+            % outer_downsample_n extraction removed here. Jitter is now applied per
+            % trial in runPreTrial, because the comparison is not known until then.
+
+            % (unchanged) nonzero_rand is still used to randomize [0 0] references
             nonzero_rand = 0.05;
             if isprop(this.ExperimentOptions, 'nonzero_rand') || isfield(this.ExperimentOptions, 'nonzero_rand')
                 if ~isempty(this.ExperimentOptions.nonzero_rand)
@@ -168,541 +255,155 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                 end
             end
 
-            low_speed = 0.1;
-            if isprop(this.ExperimentOptions, 'low_speed') || isfield(this.ExperimentOptions, 'low_speed')
-                if ~isempty(this.ExperimentOptions.low_speed)
-                    low_speed = this.ExperimentOptions.low_speed;
+            %% ====================================================================
+            %% QUEST: REFERENCE VECTORS AND COMPARISON AXES (from GetOptionsDialog)
+            %% ====================================================================
+            if this.ExperimentOptions.Quest_Random_Refs
+                % QUEST: random reference vectors for this participant.
+                % Stratified draw: the speed range and the direction range are each split
+                % into num_refs equal bins. randperm gives every reference a different bin
+                % (independently for speed and direction, so the pairing is random), and
+                % rand puts it at a random spot inside its bin. Speed bins are equal in
+                % deg/s ('Linear') or in log10(deg/s) ('Log').
+                % Own random stream (seed offset +3; signs use +1, angles +2), so the
+                % references depend only on the participant and the other draws are unaffected.
+                num_refs = this.ExperimentOptions.Quest_Ref_Num;
+                s_min = this.ExperimentOptions.Quest_Ref_Speed_Min;
+                s_max = this.ExperimentOptions.Quest_Ref_Speed_Max;
+                d_min = this.ExperimentOptions.Quest_Ref_Dir_Min;
+                d_max = this.ExperimentOptions.Quest_Ref_Dir_Max;
+                c_min = this.ExperimentOptions.Quest_Ref_Comp_Min; % QUEST: per-component limits
+                c_max = this.ExperimentOptions.Quest_Ref_Comp_Max;
+                use_log = strcmpi(char(this.ExperimentOptions.Quest_Ref_Speed_Spacing), 'Log');
+                if s_max < s_min || d_max < d_min || c_max < c_min
+                    error('A1MotionEllipsesQuest:RefRange', ...
+                        'Quest_Ref_Speed_Max/Dir_Max/Comp_Max must be >= Quest_Ref_Speed_Min/Dir_Min/Comp_Min.');
                 end
-            end
+                if use_log && s_min <= 0
+                    error('A1MotionEllipsesQuest:RefRange', ...
+                        'Log speed spacing needs Quest_Ref_Speed_Min > 0.');
+                end
 
-            % Downsampling factor for extra low-speed trial components (default 2 -> half)
-            outer_downsample_n = 2;
-            if isprop(this.ExperimentOptions, 'outer_downsample_n') || isfield(this.ExperimentOptions, 'outer_downsample_n')
-                if ~isempty(this.ExperimentOptions.outer_downsample_n)
-                    outer_downsample_n = this.ExperimentOptions.outer_downsample_n; 
-                end
-            end             
-           
-            %% ====================================================================
-            %% SET 1: STANDARD TRIALS
-            %% ====================================================================
-            lb_ref      = this.ExperimentOptions.lb_screen;
-            if isempty(lb_ref), lb_ref = 0; end
-            ub_ref      = this.ExperimentOptions.ub_screen;
-            num_ref_pts = this.ExperimentOptions.num_ref_gridpts;
-            ref_mode    = this.ExperimentOptions.ref_cart_or_polar;
-            ref_log_or_lin = this.ExperimentOptions.ref_log_or_lin;
-            
-            comp_lb        = this.ExperimentOptions.comp_lb;
-            if isempty(comp_lb), comp_lb = 0; end
-            comp_ub        = this.ExperimentOptions.comp_ub;
-            comp_intervals = this.ExperimentOptions.comp_num_intervals;
-            comp_axes      = this.ExperimentOptions.comp_num_axes;
-            comp_mode      = this.ExperimentOptions.comp_cart_or_polar;
-            comp_rel_bool  = this.ExperimentOptions.comp_rel_bool; 
-            
-            % Generate Global Reference Vectors (Standard)
-            if strcmpi(ref_mode, 'cartesian')
-                ref_ax = linspace(-ub_ref, ub_ref, num_ref_pts);
-                [rvx, rvy] = meshgrid(ref_ax, ref_ax);
-                ref_vecs = [rvx(:), rvy(:)];
-            else
-                num_ref_spokes = this.ExperimentOptions.num_ref_spokes;
-                angles = linspace(0, 2*pi, num_ref_spokes + 1);
-                angles(end) = []; 
-                if strcmpi(ref_log_or_lin, 'log')
-                    radii = logspace(log10(lb_ref), log10(ub_ref), max(1, num_ref_pts));
+                ref_stream = RandStream('mt19937ar', 'Seed', ...
+                    mod(floor(keyHash(this.Session.subjectCode)/10^10) + 3, 2^32));
+                u_speed = (randperm(ref_stream, num_refs) - rand(ref_stream, 1, num_refs)) / num_refs; % one per bin, in (0,1)
+                u_dir   = (randperm(ref_stream, num_refs) - rand(ref_stream, 1, num_refs)) / num_refs;
+
+                % QUEST: directions (0-90 deg) that keep both components in [c_min, c_max]
+                % at speed s, intersected with [d_min, d_max]:
+                %   Vx = s*cos(d):  d >= acosd(c_max/s)  and  d <= acosd(c_min/s)
+                %   Vy = s*sin(d):  d >= asind(c_min/s)  and  d <= asind(c_max/s)
+                % (ratios above 1 are capped at 1; a speed is usable when dir_lo <= dir_hi)
+                dir_lo = @(s) max(max(d_min, acosd(min(c_max ./ s, 1))), asind(min(c_min ./ s, 1)));
+                dir_hi = @(s) min(min(d_max, acosd(min(c_min ./ s, 1))), asind(min(c_max ./ s, 1)));
+
+                % QUEST: usable speed range = the speeds in [s_min, s_max] that have at least
+                % one valid direction (always one continuous range), found on a fine grid
+                if use_log
+                    s_grid = logspace(log10(s_min), log10(s_max), 20001);
                 else
-                    radii = linspace(lb_ref, ub_ref, max(1, num_ref_pts));
+                    s_grid = linspace(s_min, s_max, 20001);
                 end
-                [A, R] = meshgrid(angles, radii);
-                [vx, vy] = pol2cart(A(:), R(:));
-                ref_vecs = [vx, vy];
-            end
-            
-            if ~any(sqrt(sum(ref_vecs.^2, 2)) < 1e-10)
-                ref_vecs = [0, 0; ref_vecs];
+                usable = s_grid(dir_lo(s_grid) <= dir_hi(s_grid));
+                if isempty(usable)
+                    error('A1MotionEllipsesQuest:RefRange', ...
+                        'No reference vector satisfies the speed, direction and component limits together.');
+                end
+                s_lo = min(usable);
+                s_hi = max(usable);
+
+                % Speeds: one per bin over the usable range (QUEST: was [s_min, s_max])
+                if use_log
+                    ref_speeds = 10.^(log10(s_lo) + u_speed * (log10(s_hi) - log10(s_lo)));
+                else
+                    ref_speeds = s_lo + u_speed * (s_hi - s_lo);
+                end
+                % Directions: one per bin, as a position within the valid directions at
+                % that speed (QUEST: was a position within [d_min, d_max])
+                d_lo = dir_lo(ref_speeds);
+                d_hi = dir_hi(ref_speeds);
+                ref_dirs = d_lo + u_dir .* (d_hi - d_lo);
+                ref_vecs = [ref_speeds(:) .* cosd(ref_dirs(:)), ref_speeds(:) .* sind(ref_dirs(:))];
+
+                % QUEST: final check that every limit holds (tolerance for rounding only)
+                tol = 1e-9;
+                ref_speed_chk = sqrt(sum(ref_vecs.^2, 2));
+                if any(ref_speed_chk > s_max + tol | ref_speed_chk < s_min - tol | ...
+                        ref_vecs(:) > c_max + tol | ref_vecs(:) < c_min - tol)
+                    error('A1MotionEllipsesQuest:RefRange', 'A reference vector violates the speed or component limits.');
+                end
+            else
+                % Reference k is [Quest_Ref_Vx(k), Quest_Ref_Vy(k)] in deg/s
+                ref_vx = this.ExperimentOptions.Quest_Ref_Vx(:);
+                ref_vy = this.ExperimentOptions.Quest_Ref_Vy(:);
+                if numel(ref_vx) ~= numel(ref_vy)
+                    error('A1MotionEllipsesQuest:RefVectors', ...
+                        'Quest_Ref_Vx (%d values) and Quest_Ref_Vy (%d values) must be the same length.', ...
+                        numel(ref_vx), numel(ref_vy));
+                end
+                ref_vecs = [ref_vx, ref_vy];
             end
             num_refs = size(ref_vecs, 1);
-            
-            % Generate Default Local Comparison Offsets (Standard)
-            if strcmpi(comp_mode, 'cartesian')
-                comp_ax = linspace(-comp_ub, comp_ub, comp_intervals);
-                [cvx, cvy] = meshgrid(comp_ax, comp_ax);
-                base_comps = [cvx(:), cvy(:)];
-                c_mags = sqrt(sum(base_comps.^2, 2));
-                
-                valid_idx = c_mags >= comp_lb & c_mags <= comp_ub;
-                std_comp_offsets_def = base_comps(valid_idx, :);
-                std_comp_offset_multipliers_def = c_mags(valid_idx);
-                [~, ~, std_comp_offset_radius_idx_def] = unique(round(c_mags(valid_idx), 4));
-            else
-                comp_angles = linspace(0, 2*pi, comp_axes + 1);
-                comp_angles(end) = [];
-                comp_radii = linspace(comp_lb, comp_ub, comp_intervals);
-                
-                radius_indices = 1:comp_intervals;
-                [cA, cR] = meshgrid(comp_angles, comp_radii);
-                [~, cR_idx] = meshgrid(comp_angles, radius_indices);
-                [cvx, cvy] = pol2cart(cA(:), cR(:));
-                std_comp_offsets_def = [cvx, cvy];
-                std_comp_offset_radius_idx_def = cR_idx(:);
-                std_comp_offset_multipliers_def = cR(:);
-            end
-            
-            % Combine and Build Standard Base Trial Arrays
-            std_ref = {};
-            std_comp_base = {};
-            std_comp_offset = {};
-            std_comp_offset_rel = {};
-            std_comp_radius = [];
-            std_comp_radius_rel = [];
-            std_comp_axis   = [];
-            std_comp_rad_idx = [];
-            std_comp_mult   = [];
-            std_is_zero_ref = [];
 
-            % --- PRECOMPUTE BALANCED & RANDOMIZED OFFSETS ---
-            start_offsets = zeros(num_refs, 1);
-            
-            % Identify which reference vectors meet the qualifying criteria
-            qualifying_mask = false(num_refs, 1);
-            if comp_rel_bool && strcmpi(comp_mode, 'cartesian')
-                for r = 1:num_refs
-                    sp = norm(ref_vecs(r, :));
-                    if (sp < low_speed) && (sp >= 1e-10)
-                        qualifying_mask(r) = true;
-                    end
-                end
+            % QUEST: optional random signs. The entered values are used as absolute
+            % values and each component's sign is drawn from the participant ID hash.
+            % A separate random stream is used, so the signs depend only on the
+            % participant and the rest of the random draws below are unaffected.
+            if this.ExperimentOptions.Quest_Random_Ref_Signs
+                sign_stream = RandStream('mt19937ar', 'Seed', ...
+                    mod(floor(keyHash(this.Session.subjectCode)/10^10) + 1, 2^32));
+                ref_signs = 2 * (rand(sign_stream, num_refs, 2) > 0.5) - 1;
+                ref_vecs  = abs(ref_vecs) .* ref_signs;
             end
-            
-            num_qual = sum(qualifying_mask);
-            
-            if num_qual > 0
-                % Create an evenly balanced pool of offsets [1, 2, ..., N, 1, 2, ..., N]
-                offset_pool = mod(0:num_qual-1, outer_downsample_n) + 1;
-                
-                % Shuffle the pool randomly
-                offset_pool = offset_pool(randperm(num_qual));
-                
-                % Assign to the qualifying refs
-                start_offsets(qualifying_mask) = offset_pool;
-            end
-            
-            for r = 1:num_refs
-                v_ref = ref_vecs(r, :);
-                ref_speed = norm(v_ref);
-                is_zero = (ref_speed < 1e-10);
-                
-                % Standard condition: low speed refs (EXCLUDING 0) with relative comp get an extra grid axis step
-                if comp_rel_bool && (ref_speed < low_speed) && ~is_zero
-                    if strcmpi(comp_mode, 'cartesian')
-                        % comp_ax_base = linspace(-comp_ub, comp_ub, comp_intervals);
-                        % step_sz = comp_ax_base(2) - comp_ax_base(1);
-                        % 
-                        % if rand() > 0.5
-                        %     comp_ax_ext = [comp_ax_base, comp_ax_base(end) + step_sz];
-                        % else
-                        %     comp_ax_ext = [comp_ax_base(1) - step_sz, comp_ax_base];
-                        % end
-                        % 
-                        % [cvx, cvy] = meshgrid(comp_ax_ext, comp_ax_ext);
-                        % base_comps_r = [cvx(:), cvy(:)];
-                        % c_mags_r = sqrt(sum(base_comps_r.^2, 2));
-                        % 
-                        % max_ub = max(abs(comp_ax_ext));
-                        % valid_idx_r = c_mags_r >= comp_lb & c_mags_r <= (max_ub + 1e-5);
-                        % comp_offsets_r = base_comps_r(valid_idx_r, :);
-                        % comp_offset_multipliers_r = c_mags_r(valid_idx_r);
-                        % [~, ~, comp_offset_radius_idx_r] = unique(round(c_mags_r(valid_idx_r), 4));
-                        comp_ax_base = linspace(-comp_ub, comp_ub, comp_intervals);
-                        step_sz = comp_ax_base(2) - comp_ax_base(1);
-                        
-                        % Add both lower and upper extra steps
-                        comp_ax_ext = [comp_ax_base(1) - step_sz, comp_ax_base, comp_ax_base(end) + step_sz];
-                        
-                        [cvx, cvy] = meshgrid(comp_ax_ext, comp_ax_ext);
-                        base_comps_r = [cvx(:), cvy(:)];
-                        c_mags_r = sqrt(sum(base_comps_r.^2, 2));
-                        
-                        % FIX: Expand outer boundary safely to capture the 2D radius of the new ring
-                        outer_radius_limit = comp_ub + (step_sz * 1.00001); 
-                        
-                        % Isolate the strict original circle and the new outer ring (annulus)
-                        is_inner = c_mags_r >= comp_lb & c_mags_r <= (comp_ub + 1e-5);
-                        is_outer = c_mags_r > (comp_ub + 1e-5) & c_mags_r <= outer_radius_limit;
-                        
-                        inner_idx = find(is_inner);
-                        outer_idx = find(is_outer);
-                        
-                        if ~isempty(outer_idx)
-                            start_offset = start_offsets(r);
-                            %outer_kept = outer_idx(start_offset : outer_downsample_n : end);
 
-                            % snake draft
-                            % 1. Define the full range of potential indices you care about
-                            idx_range = start_offset : length(outer_idx);
-                            
-                            % 2. Create a 0-based step counter (0, 1, 2, 3...)
-                            steps = 0 : length(idx_range) - 1;
-                            
-                            % 3. Create a logical mask: floor(steps / n) groups them into chunks of n
-                            % mod(..., 2) == 0 keeps the even chunks (keep), and drops the odd chunks (skip)
-                            keep_mask = mod(floor(steps / outer_downsample_n), 2) == 0;
-                            
-                            % 4. Apply the mask to index your array
-                            outer_kept = outer_idx(idx_range(keep_mask));
-                        else
-                            outer_kept = [];
-                        end
-                        
-                        final_idx = [inner_idx; outer_kept];
-                        
-                        comp_offsets_r = base_comps_r(final_idx, :);
-                        comp_offset_multipliers_r = c_mags_r(final_idx);
-                        [~, ~, comp_offset_radius_idx_r] = unique(round(c_mags_r(final_idx), 4));
-                    else
-                        comp_angles = linspace(0, 2*pi, comp_axes + 1);
-                        comp_angles(end) = [];
-                        comp_radii_base = linspace(comp_lb, comp_ub, comp_intervals);
-                        step_sz = comp_radii_base(2) - comp_radii_base(1);
-                        
-                        if rand() > 0.5
-                            comp_radii_ext = [comp_radii_base, comp_radii_base(end) + step_sz];
-                        else
-                            comp_radii_ext = [max(0, comp_radii_base(1) - step_sz), comp_radii_base];
-                        end
-                        
-                        radius_indices_r = 1:length(comp_radii_ext);
-                        [cA, cR] = meshgrid(comp_angles, comp_radii_ext);
-                        [~, cR_idx] = meshgrid(comp_angles, radius_indices_r);
-                        [cvx, cvy] = pol2cart(cA(:), cR(:));
-                        comp_offsets_r = [cvx, cvy];
-                        comp_offset_radius_idx_r = cR_idx(:);
-                        comp_offset_multipliers_r = cR(:);
-                    end
-                else
-                    comp_offsets_r = std_comp_offsets_def;
-                    comp_offset_multipliers_r = std_comp_offset_multipliers_def;
-                    comp_offset_radius_idx_r = std_comp_offset_radius_idx_def;
-                end
-                
-                num_comps_r = size(comp_offsets_r, 1);
-                for c = 1:num_comps_r
-                    std_ref{end+1, 1} = v_ref;
-                    std_is_zero_ref(end+1, 1) = is_zero;
-                    
-                    if comp_rel_bool
-                        actual_offset = comp_offsets_r(c, :) .* ref_speed;
-                        if ref_speed == 0, actual_offset = comp_offsets_r(c, :) .* base_speed; end
-                    else
-                        actual_offset = comp_offsets_r(c, :);
-                    end
-                    
-                    std_comp_base{end+1, 1}       = v_ref + actual_offset;
-                    std_comp_offset{end+1, 1}     = actual_offset;
-                    std_comp_offset_rel{end+1, 1} = comp_offsets_r(c, :);
-                    std_comp_radius(end+1, 1)     = norm(actual_offset);
-                    std_comp_radius_rel(end+1, 1) = norm(comp_offsets_r(c, :));
-                    std_comp_axis(end+1, 1)       = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
-                    std_comp_rad_idx(end+1, 1)    = comp_offset_radius_idx_r(c);
-                    std_comp_mult(end+1, 1)       = comp_offset_multipliers_r(c);
-                end
-            end
-            
-            % Repeat Standard set manually for concatenation
-            std_ref = repmat(std_ref, num_repeats, 1);
-            std_is_zero_ref = repmat(std_is_zero_ref, num_repeats, 1);
-            std_comp_base = repmat(std_comp_base, num_repeats, 1);
-            std_comp_offset = repmat(std_comp_offset, num_repeats, 1);
-            std_comp_offset_rel = repmat(std_comp_offset_rel, num_repeats, 1);
-            std_comp_radius = repmat(std_comp_radius, num_repeats, 1);
-            std_comp_radius_rel = repmat(std_comp_radius_rel, num_repeats, 1);
-            std_comp_axis = repmat(std_comp_axis, num_repeats, 1);
-            std_comp_rad_idx = repmat(std_comp_rad_idx, num_repeats, 1);
-            std_comp_mult = repmat(std_comp_mult, num_repeats, 1);
+            % QUEST: common pool of equi-spaced comparison angles (absolute screen
+            % angle, deg), one per (reference x angle slot), rotated by
+            % Quest_Comp_Axis_Offset_Deg. e.g. 6 refs x 1 angle each -> 6 angles, 60 deg apart.
+            angles_per_ref = this.ExperimentOptions.Quest_Comp_Angles_Per_Ref;
+            num_reps       = this.ExperimentOptions.Quest_Reps_Per_Combo;
+            num_axes       = num_refs * angles_per_ref;   % pool size
+            axis_angles = linspace(0, 360, num_axes + 1);
+            axis_angles(end) = [];
+            axis_angles = wrapTo360(axis_angles + this.ExperimentOptions.Quest_Comp_Axis_Offset_Deg);
+
+            % QUEST: shuffle the pool with the participant ID hash and deal it out:
+            % row r of ref_axis_idx = the pool indices assigned to reference r.
+            % Uses its own random stream (seed offset +2; the sign stream uses +1),
+            % so it is the same for a given participant and does not shift the
+            % other random draws.
+            angle_stream = RandStream('mt19937ar', 'Seed', ...
+                mod(floor(keyHash(this.Session.subjectCode)/10^10) + 2, 2^32));
+            pool_order   = randperm(angle_stream, num_axes);
+            ref_axis_idx = reshape(pool_order, num_refs, angles_per_ref);
+
+            trials_per_sc = this.ExperimentOptions.Quest_Trials_Per_Staircase;
+
+            %% QUEST: one staircase per (reference, assigned angle, repetition)
+            [rep_grid, slot_grid, ref_grid] = ndgrid(1:num_reps, 1:angles_per_ref, 1:num_refs);
+            sc_ref_idx  = ref_grid(:);
+            sc_rep_idx  = rep_grid(:);
+            sc_axis_idx = ref_axis_idx(sub2ind(size(ref_axis_idx), sc_ref_idx, slot_grid(:)));
+            sc_axis_idx = sc_axis_idx(:);
+            num_sc      = numel(sc_ref_idx);
+
+            %% QUEST: expand staircases into trials (Quest_Trials_Per_Staircase each)
+            trial_sc       = repelem((1:num_sc)', trials_per_sc, 1);
+            total_trials   = numel(trial_sc);
+            trial_ref_idx  = sc_ref_idx(trial_sc);
+            trial_axis_idx = sc_axis_idx(trial_sc);
+            trial_rep_idx  = sc_rep_idx(trial_sc); % QUEST: which repetition of the ref/angle combo
+            trial_axis_deg = reshape(axis_angles(trial_axis_idx), [], 1);
+
+            final_ref         = mat2cell(ref_vecs(trial_ref_idx, :), ones(total_trials, 1), 2);
+            final_ref_nominal = final_ref; % QUEST: keeps the staircase's ref before zero-ref randomization
+            final_dir         = mat2cell([cosd(trial_axis_deg), sind(trial_axis_deg)], ones(total_trials, 1), 2);
 
             %% ====================================================================
-            %% SET 2: HARD TRIALS (Using _hard suffix parameters)
+            %% SET 3 (kept): RANDOMIZE ZERO REFERENCES BY TRIAL
             %% ====================================================================
-            lb_ref_h      = this.ExperimentOptions.lb_screen_hard;
-            if isempty(lb_ref_h), lb_ref_h = 0; end
-            ub_ref_h      = this.ExperimentOptions.ub_screen_hard;
-            num_ref_pts_h = this.ExperimentOptions.num_ref_gridpts_hard;
-            ref_mode_h    = this.ExperimentOptions.ref_cart_or_polar_hard;
-            ref_log_or_lin_h = this.ExperimentOptions.ref_log_or_lin_hard;
-            
-            comp_lb_h        = this.ExperimentOptions.comp_lb_hard;
-            if isempty(comp_lb_h), comp_lb_h = 0; end
-            comp_ub_h        = this.ExperimentOptions.comp_ub_hard;
-            comp_intervals_h = this.ExperimentOptions.comp_num_intervals_hard;
-            comp_axes_h      = this.ExperimentOptions.comp_num_axes_hard;
-            comp_mode_h      = this.ExperimentOptions.comp_cart_or_polar_hard;
-            comp_rel_bool_h  = this.ExperimentOptions.comp_rel_bool_hard; 
-            
-            custom_comp_intervals_h = [];
-            if isprop(this.ExperimentOptions, 'spec_comp_intervals_hard') || isfield(this.ExperimentOptions, 'spec_comp_intervals_hard')
-                custom_comp_intervals_h = this.ExperimentOptions.spec_comp_intervals_hard;
-            end
-            
-            target_base_trials_h = [];
-            if isprop(this.ExperimentOptions, 'target_base_trials_hard') || isfield(this.ExperimentOptions, 'target_base_trials_hard')
-                target_base_trials_h = this.ExperimentOptions.target_base_trials_hard;
-            end
-            
-            num_random_trials_h = 0;
-            if isprop(this.ExperimentOptions, 'num_random_trials_hard') || isfield(this.ExperimentOptions, 'num_random_trials_hard')
-                num_random_trials_h = this.ExperimentOptions.num_random_trials_hard;
-                if isempty(num_random_trials_h), num_random_trials_h = 0; end
-            end
-            
-            rand_comp_lb_h = comp_lb_h;
-            if isprop(this.ExperimentOptions, 'rand_comp_lb_hard') || isfield(this.ExperimentOptions, 'rand_comp_lb_hard')
-                if ~isempty(this.ExperimentOptions.rand_comp_lb_hard), rand_comp_lb_h = this.ExperimentOptions.rand_comp_lb_hard; end
-            end
-            
-            rand_comp_ub_h = comp_ub_h; 
-            if isprop(this.ExperimentOptions, 'rand_comp_ub_hard') || isfield(this.ExperimentOptions, 'rand_comp_ub_hard')
-                if ~isempty(this.ExperimentOptions.rand_comp_ub_hard), rand_comp_ub_h = this.ExperimentOptions.rand_comp_ub_hard; end
-            end
-
-            % Generate Global Reference Vectors (Hard)
-            if strcmpi(ref_mode_h, 'cartesian')
-                ref_ax_h = linspace(-ub_ref_h, ub_ref_h, num_ref_pts_h);
-                [rvx, rvy] = meshgrid(ref_ax_h, ref_ax_h);
-                ref_vecs_h = [rvx(:), rvy(:)];
-            else
-                num_ref_spokes_h = this.ExperimentOptions.num_ref_spokes_hard;
-                angles = linspace(0, 2*pi, num_ref_spokes_h + 1);
-                angles(end) = []; 
-                if strcmpi(ref_log_or_lin_h, 'log')
-                    radii = logspace(log10(lb_ref_h), log10(ub_ref_h), max(1, num_ref_pts_h));
-                else
-                    radii = linspace(lb_ref_h, ub_ref_h, max(1, num_ref_pts_h));
-                end
-                [A, R] = meshgrid(angles, radii);
-                [vx, vy] = pol2cart(A(:), R(:));
-                ref_vecs_h = [vx, vy];
-            end
-            
-            if ~any(sqrt(sum(ref_vecs_h.^2, 2)) < 1e-10)
-                ref_vecs_h = [0, 0; ref_vecs_h];
-            end
-            num_refs_h = size(ref_vecs_h, 1);
-
-            % Generate Local Comparison Offsets (Hard)
-            if strcmpi(comp_mode_h, 'cartesian')
-                if ~isempty(custom_comp_intervals_h)
-                    comp_ax_h = custom_comp_intervals_h;
-                else
-                    comp_ax_h = linspace(-comp_ub_h, comp_ub_h, comp_intervals_h);
-                end
-                [cvx, cvy] = meshgrid(comp_ax_h, comp_ax_h);
-                base_comps_h = [cvx(:), cvy(:)];
-                c_mags_h = sqrt(sum(base_comps_h.^2, 2));
-                
-                valid_idx = c_mags_h >= comp_lb_h & c_mags_h <= comp_ub_h;
-                comp_offsets_h = base_comps_h(valid_idx, :);
-                comp_offset_multipliers_h = c_mags_h(valid_idx);
-                [~, ~, comp_offset_radius_idx_h] = unique(round(c_mags_h(valid_idx), 4));
-            else
-                comp_angles_h = linspace(0, 2*pi, comp_axes_h + 1);
-                comp_angles_h(end) = [];
-                
-                if ~isempty(custom_comp_intervals_h)
-                    comp_radii_h = custom_comp_intervals_h;
-                    actual_intervals_h = length(custom_comp_intervals_h);
-                else
-                    comp_radii_h = linspace(comp_lb_h, comp_ub_h, comp_intervals_h);
-                    actual_intervals_h = comp_intervals_h;
-                end
-                
-                radius_indices_h = 1:actual_intervals_h;
-                [cA, cR] = meshgrid(comp_angles_h, comp_radii_h);
-                [~, cR_idx] = meshgrid(comp_angles_h, radius_indices_h);
-                [cvx, cvy] = pol2cart(cA(:), cR(:));
-                comp_offsets_h = [cvx, cvy];
-                comp_offset_radius_idx_h = cR_idx(:);
-                comp_offset_multipliers_h = cR(:);
-            end
-
-            % Combine and Build Hard Trial Arrays
-            num_comps_h = size(comp_offsets_h, 1);
-            trials_per_rep_h = num_refs_h * num_comps_h;
-            
-            hard_ref = cell(trials_per_rep_h, 1);
-            hard_is_zero_ref = zeros(trials_per_rep_h, 1);
-            hard_comp_base = cell(trials_per_rep_h, 1);
-            hard_comp_offset = cell(trials_per_rep_h, 1); 
-            hard_comp_offset_rel = cell(trials_per_rep_h, 1);
-            hard_comp_radius = zeros(trials_per_rep_h, 1); 
-            hard_comp_radius_rel = zeros(trials_per_rep_h, 1);
-            hard_comp_axis   = zeros(trials_per_rep_h, 1);
-            hard_comp_rad_idx = zeros(trials_per_rep_h, 1); 
-            hard_comp_mult   = zeros(trials_per_rep_h, 1);
-            
-            counter = 1;
-            for r = 1:num_refs_h
-                v_ref = ref_vecs_h(r, :);
-                ref_speed = norm(v_ref);
-                is_zero = (ref_speed < 1e-10);
-                
-                for c = 1:num_comps_h
-                    hard_ref{counter} = v_ref;
-                    hard_is_zero_ref(counter) = is_zero;
-                    
-                    if comp_rel_bool_h
-                        actual_offset = comp_offsets_h(c, :) .* ref_speed;
-                        if ref_speed == 0, actual_offset = comp_offsets_h(c, :) .* base_speed; end
-                    else
-                        actual_offset = comp_offsets_h(c, :);
-                    end
-                    hard_comp_base{counter} = v_ref + actual_offset;
-                    hard_comp_offset{counter} = actual_offset;
-                    hard_comp_offset_rel{counter} = comp_offsets_h(c, :);
-                    hard_comp_radius(counter) = norm(actual_offset);
-                    hard_comp_radius_rel(counter) = norm(comp_offsets_h(c, :));
-                    hard_comp_axis(counter)   = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
-                    hard_comp_rad_idx(counter) = comp_offset_radius_idx_h(c);
-                    hard_comp_mult(counter) = comp_offset_multipliers_h(c);
-                    counter = counter + 1;
-                end
-            end
-            
-            % Repeat and Downsample arrays manually
-            hard_ref = repmat(hard_ref, num_repeats, 1);
-            hard_is_zero_ref = repmat(hard_is_zero_ref, num_repeats, 1);
-            hard_comp_base = repmat(hard_comp_base, num_repeats, 1);
-            hard_comp_offset = repmat(hard_comp_offset, num_repeats, 1);
-            hard_comp_offset_rel = repmat(hard_comp_offset_rel, num_repeats, 1);
-            hard_comp_radius = repmat(hard_comp_radius, num_repeats, 1);
-            hard_comp_radius_rel = repmat(hard_comp_radius_rel, num_repeats, 1);
-            hard_comp_axis = repmat(hard_comp_axis, num_repeats, 1);
-            hard_comp_rad_idx = repmat(hard_comp_rad_idx, num_repeats, 1);
-            hard_comp_mult = repmat(hard_comp_mult, num_repeats, 1);
-        
-            base_generated_h = length(hard_ref);
-            
-            % % Randomly cull base variables if target exists
-            % if ~isempty(target_base_trials_h) && target_base_trials_h < base_generated_h
-            %     keep_idx = randperm(base_generated_h, target_base_trials_h);
-            % 
-            %     hard_ref = hard_ref(keep_idx);
-            %     hard_is_zero_ref = hard_is_zero_ref(keep_idx);
-            %     hard_comp_base = hard_comp_base(keep_idx);
-            %     hard_comp_offset = hard_comp_offset(keep_idx);
-            %     hard_comp_offset_rel = hard_comp_offset_rel(keep_idx);
-            %     hard_comp_radius = hard_comp_radius(keep_idx);
-            %     hard_comp_radius_rel = hard_comp_radius_rel(keep_idx);
-            %     hard_comp_axis = hard_comp_axis(keep_idx);
-            %     hard_comp_rad_idx = hard_comp_rad_idx(keep_idx);
-            %     hard_comp_mult = hard_comp_mult(keep_idx);
-            %     base_kept_h = target_base_trials_h;
-
-            % Randomly cull base variables if target exists, evenly distributed by reference vector
-            if ~isempty(target_base_trials_h) && target_base_trials_h < base_generated_h
-                
-                % Convert cell array to matrix to group by unique reference vectors
-                ref_mat = cell2mat(hard_ref);
-                
-                % Find unique reference vectors (rounding to 4 decimals to avoid floating point issues)
-                [~, ~, ref_group_idx] = unique(round(ref_mat, 4), 'rows');
-                num_groups = max(ref_group_idx);
-                
-                % Calculate how many trials to keep per unique reference vector
-                trials_per_group = floor(target_base_trials_h / num_groups);
-                remainder = mod(target_base_trials_h, num_groups);
-                
-                % Randomly decide which groups get the +1 remainder trials
-                groups_with_extra = randperm(num_groups, remainder);
-                
-                keep_idx = [];
-                
-                for g = 1:num_groups
-                    % Find all trial indices belonging to this specific reference vector
-                    idx_for_group = find(ref_group_idx == g);
-                    
-                    % Determine the target number to keep for this group
-                    num_to_keep_g = trials_per_group;
-                    if ismember(g, groups_with_extra)
-                        num_to_keep_g = num_to_keep_g + 1;
-                    end
-                    
-                    % Fail-safe: don't try to keep more trials than actually exist in the group
-                    num_to_keep_g = min(num_to_keep_g, length(idx_for_group));
-                    
-                    % Randomly select the specific trials to keep for this reference vector
-                    rand_subset = randperm(length(idx_for_group), num_to_keep_g);
-                    keep_idx = [keep_idx; idx_for_group(rand_subset)];
-                end
-                
-                % Sort the indices to maintain the original relative generation order
-                keep_idx = sort(keep_idx);
-                
-                % Apply the final curated indices
-                hard_ref = hard_ref(keep_idx);
-                hard_is_zero_ref = hard_is_zero_ref(keep_idx);
-                hard_comp_base = hard_comp_base(keep_idx);
-                hard_comp_offset = hard_comp_offset(keep_idx);
-                hard_comp_offset_rel = hard_comp_offset_rel(keep_idx);
-                hard_comp_radius = hard_comp_radius(keep_idx);
-                hard_comp_radius_rel = hard_comp_radius_rel(keep_idx);
-                hard_comp_axis = hard_comp_axis(keep_idx);
-                hard_comp_rad_idx = hard_comp_rad_idx(keep_idx);
-                hard_comp_mult = hard_comp_mult(keep_idx);
-                
-                base_kept_h = length(keep_idx); % Ensures accuracy if the min() fail-safe triggered
-            else
-
-                base_kept_h = base_generated_h;
-            end
-            
-            % Inject Random Trial Arrays
-            if num_random_trials_h > 0
-                rand_ref_idx = randi([1, num_refs_h], num_random_trials_h, 1);
-                m_ref_rand = ref_vecs_h(rand_ref_idx, :);
-                
-                rand_r = rand_comp_lb_h + (rand_comp_ub_h - rand_comp_lb_h) * rand(num_random_trials_h, 1);
-                rand_theta = 2 * pi * rand(num_random_trials_h, 1);
-                [dx, dy] = pol2cart(rand_theta, rand_r);
-                actual_rand_offsets = [dx, dy];
-                
-                if comp_rel_bool_h3
-                    ref_speeds_rand = sqrt(sum(m_ref_rand.^2, 2));
-                    ref_speeds_rand(ref_speeds_rand == 0) = base_speed;
-                    actual_rand_offsets_scaled = actual_rand_offsets .* ref_speeds_rand;
-                else
-                    actual_rand_offsets_scaled = actual_rand_offsets;
-                end
-                m_comp_rand = m_ref_rand + actual_rand_offsets_scaled;
-                
-                rand_ref_cell = mat2cell(m_ref_rand, ones(num_random_trials_h,1), 2);
-                rand_is_zero_ref = (sqrt(sum(m_ref_rand.^2, 2)) < 1e-10);
-                rand_comp_base_cell = mat2cell(m_comp_rand, ones(num_random_trials_h,1), 2);
-                rand_comp_offset_cell = mat2cell(actual_rand_offsets_scaled, ones(num_random_trials_h,1), 2);
-                rand_comp_offset_rel_cell = mat2cell(actual_rand_offsets, ones(num_random_trials_h,1), 2);
-                
-                rand_comp_radius = sqrt(sum(actual_rand_offsets_scaled.^2, 2));
-                rand_comp_radius_rel = rand_r;
-                rand_comp_axis = wrapTo360(rad2deg(atan2(actual_rand_offsets_scaled(:,2), actual_rand_offsets_scaled(:,1))));
-                rand_comp_rad_idx = zeros(num_random_trials_h, 1); 
-                rand_comp_mult = rand_r;
-                
-                hard_ref = [hard_ref; rand_ref_cell];
-                hard_is_zero_ref = [hard_is_zero_ref; rand_is_zero_ref];
-                hard_comp_base = [hard_comp_base; rand_comp_base_cell];
-                hard_comp_offset = [hard_comp_offset; rand_comp_offset_cell];
-                hard_comp_offset_rel = [hard_comp_offset_rel; rand_comp_offset_rel_cell];
-                hard_comp_radius = [hard_comp_radius; rand_comp_radius];
-                hard_comp_radius_rel = [hard_comp_radius_rel; rand_comp_radius_rel];
-                hard_comp_axis = [hard_comp_axis; rand_comp_axis];
-                hard_comp_rad_idx = [hard_comp_rad_idx; rand_comp_rad_idx];
-                hard_comp_mult = [hard_comp_mult; rand_comp_mult];
-            end
-
-            %% ====================================================================
-            %% SET 3: RANDOMIZE ZERO REFERENCES BY TRIAL
-            %% ====================================================================
+            % QUEST: same nz_options as the original. Only the reference is replaced
+            % here; the comparison is built from it in runPreTrial (so the offset
+            % scales with the randomized ref speed, as before).
             nz = nonzero_rand;
             nz_options = [
                 -nz,   0;
@@ -714,112 +415,63 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                  nz, -nz;
                  nz,  nz
             ];
-
-            % Standard trials zero-reference replacement
-            for i = 1:length(std_ref)
-                if std_is_zero_ref(i)
-                    v_rand = nz_options(randi(8), :);
-                    std_ref{i} = v_rand;
-                    v_rand_speed = norm(v_rand);
-                    
-                    rel_offset = std_comp_offset_rel{i};
-                    if comp_rel_bool
-                        actual_offset = rel_offset .* v_rand_speed;
-                    else
-                        actual_offset = rel_offset;
-                    end
-                    
-                    std_comp_base{i}       = v_rand + actual_offset;
-                    std_comp_offset{i}     = actual_offset;
-                    std_comp_radius(i)     = norm(actual_offset);
-                    std_comp_axis(i)       = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
+            for i = 1:total_trials
+                if norm(final_ref{i}) < 1e-10
+                    final_ref{i} = nz_options(randi(8), :);
                 end
             end
 
-            % Hard trials zero-reference replacement
-            for i = 1:length(hard_ref)
-                if hard_is_zero_ref(i)
-                    v_rand = nz_options(randi(8), :);
-                    hard_ref{i} = v_rand;
-                    v_rand_speed = norm(v_rand);
-                    
-                    rel_offset = hard_comp_offset_rel{i};
-                    if comp_rel_bool_h
-                        actual_offset = rel_offset .* v_rand_speed;
-                    else
-                        actual_offset = rel_offset;
-                    end
-                    
-                    hard_comp_base{i}       = v_rand + actual_offset;
-                    hard_comp_offset{i}     = actual_offset;
-                    hard_comp_radius(i)     = norm(actual_offset);
-                    hard_comp_axis(i)       = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
-                end
-            end
-
-            %% ====================================================================
-            %% SET 4: COMBINE STANDARD AND HARD SETS & GENERATE TABLE
-            %% ====================================================================
-            final_ref = [std_ref; hard_ref];
-            final_comp_base = [std_comp_base; hard_comp_base];
-            final_comp_offset = [std_comp_offset; hard_comp_offset];
-            final_comp_offset_rel = [std_comp_offset_rel; hard_comp_offset_rel];
-            final_comp_radius = [std_comp_radius; hard_comp_radius];
-            final_comp_radius_rel = [std_comp_radius_rel; hard_comp_radius_rel];
-            final_comp_axis = [std_comp_axis; hard_comp_axis];
-            final_comp_rad_idx = [std_comp_rad_idx; hard_comp_rad_idx];
-            final_comp_mult = [std_comp_mult; hard_comp_mult];
-            
-            % Boolean vector indicating if the trial is from the hard condition
-            is_hard_trial = [zeros(length(std_ref), 1); ones(length(hard_ref), 1)];
-
-            total_trials = length(final_ref);
-            
+            %% Generate Table - Arume will shuffle everything uniformly (unchanged)
             t = ArumeCore.TrialTableBuilder();
             t.AddConditionVariable('RefCompPair', (1:total_trials));
-            
-            % Generate Table - Arume will shuffle everything uniformly
+
             trialTable = t.GenerateTrialTable('Random', 'Sequential', 1, 'Delay');
+
+            % QUEST: sequential repetitions. Arume shuffles all trials together; the
+            % shuffled rows are then stably re-sorted by repetition index, so every
+            % rep-1 staircase finishes before any rep-2 trial starts, and so on.
+            % Within each repetition phase the order stays random, so that phase's
+            % staircases are still interleaved. (Rows are reordered whole, so every
+            % column Arume generated stays consistent with its RefCompPair.)
+            [~, rep_order] = sort(trial_rep_idx(trialTable.RefCompPair)); % sort is stable
+            trialTable = trialTable(rep_order, :);
+
             trialTable.OddballWindow = randi([1, 3], total_trials, 1);
-            
+
             idx = trialTable.RefCompPair;
-            
-            trialTable.ReferenceVelocity = final_ref(idx);
-            trialTable.ComparisonVelocity = final_comp_base(idx);
-            trialTable.CompOffsetVector = final_comp_offset(idx);
-            trialTable.CompOffsetVectorRel = final_comp_offset_rel(idx);
-            trialTable.CompOffsetRadius = final_comp_radius(idx);
-            trialTable.CompOffsetRadiusRel = final_comp_radius_rel(idx);
-            trialTable.CompOffsetAxis   = final_comp_axis(idx);
-            trialTable.CompOffsetRadiusIndex = final_comp_rad_idx(idx);
-            trialTable.CompOffsetMultiplier = final_comp_mult(idx);
-            trialTable.IsHardTrial = is_hard_trial(idx);
-        
-            %% Apply Pseudo-Random Jitter
-            comp_vels = trialTable.ComparisonVelocity;
-            if do_jitter
-                for i = 1:height(trialTable)
-                    v_base = comp_vels{i};
-                    speed = norm(v_base);
-                    if speed == 0, speed = 0.1; end
-                    
-                    jx = (2*rand() - 1) * jitter_mult * speed;
-                    jy = (2*rand() - 1) * jitter_mult * speed;
-                    comp_vels{i} = v_base + [jx, jy];
-                end
-            end
-            trialTable.ComparisonVelocity = comp_vels; 
-            
+
+            % QUEST: staircase bookkeeping
+            trialTable.QuestStaircaseID        = trial_sc(idx);
+            trialTable.QuestRefIndex           = trial_ref_idx(idx);
+            trialTable.QuestAxisIndex          = trial_axis_idx(idx);
+            trialTable.QuestRepIndex           = trial_rep_idx(idx); % QUEST
+            trialTable.QuestNominalRefVelocity = final_ref_nominal(idx);
+
+            trialTable.ReferenceVelocity   = final_ref(idx);
+            trialTable.CompOffsetAxis      = trial_axis_deg(idx);
+            trialTable.CompOffsetDirection = final_dir(idx); % QUEST: unit vector of the staircase axis
+
+            % QUEST: placeholders, filled in per trial by runPreTrial (offset) and runTrial (IsCorrect).
+            % CompOffsetRadiusIndex and IsHardTrial from the original no longer apply and are not created.
+            nan_col   = nan(total_trials, 1);
+            zero_cell = repmat({[0 0]}, total_trials, 1);
+            trialTable.ComparisonVelocity   = trialTable.ReferenceVelocity;
+            trialTable.CompOffsetVector     = zero_cell;
+            trialTable.CompOffsetVectorRel  = zero_cell;
+            trialTable.CompOffsetRadius     = nan_col;
+            trialTable.CompOffsetRadiusRel  = nan_col;
+            trialTable.CompOffsetMultiplier = nan_col;
+            trialTable.QuestIntensity       = nan_col; % log10(relative offset) actually shown
+            trialTable.IsCorrect            = nan_col;
+
             %% Final Window Assignment
+            % QUEST: all three windows start at the reference velocity; the oddball
+            % window is overwritten with the adaptive comparison in runPreTrial.
             trialTable.Window1_Velocity = trialTable.ReferenceVelocity;
             trialTable.Window2_Velocity = trialTable.ReferenceVelocity;
             trialTable.Window3_Velocity = trialTable.ReferenceVelocity;
-            
-            trialTable.Window1_Velocity(trialTable.OddballWindow == 1) = comp_vels(trialTable.OddballWindow == 1);
-            trialTable.Window2_Velocity(trialTable.OddballWindow == 2) = comp_vels(trialTable.OddballWindow == 2);
-            trialTable.Window3_Velocity(trialTable.OddballWindow == 3) = comp_vels(trialTable.OddballWindow == 3);
-            
-            %% Set the physical positions of the three apertures
+
+            %% Set the physical positions of the three apertures (unchanged)
             trials_per_block = this.ExperimentOptions.TrialsBeforeBreak;
             num_blocks = floor(total_trials / trials_per_block) + 1;
             
@@ -833,722 +485,59 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             trialTable.Window1_Angle = angle_set(block_idx)';
             trialTable.Window2_Angle = wrapTo360(trialTable.Window1_Angle - 120);
             trialTable.Window3_Angle = wrapTo360(trialTable.Window1_Angle - 240);
-            
-            %% --- Print Experiment Summary ---
 
+            %% --- Print Experiment Summary --- (QUEST: rewritten for staircases)
             fprintf('\n============================================================\n');
-            fprintf('           STANDARD STIMULUS CONFIGURATION SUMMARY                 \n');
+            fprintf('           QUEST STAIRCASE CONFIGURATION SUMMARY            \n');
             fprintf('============================================================\n');
-            if strcmpi(ref_mode, 'cartesian')
-                fprintf('REFERENCE VECTORS: [CARTESIAN GRID]\n');
-                fprintf('  - Grid Axis Steps:   [%s] deg/s\n', num2str(ref_ax, '%.4f '));
-                fprintf('  - Frame Bounds:      %.4f to %.4f deg/s (Magnitude)\n', lb_ref, ub_ref);
-            else
-                fprintf('REFERENCE VECTORS: [POLAR WHEEL]\n');
-                fprintf('  - Reference Radii:   [%s] deg/s\n', num2str(radii, '%.4f '));
-                fprintf('  - Number of Spokes:  %d\n', num_ref_spokes);
+            fprintf('REFERENCE VECTORS (deg/s):\n');
+            for r = 1:num_refs
+                fprintf('  - Ref %2d: [%7.3f, %7.3f]  (speed %6.3f, dir %5.1f deg)\n', r, ref_vecs(r, 1), ref_vecs(r, 2), ...
+                    norm(ref_vecs(r, :)), wrapTo360(atan2d(ref_vecs(r, 2), ref_vecs(r, 1)))); % QUEST: + speed/direction
             end
-            fprintf('  - Total Unique Refs: %d\n', num_refs);
+            if this.ExperimentOptions.Quest_Random_Refs % QUEST
+                fprintf('  - Drawn from participant ID hash: %.3f-%.3f deg/s (%s spacing), %.1f-%.1f deg\n', ...
+                    this.ExperimentOptions.Quest_Ref_Speed_Min, this.ExperimentOptions.Quest_Ref_Speed_Max, ...
+                    char(this.ExperimentOptions.Quest_Ref_Speed_Spacing), ...
+                    this.ExperimentOptions.Quest_Ref_Dir_Min, this.ExperimentOptions.Quest_Ref_Dir_Max);
+                fprintf('  - Component limits: %.3f-%.3f deg/s; usable speed range: %.3f-%.3f deg/s\n', ...
+                    c_min, c_max, s_lo, s_hi); % QUEST
+            end
+            fprintf('  - [0 0] refs randomized per trial to +/-%.3f deg/s\n', nonzero_rand);
+            if this.ExperimentOptions.Quest_Random_Ref_Signs % QUEST
+                fprintf('  - Signs drawn from participant ID hash (entered values used as |Vx|, |Vy|)\n');
+            end
             fprintf('------------------------------------------------------------\n');
-            if comp_rel_bool
-                comp_type_str = 'RELATIVE (%% of ref speed)';
-            else
-                comp_type_str = 'ABSOLUTE (deg/s)';
+            fprintf('COMPARISON ANGLE POOL: %d  [%s] deg\n', num_axes, num2str(axis_angles, '%.1f ')); % QUEST
+            for r = 1:num_refs % QUEST: per-reference assignment (from participant ID hash)
+                fprintf('  - Ref %2d angles:    [%s] deg\n', r, num2str(axis_angles(ref_axis_idx(r, :)), '%.1f '));
             end
-
-            if strcmpi(comp_mode, 'cartesian')
-                fprintf('COMPARISON VECTORS: [CARTESIAN LOCAL GRID]\n');
-                fprintf('  - Offset Type:       %s\n', comp_type_str);
-                fprintf('  - Grid Axis Steps:   [%s]\n', num2str(comp_ax, '%.2f '));
-                if exist('comp_ax_ext', 'var')
-                    fprintf('  - Grid Axis Steps for Refs w/ Speeds Lower than %s: %s\n',  num2str(low_speed, '%.2f '), num2str(comp_ax_ext, '%.2f '));
-                end
-                fprintf('  - Local Bounds:      %.2f to %.2f (Magnitude)\n', comp_lb, comp_ub);
-            else
-                fprintf('COMPARISON VECTORS: [POLAR LOCAL SPOKES]\n');
-                fprintf('  - Offset Type:       %s\n', comp_type_str);
-                fprintf('  - Comparison Radii:  [%s]\n', num2str(comp_radii, '%.2f '));
-                fprintf('  - Comparison Axes:   %d\n', comp_axes);
-            end
-            fprintf('  - Total Unique Comps: %d (per reference)\n', num_comps_r);
-
-            fprintf('\n============================================================\n');
-            fprintf('          HARD STIMULUS CONFIGURATION SUMMARY                 \n');
-            fprintf('============================================================\n');
-            if strcmpi(ref_mode, 'cartesian')
-                fprintf('REFERENCE VECTORS: [CARTESIAN GRID]\n');
-                fprintf('  - Grid Axis Steps:   [%s] deg/s\n', num2str(ref_ax_h, '%.4f '));
-                fprintf('  - Frame Bounds:      %.4f to %.4f deg/s (Magnitude)\n', lb_ref_h, ub_ref_h);
-            else
-                fprintf('REFERENCE VECTORS: [POLAR WHEEL]\n');
-                fprintf('  - Reference Radii:   [%s] deg/s\n', num2str(radii, '%.4f '));
-                fprintf('  - Number of Spokes:  %d\n', num_ref_spokes);
-            end
-            fprintf('  - Total Unique Refs: %d\n', num_refs_h);
+            fprintf('  - Offset Type:       RELATIVE (x ref speed), adaptive magnitude\n');
+            fprintf('  - Allowed Range:     %.4f to %.4f (x ref speed)\n', ...
+                this.ExperimentOptions.Quest_Min_Rel_Offset, this.ExperimentOptions.Quest_Max_Rel_Offset);
             fprintf('------------------------------------------------------------\n');
-
-            if comp_rel_bool
-                comp_type_str = 'RELATIVE (%% of ref speed)';
-            else
-                comp_type_str = 'ABSOLUTE (deg/s)';
-            end
-
-            if strcmpi(comp_mode, 'cartesian')
-                fprintf('COMPARISON VECTORS: [CARTESIAN LOCAL GRID]\n');
-                fprintf('  - Offset Type:       %s\n', comp_type_str);
-                fprintf('  - Grid Axis Steps:   [%s]\n', num2str(comp_ax_h, '%.4f '));
-                fprintf('  - Local Bounds:      %.4f to %.4f (Magnitude)\n', comp_lb_h, comp_ub_h);
-            else
-                fprintf('COMPARISON VECTORS: [POLAR LOCAL SPOKES]\n');
-                fprintf('  - Offset Type:       %s\n', comp_type_str);
-                fprintf('  - Comparison Radii:  [%s]\n', num2str(comp_radii, '%.4f '));
-                fprintf('  - Comparison Axes:   %d\n', comp_axes);
-            end
-            fprintf('  - Total Unique Comps: %d (per reference)\n', num_comps_h);
-
-            if ~isempty(target_base_trials_h) && target_base_trials_h < base_generated_h
-                fprintf('  - Culled Base Trials:  %d (randomly kept)\n', base_kept_h);
-            end
-            if num_random_trials_h > 0
-                fprintf('------------------------------------------------------------\n');
-                fprintf('  - EXTRA INJECTIONS:    %d Random Offset Trials\n', num_random_trials_h);
-                fprintf('  - Random Offset Range: %.4f to %.4f\n', rand_comp_lb_h, rand_comp_ub_h);
-            end
-
-
-            fprintf('\n============================================================\n');
-            fprintf('           STIMULUS CONFIGURATION SUMMARY (MIXED)         \n');
-            fprintf('============================================================\n');
-            fprintf('  - Standard N Trials:   %d\n', length(std_ref));
-            fprintf('  - Hard N Trials:       %d\n', length(hard_ref));
+            fprintf('QUEST PARAMETERS (intensity = log10 rel offset):\n');
+            fprintf('  - tGuess / tGuessSd: %.3f / %.3f\n', this.ExperimentOptions.Quest_tGuess, this.ExperimentOptions.Quest_tGuessSd);
+            fprintf('  - pThreshold:        %.4f\n', this.ExperimentOptions.Quest_pThreshold);
+            fprintf('  - beta/delta/gamma:  %.2f / %.3f / %.4f\n', this.ExperimentOptions.Quest_beta, ...
+                this.ExperimentOptions.Quest_delta, this.ExperimentOptions.Quest_gamma);
             fprintf('------------------------------------------------------------\n');
+            fprintf('  - N Staircases:        %d (%d refs x %d angles x %d reps)\n', num_sc, num_refs, angles_per_ref, num_reps); % QUEST
+            fprintf('  - Trials / Staircase:  %d\n', trials_per_sc);
+            fprintf('  - Rep Order:           sequential (%d phases of %d trials: all rep 1, then rep 2, ...)\n', ...
+                num_reps, total_trials / num_reps); % QUEST
+            % QUEST: Arume moves aborted trials to the end of their block, so a phase
+            % boundary must also be a block boundary or a delayed trial could cross phases.
+            if mod(total_trials / num_reps, trials_per_block) ~= 0
+                warning('A1MotionEllipsesQuest:PhaseBlocks', ...
+                    ['Each rep phase (%g trials) is not a whole number of blocks (TrialsBeforeBreak = %d). ', ...
+                     'An aborted trial near a phase boundary could be delayed into the next phase.'], ...
+                    total_trials / num_reps, trials_per_block);
+            end
             fprintf('  - Total N Trials:      %d\n', height(trialTable));
             fprintf('============================================================\n\n');
         end
-
-
-        % function trialTable = SetUpTrialTable(this)
-        %     %% 1. Parameter Extraction
-        %     lb_ref      = this.ExperimentOptions.lb_screen;
-        %     if isempty(lb_ref), lb_ref = 0; end
-        %     ub_ref      = this.ExperimentOptions.ub_screen;
-        %     num_ref_pts = this.ExperimentOptions.num_ref_gridpts;
-        %     ref_mode    = this.ExperimentOptions.ref_cart_or_polar;
-        %     ref_log_or_lin = this.ExperimentOptions.ref_log_or_lin;
-        % 
-        %     comp_lb        = this.ExperimentOptions.comp_lb;
-        %     if isempty(comp_lb), comp_lb = 0; end
-        %     comp_ub        = this.ExperimentOptions.comp_ub;
-        %     comp_intervals = this.ExperimentOptions.comp_num_intervals;
-        %     comp_axes      = this.ExperimentOptions.comp_num_axes;
-        %     comp_mode      = this.ExperimentOptions.comp_cart_or_polar;
-        %     comp_rel_bool  = this.ExperimentOptions.comp_rel_bool; 
-        % 
-        %     % --- Optional Arrays and Injectors ---
-        %     custom_comp_intervals = [];
-        %     if isprop(this.ExperimentOptions, 'comp_intervals_list') || isfield(this.ExperimentOptions, 'comp_intervals_list')
-        %         custom_comp_intervals = this.ExperimentOptions.comp_intervals_list;
-        %     end
-        % 
-        %     % --- Base Trial Target Downsampler ---
-        %     target_base_trials = [];
-        %     if isprop(this.ExperimentOptions, 'target_base_trials') || isfield(this.ExperimentOptions, 'target_base_trials')
-        %         target_base_trials = this.ExperimentOptions.target_base_trials;
-        %     end
-        % 
-        %     num_random_trials = 0;
-        %     if isprop(this.ExperimentOptions, 'num_random_trials') || isfield(this.ExperimentOptions, 'num_random_trials')
-        %         num_random_trials = this.ExperimentOptions.num_random_trials;
-        %         if isempty(num_random_trials), num_random_trials = 0; end
-        %     end
-        % 
-        %     rand_comp_lb = comp_lb;
-        %     if isprop(this.ExperimentOptions, 'rand_comp_lb') || isfield(this.ExperimentOptions, 'rand_comp_lb')
-        %         if ~isempty(this.ExperimentOptions.rand_comp_lb), rand_comp_lb = this.ExperimentOptions.rand_comp_lb; end
-        %     end
-        % 
-        %     rand_comp_ub = comp_ub; 
-        %     if isprop(this.ExperimentOptions, 'rand_comp_ub') || isfield(this.ExperimentOptions, 'rand_comp_ub')
-        %         if ~isempty(this.ExperimentOptions.rand_comp_ub), rand_comp_ub = this.ExperimentOptions.rand_comp_ub; end
-        %     end
-        % 
-        %     do_jitter   = this.ExperimentOptions.Do_Jitter;
-        %     jitter_mult = this.ExperimentOptions.Jitter_Multiplier;
-        %     num_repeats = this.ExperimentOptions.Num_Repeats_Per_Combo;
-        % 
-        %     %% 2. Seed RNG 
-        %     rng(keyHash(this.Session.subjectCode)/10^10)
-        % 
-        %     %% 3. Generate Global Reference Vectors
-        %     if strcmpi(ref_mode, 'cartesian')
-        %         ref_ax = linspace(-ub_ref, ub_ref, num_ref_pts);
-        %         [rvx, rvy] = meshgrid(ref_ax, ref_ax);
-        %         base_refs = [rvx(:), rvy(:)];
-        %         ref_vecs = base_refs;
-        %     else
-        %         num_ref_spokes = this.ExperimentOptions.num_ref_spokes;
-        %         angles = linspace(0, 2*pi, num_ref_spokes + 1);
-        %         angles(end) = []; 
-        %         if strcmpi(ref_log_or_lin, 'log')
-        %             radii = logspace(log10(lb_ref), log10(ub_ref), max(1, num_ref_pts));
-        %         else
-        %             radii = linspace(lb_ref, ub_ref, max(1, num_ref_pts));
-        %         end
-        %         [A, R] = meshgrid(angles, radii);
-        %         [vx, vy] = pol2cart(A(:), R(:));
-        %         ref_vecs = [vx, vy];
-        %     end
-        % 
-        %     if ~any(sqrt(sum(ref_vecs.^2, 2)) < 1e-10)
-        %         ref_vecs = [0, 0; ref_vecs];
-        %     end
-        %     num_refs = size(ref_vecs, 1);
-        % 
-        %     %% 4. Generate Local Comparison Offsets (dx, dy)
-        %     if strcmpi(comp_mode, 'cartesian')
-        %         if ~isempty(custom_comp_intervals)
-        %             comp_ax = custom_comp_intervals;
-        %         else
-        %             comp_ax = linspace(-comp_ub, comp_ub, comp_intervals);
-        %         end
-        %         [cvx, cvy] = meshgrid(comp_ax, comp_ax);
-        %         base_comps = [cvx(:), cvy(:)];
-        %         c_mags = sqrt(sum(base_comps.^2, 2));
-        % 
-        %         valid_idx = c_mags >= comp_lb & c_mags <= comp_ub;
-        %         comp_offsets = base_comps(valid_idx, :);
-        %         comp_offset_multipliers = c_mags(valid_idx);
-        %         [~, ~, comp_offset_radius_idx] = unique(round(c_mags(valid_idx), 4));
-        %     else
-        %         comp_angles = linspace(0, 2*pi, comp_axes + 1);
-        %         comp_angles(end) = [];
-        % 
-        %         if ~isempty(custom_comp_intervals)
-        %             comp_radii = custom_comp_intervals;
-        %             actual_intervals = length(custom_comp_intervals);
-        %         else
-        %             comp_radii = linspace(comp_lb, comp_ub, comp_intervals);
-        %             actual_intervals = comp_intervals;
-        %         end
-        % 
-        %         radius_indices = 1:actual_intervals;
-        %         [cA, cR] = meshgrid(comp_angles, comp_radii);
-        %         [~, cR_idx] = meshgrid(comp_angles, radius_indices);
-        %         [cvx, cvy] = pol2cart(cA(:), cR(:));
-        %         comp_offsets = [cvx, cvy];
-        %         comp_offset_radius_idx = cR_idx(:);
-        %         comp_offset_multipliers = cR(:);
-        %     end
-        % 
-        %     %% 5. Combine and Build the Base Trial Arrays
-        %     num_comps = size(comp_offsets, 1);
-        %     trials_per_rep = num_refs * num_comps;
-        % 
-        %     final_ref = cell(trials_per_rep, 1);
-        %     final_comp_base = cell(trials_per_rep, 1);
-        %     final_comp_offset = cell(trials_per_rep, 1); 
-        %     final_comp_offset_rel = cell(trials_per_rep, 1);
-        %     final_comp_radius = zeros(trials_per_rep, 1); 
-        %     final_comp_radius_rel = zeros(trials_per_rep, 1);
-        %     final_comp_axis   = zeros(trials_per_rep, 1);
-        %     final_comp_rad_idx = zeros(trials_per_rep, 1); 
-        %     final_comp_mult   = zeros(trials_per_rep, 1);
-        % 
-        %     counter = 1;
-        %     base_speed = 0.25;
-        %     for r = 1:num_refs
-        %         v_ref = ref_vecs(r, :);
-        %         ref_speed = norm(v_ref);
-        %         for c = 1:num_comps
-        %             final_ref{counter} = v_ref;
-        %             if comp_rel_bool
-        %                 actual_offset = comp_offsets(c, :) .* ref_speed;
-        %                 if ref_speed == 0
-        %                     actual_offset = comp_offsets(c, :) .* base_speed;
-        %                 end
-        %             else
-        %                 actual_offset = comp_offsets(c, :);
-        %             end
-        %             final_comp_base{counter} = v_ref + actual_offset;
-        % 
-        %             final_comp_offset{counter} = actual_offset;
-        %             final_comp_offset_rel{counter} = comp_offsets(c, :);
-        %             final_comp_radius(counter) = norm(actual_offset);
-        %             final_comp_radius_rel(counter) = norm(comp_offsets(c, :));
-        %             final_comp_axis(counter)   = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
-        %             final_comp_rad_idx(counter) = comp_offset_radius_idx(c);
-        %             final_comp_mult(counter) = comp_offset_multipliers(c);
-        %             counter = counter + 1;
-        %         end
-        %     end
-        % 
-        %     %% 5.1 Repeat and Downsample arrays manually
-        %     % Duplicate variables to account for num_repeats directly
-        %     final_ref = repmat(final_ref, num_repeats, 1);
-        %     final_comp_base = repmat(final_comp_base, num_repeats, 1);
-        %     final_comp_offset = repmat(final_comp_offset, num_repeats, 1);
-        %     final_comp_offset_rel = repmat(final_comp_offset_rel, num_repeats, 1);
-        %     final_comp_radius = repmat(final_comp_radius, num_repeats, 1);
-        %     final_comp_radius_rel = repmat(final_comp_radius_rel, num_repeats, 1);
-        %     final_comp_axis = repmat(final_comp_axis, num_repeats, 1);
-        %     final_comp_rad_idx = repmat(final_comp_rad_idx, num_repeats, 1);
-        %     final_comp_mult = repmat(final_comp_mult, num_repeats, 1);
-        % 
-        %     base_generated = length(final_ref);
-        % 
-        %     % Randomly cull base variables if target exists
-        %     if ~isempty(target_base_trials) && target_base_trials < base_generated
-        %         keep_idx = randperm(base_generated, target_base_trials);
-        % 
-        %         final_ref = final_ref(keep_idx);
-        %         final_comp_base = final_comp_base(keep_idx);
-        %         final_comp_offset = final_comp_offset(keep_idx);
-        %         final_comp_offset_rel = final_comp_offset_rel(keep_idx);
-        %         final_comp_radius = final_comp_radius(keep_idx);
-        %         final_comp_radius_rel = final_comp_radius_rel(keep_idx);
-        %         final_comp_axis = final_comp_axis(keep_idx);
-        %         final_comp_rad_idx = final_comp_rad_idx(keep_idx);
-        %         final_comp_mult = final_comp_mult(keep_idx);
-        % 
-        %         base_kept = target_base_trials;
-        %     else
-        %         base_kept = base_generated;
-        %     end
-        % 
-        %     %% 5.2 Inject Random Trial Arrays
-        %     if num_random_trials > 0
-        %         rand_ref_idx = randi([1, num_refs], num_random_trials, 1);
-        %         m_ref_rand = ref_vecs(rand_ref_idx, :);
-        % 
-        %         rand_r = rand_comp_lb + (rand_comp_ub - rand_comp_lb) * rand(num_random_trials, 1);
-        %         rand_theta = 2 * pi * rand(num_random_trials, 1);
-        %         [dx, dy] = pol2cart(rand_theta, rand_r);
-        %         actual_rand_offsets = [dx, dy];
-        % 
-        %         if comp_rel_bool
-        %             ref_speeds_rand = sqrt(sum(m_ref_rand.^2, 2));
-        %             ref_speeds_rand(ref_speeds_rand == 0) = base_speed;
-        %             actual_rand_offsets_scaled = actual_rand_offsets .* ref_speeds_rand;
-        %         else
-        %             actual_rand_offsets_scaled = actual_rand_offsets;
-        %         end
-        %         m_comp_rand = m_ref_rand + actual_rand_offsets_scaled;
-        % 
-        %         % Convert to matching cell arrays and vectors
-        %         rand_ref_cell = mat2cell(m_ref_rand, ones(num_random_trials,1), 2);
-        %         rand_comp_base_cell = mat2cell(m_comp_rand, ones(num_random_trials,1), 2);
-        %         rand_comp_offset_cell = mat2cell(actual_rand_offsets_scaled, ones(num_random_trials,1), 2);
-        %         rand_comp_offset_rel_cell = mat2cell(actual_rand_offsets, ones(num_random_trials,1), 2);
-        % 
-        %         rand_comp_radius = sqrt(sum(actual_rand_offsets_scaled.^2, 2));
-        %         rand_comp_radius_rel = rand_r;
-        %         rand_comp_axis = wrapTo360(rad2deg(atan2(actual_rand_offsets_scaled(:,2), actual_rand_offsets_scaled(:,1))));
-        %         rand_comp_rad_idx = zeros(num_random_trials, 1); 
-        %         rand_comp_mult = rand_r;
-        % 
-        %         % Vertically concatenate directly to the downsampled base arrays
-        %         final_ref = [final_ref; rand_ref_cell];
-        %         final_comp_base = [final_comp_base; rand_comp_base_cell];
-        %         final_comp_offset = [final_comp_offset; rand_comp_offset_cell];
-        %         final_comp_offset_rel = [final_comp_offset_rel; rand_comp_offset_rel_cell];
-        %         final_comp_radius = [final_comp_radius; rand_comp_radius];
-        %         final_comp_radius_rel = [final_comp_radius_rel; rand_comp_radius_rel];
-        %         final_comp_axis = [final_comp_axis; rand_comp_axis];
-        %         final_comp_rad_idx = [final_comp_rad_idx; rand_comp_rad_idx];
-        %         final_comp_mult = [final_comp_mult; rand_comp_mult];
-        %     end
-        % 
-        %     %% 5.3 Generate Arume Table ONCE
-        %     total_trials = length(final_ref);
-        % 
-        %     t = ArumeCore.TrialTableBuilder();
-        %     t.AddConditionVariable('RefCompPair', (1:total_trials));
-        % 
-        %     % Because we handled num_repeats manually, tell Arume to do exactly 1 sequence
-        %     trialTable = t.GenerateTrialTable('Random', 'Sequential', 1, 'Delay');
-        % 
-        %     trialTable.OddballWindow = randi([1, 3], total_trials, 1);
-        % 
-        %     % The variable idx is a shuffled index of (1 to total_trials)
-        %     idx = trialTable.RefCompPair;
-        % 
-        %     trialTable.ReferenceVelocity = final_ref(idx);
-        %     trialTable.ComparisonVelocity = final_comp_base(idx);
-        %     trialTable.CompOffsetVector = final_comp_offset(idx);
-        %     trialTable.CompOffsetVectorRel = final_comp_offset_rel(idx);
-        %     trialTable.CompOffsetRadius = final_comp_radius(idx);
-        %     trialTable.CompOffsetRadiusRel = final_comp_radius_rel(idx);
-        %     trialTable.CompOffsetAxis   = final_comp_axis(idx);
-        %     trialTable.CompOffsetRadiusIndex = final_comp_rad_idx(idx);
-        %     trialTable.CompOffsetMultiplier = final_comp_mult(idx);
-        % 
-        %     %% 6. Apply Pseudo-Random Jitter
-        %     comp_vels = trialTable.ComparisonVelocity;
-        %     if do_jitter
-        %         for i = 1:height(trialTable)
-        %             v_base = comp_vels{i};
-        %             speed = norm(v_base);
-        %             if speed == 0, speed = 0.1; end
-        % 
-        %             jx = (2*rand() - 1) * jitter_mult * speed;
-        %             jy = (2*rand() - 1) * jitter_mult * speed;
-        %             comp_vels{i} = v_base + [jx, jy];
-        %         end
-        %     end
-        %     trialTable.ComparisonVelocity = comp_vels; 
-        % 
-        %     %% 7. Final Window Assignment
-        %     trialTable.Window1_Velocity = trialTable.ReferenceVelocity;
-        %     trialTable.Window2_Velocity = trialTable.ReferenceVelocity;
-        %     trialTable.Window3_Velocity = trialTable.ReferenceVelocity;
-        % 
-        %     trialTable.Window1_Velocity(trialTable.OddballWindow == 1) = comp_vels(trialTable.OddballWindow == 1);
-        %     trialTable.Window2_Velocity(trialTable.OddballWindow == 2) = comp_vels(trialTable.OddballWindow == 2);
-        %     trialTable.Window3_Velocity(trialTable.OddballWindow == 3) = comp_vels(trialTable.OddballWindow == 3);
-        % 
-        %     %% 8. Set the physical positions of the three apertures
-        %     trials_per_block = this.ExperimentOptions.TrialsBeforeBreak;
-        %     num_blocks = floor(total_trials / trials_per_block) + 1;
-        % 
-        %     angle_set = 125 + linspace(0, 110, num_blocks);
-        %     angle_set = angle_set(randperm(num_blocks));
-        % 
-        %     block_idx = floor((0:(total_trials-1)) / trials_per_block) + 1;
-        %     trialTable.BlockNumber = block_idx';
-        %     trialTable.BlockSequenceNumber = block_idx';
-        % 
-        %     trialTable.Window1_Angle = angle_set(block_idx)';
-        %     trialTable.Window2_Angle = wrapTo360(trialTable.Window1_Angle - 120);
-        %     trialTable.Window3_Angle = wrapTo360(trialTable.Window1_Angle - 240);
-        % 
-        % 
-        %     %% --- Print Experiment Summary ---
-        %     fprintf('\n============================================================\n');
-        %     fprintf('           STIMULUS CONFIGURATION SUMMARY                 \n');
-        %     fprintf('============================================================\n');
-        %     if strcmpi(ref_mode, 'cartesian')
-        %         fprintf('REFERENCE VECTORS: [CARTESIAN GRID]\n');
-        %         fprintf('  - Grid Axis Steps:   [%s] deg/s\n', num2str(ref_ax, '%.4f '));
-        %         fprintf('  - Frame Bounds:      %.4f to %.4f deg/s (Magnitude)\n', lb_ref, ub_ref);
-        %     else
-        %         fprintf('REFERENCE VECTORS: [POLAR WHEEL]\n');
-        %         fprintf('  - Reference Radii:   [%s] deg/s\n', num2str(radii, '%.4f '));
-        %         fprintf('  - Number of Spokes:  %d\n', num_ref_spokes);
-        %     end
-        %     fprintf('  - Total Unique Refs: %d\n', num_refs);
-        %     fprintf('------------------------------------------------------------\n');
-        % 
-        %     if comp_rel_bool
-        %         comp_type_str = 'RELATIVE (%% of ref speed)';
-        %     else
-        %         comp_type_str = 'ABSOLUTE (deg/s)';
-        %     end
-        % 
-        %     if strcmpi(comp_mode, 'cartesian')
-        %         fprintf('COMPARISON VECTORS: [CARTESIAN LOCAL GRID]\n');
-        %         fprintf('  - Offset Type:       %s\n', comp_type_str);
-        %         fprintf('  - Grid Axis Steps:   [%s]\n', num2str(comp_ax, '%.4f '));
-        %         fprintf('  - Local Bounds:      %.4f to %.4f (Magnitude)\n', comp_lb, comp_ub);
-        %     else
-        %         fprintf('COMPARISON VECTORS: [POLAR LOCAL SPOKES]\n');
-        %         fprintf('  - Offset Type:       %s\n', comp_type_str);
-        %         fprintf('  - Comparison Radii:  [%s]\n', num2str(comp_radii, '%.4f '));
-        %         fprintf('  - Comparison Axes:   %d\n', comp_axes);
-        %     end
-        %     fprintf('  - Total Unique Comps: %d (per reference)\n', num_comps);
-        % 
-        %     if ~isempty(target_base_trials) && target_base_trials < base_generated
-        %         fprintf('  - Culled Base Trials:  %d (randomly kept)\n', base_kept);
-        %     end
-        %     if num_random_trials > 0
-        %         fprintf('------------------------------------------------------------\n');
-        %         fprintf('  - EXTRA INJECTIONS:    %d Random Offset Trials\n', num_random_trials);
-        %         fprintf('  - Random Offset Range: %.4f to %.4f\n', rand_comp_lb, rand_comp_ub);
-        %     end
-        % 
-        % 
-        %     fprintf('------------------------------------------------------------\n');
-        %     fprintf('  - Repetitions / Combo: %d\n', num_repeats);
-        %     fprintf('  - Total N Trials:      %d\n', height(trialTable));
-        %     fprintf('============================================================\n\n');
-        % end
-
-        % 
-        % function trialTable = SetUpTrialTable(this)
-        % 
-        %     %% 1. Parameter Extraction
-        %     % These variables define the "Global" space where our reference stimuli live.
-        %     lb_ref      = this.ExperimentOptions.lb_screen;
-        %     if isempty(lb_ref)
-        %         lb_ref = 0;
-        %     end
-        %     ub_ref      = this.ExperimentOptions.ub_screen;
-        %     num_ref_pts = this.ExperimentOptions.num_ref_gridpts;
-        %     ref_mode    = this.ExperimentOptions.ref_cart_or_polar;
-        %     ref_log_or_lin = this.ExperimentOptions.ref_log_or_lin;
-        %     % These define the "Local" difference between the reference and the comparison.
-        %     comp_lb        = this.ExperimentOptions.comp_lb;
-        %     if isempty(comp_lb)
-        %         comp_lb = 0;
-        %     end
-        %     comp_ub        = this.ExperimentOptions.comp_ub;
-        %     comp_intervals = this.ExperimentOptions.comp_num_intervals;
-        %     comp_axes      = this.ExperimentOptions.comp_num_axes;
-        %     comp_mode      = this.ExperimentOptions.comp_cart_or_polar;
-        %     comp_rel_bool  = this.ExperimentOptions.comp_rel_bool; % Toggle for relative vs absolute
-        %     % Jitter adds small noise to the comparison to prevent grid-learning.
-        %     do_jitter   = this.ExperimentOptions.Do_Jitter;
-        %     jitter_mult = this.ExperimentOptions.Jitter_Multiplier;
-        %     num_repeats = this.ExperimentOptions.Num_Repeats_Per_Combo;
-        % 
-        %     %% 2. Seed RNG for Pseudo-Randomization
-        %     % Seeding with the subject code ensures that the trial table is unique to the
-        %     % participant but reproducible if the same session is re-generated.
-        %     rng(keyHash(this.Session.subjectCode)/10^10)
-        % 
-        %     %% 3. Generate Global Reference Vectors
-        %     % This step creates the set of baseline motion vectors (x_ref).
-        %     if strcmpi(ref_mode, 'cartesian')
-        %         % Create a square grid and mask it to form a circular frame/ring.
-        %         ref_ax = linspace(-ub_ref, ub_ref, num_ref_pts);
-        %         [rvx, rvy] = meshgrid(ref_ax, ref_ax);
-        %         base_refs = [rvx(:), rvy(:)];
-        % 
-        %         % MODIFIED TO MATCH PYTHON: use full grid instead of masking by magnitude
-        %         % mags = sqrt(sum(base_refs.^2, 2));
-        %         % ref_vecs = base_refs(mags >= lb_ref & mags <= ub_ref, :);
-        %         ref_vecs = base_refs;
-        %     else
-        %         num_ref_spokes = this.ExperimentOptions.num_ref_spokes;
-        %         % Create spokes of a wheel (Polar).
-        %         angles = linspace(0, 2*pi, num_ref_spokes + 1);
-        %         angles(end) = []; % Remove overlap
-        %         if strcmpi(ref_log_or_lin, 'log')
-        %             radii = logspace(log10(lb_ref), log10(ub_ref), max(1, num_ref_pts));
-        %         else
-        %             radii = linspace(lb_ref, ub_ref, max(1, num_ref_pts));
-        %         end
-        %         [A, R] = meshgrid(angles, radii);
-        %         [vx, vy] = pol2cart(A(:), R(:));
-        %         ref_vecs = [vx, vy];
-        %     end
-        % 
-        %     %% 3.1 Force inclusion of [0,0] Reference
-        %     % Check if a zero-velocity vector already exists (using a small epsilon)
-        %     if ~any(sqrt(sum(ref_vecs.^2, 2)) < 1e-10)
-        %         ref_vecs = [0, 0; ref_vecs];
-        %         num_refs = size(ref_vecs, 1); % Update the count for later steps
-        %     end
-        % 
-        %     %% 4. Generate Local Comparison Offsets (dx, dy)
-        %     % Here we define the "delta" or the shape of the MOCS-like intervals.
-        %     % If comp_rel_bool is true, these are treated as unit-less scaling factors.
-        %     if strcmpi(comp_mode, 'cartesian')
-        %         comp_ax = linspace(-comp_ub, comp_ub, comp_intervals);
-        %         [cvx, cvy] = meshgrid(comp_ax, comp_ax);
-        %         base_comps = [cvx(:), cvy(:)];
-        %         c_mags = sqrt(sum(base_comps.^2, 2));
-        %         % Filter offsets to stay within the local bounds
-        %         valid_idx = c_mags >= comp_lb & c_mags <= comp_ub;
-        %         comp_offsets = base_comps(valid_idx, :);
-        %         comp_offset_multipliers = c_mags(valid_idx);
-        %         % Map Cartesian magnitudes to an index (1 = smallest, N = largest)
-        %         [~, ~, comp_offset_radius_idx] = unique(round(c_mags(valid_idx), 4));
-        %     else
-        %         % Circular spokes centered on the reference point
-        %         comp_angles = linspace(0, 2*pi, comp_axes + 1);
-        %         comp_angles(end) = [];
-        %         comp_radii = linspace(comp_lb, comp_ub, comp_intervals);
-        %         % Create a matching grid of indices (1 to comp_intervals)
-        %         radius_indices = 1:comp_intervals;
-        %         [cA, cR] = meshgrid(comp_angles, comp_radii);
-        %         [~, cR_idx] = meshgrid(comp_angles, radius_indices);
-        %         [cvx, cvy] = pol2cart(cA(:), cR(:));
-        %         comp_offsets = [cvx, cvy];
-        %         comp_offset_radius_idx = cR_idx(:); % Flattened index array
-        %         comp_offset_multipliers = cR(:); % Flattened array
-        %     end
-        % 
-        %     %% 5. Combine and Build the Trial Table
-        %     % This is the cross-product of all references and all local offsets.
-        %     num_refs = size(ref_vecs, 1);
-        %     num_comps = size(comp_offsets, 1);
-        %     trials_per_rep = num_refs * num_comps;
-        %     final_ref = cell(trials_per_rep, 1);
-        %     final_comp_base = cell(trials_per_rep, 1);
-        % 
-        %     % Pre-allocate metric tracking arrays
-        %     final_comp_offset = cell(trials_per_rep, 1); % 1x2 vectors need cell arrays
-        %     final_comp_offset_rel = cell(trials_per_rep, 1);
-        %     final_comp_radius = zeros(trials_per_rep, 1); % Scalars can be standard numeric arrays
-        %     final_comp_radius_rel = zeros(trials_per_rep, 1);
-        %     final_comp_axis   = zeros(trials_per_rep, 1);
-        %     final_comp_rad_idx = zeros(trials_per_rep, 1); % Index array for different levels
-        %     final_comp_mult   = zeros(trials_per_rep, 1);
-        % 
-        %     counter = 1;
-        %     % if 0,0
-        %     base_speed = 0.25;
-        %     for r = 1:num_refs
-        %         v_ref = ref_vecs(r, :);
-        %         ref_speed = norm(v_ref);
-        %         for c = 1:num_comps
-        %             final_ref{counter} = v_ref;
-        %             % Determine the actual offset being added
-        %             if comp_rel_bool
-        %                 % offset_percentage * speed_ref
-        %                 actual_offset = comp_offsets(c, :) .* ref_speed;
-        %                 if ref_speed == 0
-        %                     actual_offset = comp_offsets(c, :) .* base_speed;
-        %                     % MODIFIED TO MATCH PYTHON: removed stray 2;
-        %                 end
-        %             else
-        %                 % offset_absolute
-        %                 actual_offset = comp_offsets(c, :);
-        %             end
-        %             final_comp_base{counter} = v_ref + actual_offset;
-        % 
-        %             % Record the metrics
-        %             final_comp_offset{counter} = actual_offset;
-        %             final_comp_offset_rel{counter} = comp_offsets(c, :);
-        %             final_comp_radius(counter) = norm(actual_offset);
-        %             final_comp_radius_rel(counter) = norm(comp_offsets(c, :));
-        % 
-        %             % Calculate angle using atan2, convert to degrees, and wrap 0-360
-        %             final_comp_axis(counter)   = wrapTo360(rad2deg(atan2(actual_offset(2), actual_offset(1))));
-        % 
-        %             % Record the discrete MOCS radius index
-        %             final_comp_rad_idx(counter) = comp_offset_radius_idx(c);
-        %             final_comp_mult(counter) = comp_offset_multipliers(c);
-        %             counter = counter + 1;
-        %         end
-        %     end
-        % 
-        %     % Use Arume's TrialTableBuilder to handle shuffling and repeats.
-        %     t = ArumeCore.TrialTableBuilder();
-        %     t.AddConditionVariable('RefCompPair', (1:trials_per_rep));
-        %     trialTable = t.GenerateTrialTable('Random', 'Sequential', num_repeats, 'Delay');
-        % 
-        %     % Randomly assign 1, 2, or 3 to each trial
-        %     trialTable.OddballWindow = randi([1, 3], height(trialTable), 1);
-        % 
-        %     % Map the generated IDs back to the actual velocity pairs.
-        %     idx = trialTable.RefCompPair;
-        %     trialTable.ReferenceVelocity = final_ref(idx);
-        %     comp_vels = final_comp_base(idx);
-        % 
-        %     % Map the offset metrics to the trial table
-        %     trialTable.CompOffsetVector = final_comp_offset(idx);
-        %     trialTable.CompOffsetVectorRel = final_comp_offset_rel(idx);
-        %     trialTable.CompOffsetRadius = final_comp_radius(idx);
-        %     trialTable.CompOffsetRadiusRel = final_comp_radius_rel(idx);
-        %     trialTable.CompOffsetAxis   = final_comp_axis(idx);
-        %     trialTable.CompOffsetRadiusIndex = final_comp_rad_idx(idx);
-        %     trialTable.CompOffsetMultiplier = final_comp_mult(idx);
-        % 
-        %     %% 6. Apply Pseudo-Random Jitter
-        %     % We apply jitter after expanding the table so every repeat is slightly unique.
-        %     if do_jitter
-        %         for i = 1:height(trialTable)
-        %             v_base = comp_vels{i};
-        %             speed = norm(v_base);
-        %             % Small floor for speed to ensure 0-velocity points can still jitter.
-        %             if speed == 0, speed = 0.1; end
-        %             % The jitter is a random (x,y) shift proportional to the vector's speed.
-        %             jx = (2*rand() - 1) * jitter_mult * speed;
-        %             jy = (2*rand() - 1) * jitter_mult * speed;
-        %             comp_vels{i} = v_base + [jx, jy];
-        %         end
-        %     end
-        % 
-        %     % MODIFIED TO MATCH PYTHON: removed the "(idx)" at the end.
-        %     % comp_vels was already indexed at line 147, indexing it again shuffles it wrongly.
-        %     trialTable.ComparisonVelocity = comp_vels;
-        % 
-        %     %% 7. Final Window Assignment
-        %     % Initialize all apertures with the reference velocity.
-        %     trialTable.Window1_Velocity = trialTable.ReferenceVelocity;
-        %     trialTable.Window2_Velocity = trialTable.ReferenceVelocity;
-        %     trialTable.Window3_Velocity = trialTable.ReferenceVelocity;
-        % 
-        %     % The 'Oddball' window is the only one that gets the comparison velocity.
-        %     trialTable.Window1_Velocity(trialTable.OddballWindow == 1) = comp_vels(trialTable.OddballWindow == 1);
-        %     trialTable.Window2_Velocity(trialTable.OddballWindow == 2) = comp_vels(trialTable.OddballWindow == 2);
-        %     trialTable.Window3_Velocity(trialTable.OddballWindow == 3) = comp_vels(trialTable.OddballWindow == 3);
-        % 
-        %     %% 8.
-        %     %  Set the physical positions of the three apertures on the display.
-        %     % trialTable.Window1_Angle = 125 + 110 * rand(height(trialTable), 1);
-        %     % trialTable.Window2_Angle = wrapTo360(trialTable.Window1_Angle - 120);
-        %     % trialTable.Window3_Angle = wrapTo360(trialTable.Window1_Angle - 240);
-        % 
-        %     % Determine the number of unique rotation blocks
-        %     total_trials = height(trialTable);
-        %     trials_per_block = this.ExperimentOptions.TrialsBeforeBreak;
-        %     num_blocks = floor(total_trials / trials_per_block) + 1;
-        % 
-        %     % Generate evenly spaced offsets across 0 to 110, add the 125 base, and shuffle
-        %     angle_set = 125 + linspace(0, 110, num_blocks);
-        %     angle_set = angle_set(randperm(num_blocks));
-        % 
-        %     % Map each trial sequentially to its corresponding block index
-        %     block_idx = floor((0:(total_trials-1)) / trials_per_block) + 1;
-        % 
-        %     % Change the blocknumber and session columns manually to match
-        %     trialTable.BlockNumber = block_idx';
-        %     trialTable.BlockSequenceNumber = block_idx';
-        % 
-        % 
-        %     % Assign the angles
-        %     trialTable.Window1_Angle = angle_set(block_idx)';
-        %     trialTable.Window2_Angle = wrapTo360(trialTable.Window1_Angle - 120);
-        %     trialTable.Window3_Angle = wrapTo360(trialTable.Window1_Angle - 240);
-        % 
-        % 
-        %     %% --- Print Experiment Summary ---
-        %     % MODIFIED TO MATCH PYTHON: Formatted exactly like the python version
-        %     fprintf('\n============================================================\n');
-        %     fprintf('           STIMULUS CONFIGURATION SUMMARY                 \n');
-        %     fprintf('============================================================\n');
-        % 
-        %     if strcmpi(ref_mode, 'cartesian')
-        %         fprintf('REFERENCE VECTORS: [CARTESIAN GRID]\n');
-        %         fprintf('  - Grid Axis Steps:   [%s] deg/s\n', num2str(ref_ax, '%.2f '));
-        %         fprintf('  - Frame Bounds:      %.2f to %.2f deg/s (Magnitude)\n', lb_ref, ub_ref);
-        %     else
-        %         fprintf('REFERENCE VECTORS: [POLAR WHEEL]\n');
-        %         fprintf('  - Reference Radii:   [%s] deg/s\n', num2str(radii, '%.2f '));
-        %         fprintf('  - Number of Spokes:  %d\n', num_ref_spokes);
-        %     end
-        % 
-        %     fprintf('  - Total Unique Refs: %d\n', num_refs);
-        %     fprintf('------------------------------------------------------------\n');
-        % 
-        %     if comp_rel_bool
-        %         comp_type_str = 'RELATIVE (%% of ref speed)';
-        %     else
-        %         comp_type_str = 'ABSOLUTE (deg/s)';
-        %     end
-        % 
-        %     if strcmpi(comp_mode, 'cartesian')
-        %         fprintf('COMPARISON VECTORS: [CARTESIAN LOCAL GRID]\n');
-        %         fprintf('  - Offset Type:       %s\n', comp_type_str);
-        %         fprintf('  - Grid Axis Steps:   [%s]\n', num2str(comp_ax, '%.2f '));
-        %         fprintf('  - Local Bounds:      %.2f to %.2f (Magnitude)\n', comp_lb, comp_ub);
-        %     else
-        %         fprintf('COMPARISON VECTORS: [POLAR LOCAL SPOKES]\n');
-        %         fprintf('  - Offset Type:       %s\n', comp_type_str);
-        %         fprintf('  - Comparison Radii:  [%s]\n', num2str(comp_radii, '%.2f '));
-        %         fprintf('  - Comparison Axes:   %d\n', comp_axes);
-        %     end
-        % 
-        %     fprintf('  - Total Unique Comps: %d (per reference)\n', num_comps);
-        %     fprintf('------------------------------------------------------------\n');
-        %     fprintf('  - Repetitions / Combo: %d\n', num_repeats);
-        %     fprintf('  - Total N Trials:      %d\n', height(trialTable));
-        %     fprintf('============================================================\n\n');
-        % 
-        % end
+        % QUEST: ORIGINAL SetUpTrialTable (MOCS standard + hard sets), commented out, unchanged.
 
        
         % run initialization before the first trial is run
@@ -1838,6 +827,60 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             this.lots_dots2 = lots_dots2;
             this.lots_dots3 = lots_dots3;
 
+            % =================================================================
+            % QUEST: create one QUEST staircase per (reference x axis), all with
+            % the same prior. If this run is being resumed, replay the responses
+            % already collected so every staircase picks up where it left off.
+            % =================================================================
+            opts = this.ExperimentOptions;
+            q0 = QuestCreate(opts.Quest_tGuess, opts.Quest_tGuessSd, opts.Quest_pThreshold, ...
+                opts.Quest_beta, opts.Quest_delta, opts.Quest_gamma, opts.Quest_grain, opts.Quest_range);
+            q0.normalizePdf = 1; % avoids underflow over many trials (recommended in QuestCreate help)
+            num_sc = max(this.TrialTable.QuestStaircaseID);
+            this.questStates = repmat(q0, num_sc, 1);
+
+            try
+                past = this.Session.currentRun.pastTrialTable;
+                if ~isempty(past) && all(ismember({'QuestStaircaseID', 'QuestIntensity', 'IsCorrect'}, past.Properties.VariableNames))
+                    for i = 1:height(past)
+                        if ~isnan(past.QuestIntensity(i)) && ~isnan(past.IsCorrect(i))
+                            sc = past.QuestStaircaseID(i);
+                            this.questStates(sc) = QuestUpdate(this.questStates(sc), past.QuestIntensity(i), past.IsCorrect(i));
+                        end
+                    end
+                end
+            catch ex
+                warning('A1MotionEllipsesQuest:QuestReplay', ...
+                    'Could not replay past trials into QUEST (%s). Staircases start from the prior.', ex.message);
+            end
+
+            % =================================================================
+            % QUEST SAVE: condition info for each staircase (read from the trial
+            % table), saved alongside the QUEST structs by saveQuestStaircases.
+            % =================================================================
+            tt = this.TrialTable;
+            info = struct('StaircaseID', num2cell((1:num_sc)'));
+            for k = 1:num_sc
+                info(k).NumTrialsPlanned = opts.Quest_Trials_Per_Staircase;
+                r = find(tt.QuestStaircaseID == k, 1);
+                if isempty(r), continue; end
+                v_ref = tt.QuestNominalRefVelocity{r};
+                info(k).RefIndex          = tt.QuestRefIndex(r);
+                info(k).RefVelocity       = v_ref;                      % nominal ref [vx vy] (deg/s)
+                info(k).RefSpeed          = norm(v_ref);
+                info(k).RefDirectionDeg   = wrapTo360(atan2d(v_ref(2), v_ref(1)));
+                info(k).ZeroRefRandomized = norm(v_ref) < 1e-10;        % [0 0] refs are randomized per trial (nonzero_rand)
+                info(k).AxisIndex         = tt.QuestAxisIndex(r);         % index into the angle pool
+                info(k).RepIndex          = tt.QuestRepIndex(r);          % QUEST: repetition of this ref/angle combo
+                info(k).CompAngleDeg      = tt.CompOffsetAxis(r);       % absolute screen angle of the offset
+                info(k).CompDirection     = tt.CompOffsetDirection{r};  % unit vector of the offset
+            end
+            this.questInfo = info;
+
+            % QUEST SAVE: write the file once now, so it exists (with the replayed
+            % state if this is a resumed session) before the first response
+            this.saveQuestStaircases(NaN);
+
 
             % show cursor if ClaraDebug
             if this.ExperimentOptions.ClaraDebug
@@ -1894,6 +937,45 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
 
 
 
+            % =================================================================
+            % QUEST: choose this trial's comparison from its staircase.
+            % Intensity = log10(relative offset magnitude), applied along this
+            % staircase's fixed axis and scaled by the reference speed
+            % (same relative-offset convention as the original comp_rel_bool = 1).
+            % =================================================================
+            opts = this.ExperimentOptions;
+            sc = thisTrialData.QuestStaircaseID;
+            q_int = QuestQuantile(this.questStates(sc));
+            q_int = min(max(q_int, log10(opts.Quest_Min_Rel_Offset)), log10(opts.Quest_Max_Rel_Offset)); % clamp to allowed range
+            rel_mag = 10^q_int;
+
+            v_ref = thisTrialData.ReferenceVelocity{1};
+            ref_speed = norm(v_ref);
+            if ref_speed < 1e-10, ref_speed = 0.25; end % original base_speed fallback (zero refs are normally already randomized)
+
+            rel_offset    = rel_mag * thisTrialData.CompOffsetDirection{1};
+            actual_offset = rel_offset .* ref_speed;
+            v_comp        = v_ref + actual_offset;
+
+            % QUEST: jitter moved here from SetUpTrialTable (same formula as the original)
+            if opts.Do_Jitter
+                speed = norm(v_comp);
+                if speed == 0, speed = 0.1; end
+                jx = (2*rand() - 1) * opts.Jitter_Multiplier * speed;
+                jy = (2*rand() - 1) * opts.Jitter_Multiplier * speed;
+                v_comp = v_comp + [jx, jy];
+            end
+
+            % QUEST: record what was shown, and put the comparison in the oddball window
+            thisTrialData.QuestIntensity       = q_int;
+            thisTrialData.CompOffsetVector     = {actual_offset};
+            thisTrialData.CompOffsetVectorRel  = {rel_offset};
+            thisTrialData.CompOffsetRadius     = norm(actual_offset);
+            thisTrialData.CompOffsetRadiusRel  = rel_mag;
+            thisTrialData.CompOffsetMultiplier = rel_mag;
+            thisTrialData.ComparisonVelocity   = {v_comp};
+            thisTrialData.(sprintf('Window%d_Velocity', thisTrialData.OddballWindow)) = {v_comp};
+            % ===================== END QUEST =================================
             %% Assign the parameters to the different windows
             all_dots_colour = this.ExperimentOptions.DisplayOptions.grey_col;
 
@@ -2128,6 +1210,8 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                         this.lots_dots2.move();
                         this.lots_dots3.move();
 
+
+
                         %fprintf('\n[0.2%f]', secondsElapsed);
 
                         % Stimulus Presentation Period:
@@ -2272,6 +1356,13 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
                             if ( ~isempty( response) )
                                 thisTrialData.Response = response;
                                 thisTrialData.ResponseTime = GetSecs;
+
+                                % QUEST: score this response and update this trial's staircase
+                                thisTrialData.IsCorrect = double(response == thisTrialData.OddballWindow);
+                                sc = thisTrialData.QuestStaircaseID;
+                                this.questStates(sc) = QuestUpdate(this.questStates(sc), ...
+                                    thisTrialData.QuestIntensity, thisTrialData.IsCorrect);
+                                this.saveQuestStaircases(thisTrialData.TrialNumber); % QUEST SAVE: keep the staircase file current
 
                                 fprintf(['\n\nTrial: %0.0f | %s | W_Vec1: [%0.1f, %0.1f]| W_Vec2: [%0.1f, %0.1f]| W_Vec3: [%0.' ...
                                     '1f, %0.1f] | Oddball: %0.0f | Reponse: %0.0f \n'], ...
@@ -2470,7 +1561,81 @@ classdef A1MotionEllipses < ArumeExperimentDesigns.EyeTracking
             end
 
         end
+
+        % =====================================================================
+        % QUEST SAVE: write every QUEST staircase, with its condition info, to a
+        % separate .mat file next to the session data (overwritten each time).
+        % Called once in initBeforeRunning and after every QUEST update in runTrial,
+        % so the file is always current even if the session is aborted.
+        %
+        % File contents:
+        %   QuestStaircases  struct array, one element per staircase:
+        %       StaircaseID, NumTrialsPlanned, RefIndex, RefVelocity, RefSpeed,
+        %       RefDirectionDeg, ZeroRefRandomized, AxisIndex, RepIndex, CompAngleDeg,
+        %       CompDirection, NumTrialsDone, Intensities, Responses,
+        %       ThresholdLog10 (QuestMean), ThresholdSdLog10 (QuestSd),
+        %       ThresholdRel, ThresholdOffsetSpeed, ThresholdOffsetVector,
+        %       Quest (the full Psychtoolbox QUEST struct)
+        %   QuestInfo        subject, last trial number, save time, intensity
+        %                    definition, and all Quest_* / jitter / nonzero_rand options
+        % =====================================================================
+        function saveQuestStaircases(this, lastTrialNumber)
+            try
+                QuestStaircases = this.questInfo;
+                for k = 1:numel(this.questStates)
+                    q = this.questStates(k);
+                    n = q.trialCount;
+                    q.intensity = q.intensity(1:n); % drop QUEST's unused preallocated entries
+                    q.response  = q.response(1:n);
+
+                    QuestStaircases(k).NumTrialsDone    = n;
+                    QuestStaircases(k).Intensities      = q.intensity;  % log10 rel offset shown on each trial
+                    QuestStaircases(k).Responses        = q.response;   % 1 = correct, 0 = incorrect
+                    QuestStaircases(k).ThresholdLog10   = QuestMean(q);
+                    QuestStaircases(k).ThresholdSdLog10 = QuestSd(q);
+                    QuestStaircases(k).ThresholdRel     = 10^QuestStaircases(k).ThresholdLog10; % x ref speed
+                    if QuestStaircases(k).ZeroRefRandomized
+                        % ref speed changes trial to trial, so no single deg/s threshold
+                        QuestStaircases(k).ThresholdOffsetSpeed  = NaN;
+                        QuestStaircases(k).ThresholdOffsetVector = [NaN NaN];
+                    else
+                        QuestStaircases(k).ThresholdOffsetSpeed  = QuestStaircases(k).ThresholdRel * QuestStaircases(k).RefSpeed; % deg/s
+                        QuestStaircases(k).ThresholdOffsetVector = QuestStaircases(k).ThresholdOffsetSpeed * QuestStaircases(k).CompDirection;
+                    end
+                    QuestStaircases(k).Quest = q;
+                end
+
+                QuestInfo = struct();
+                QuestInfo.SubjectCode         = this.Session.subjectCode;
+                QuestInfo.LastTrialNumber     = lastTrialNumber; % NaN = saved at start of run
+                QuestInfo.SavedAt             = datestr(now, 'yyyy-mm-dd HH:MM:SS');
+                QuestInfo.IntensityDefinition = 'log10(|comp - ref| / |ref|) along CompDirection, before jitter';
+                opt_names = fieldnames(this.ExperimentOptions);
+                keep = opt_names(startsWith(opt_names, 'Quest_') | ...
+                    ismember(opt_names, {'nonzero_rand', 'Do_Jitter', 'Jitter_Multiplier'}));
+                for f = 1:numel(keep)
+                    QuestInfo.Options.(keep{f}) = this.ExperimentOptions.(keep{f});
+                end
+
+                % Same folder as the session data; falls back to the current folder
+                save_dir = '';
+                try save_dir = this.Session.dataPath; catch, end
+                if isempty(save_dir) || ~exist(save_dir, 'dir')
+                    save_dir = pwd;
+                end
+                try sess_name = this.Session.name; catch, sess_name = ''; end
+                if isempty(sess_name), sess_name = this.Session.subjectCode; end
+                fname = fullfile(char(save_dir), [char(sess_name) '_QuestStaircases.mat']);
+
+                save(fname, 'QuestStaircases', 'QuestInfo', '-v6'); % -v6: uncompressed, fast between trials
+                if isnan(lastTrialNumber)
+                    fprintf('QUEST staircases will be saved to: %s\n', fname);
+                end
+            catch ex
+                % never stop the experiment because of a save problem
+                warning('A1MotionEllipsesQuest:QuestSave', 'Could not save QUEST staircases (%s).', ex.message);
+            end
+        end
     end
 
 end
-

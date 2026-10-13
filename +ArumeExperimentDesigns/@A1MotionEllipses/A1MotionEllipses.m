@@ -881,6 +881,10 @@ classdef A1MotionEllipsesQuest < ArumeExperimentDesigns.EyeTracking
             % state if this is a resumed session) before the first response
             this.saveQuestStaircases(NaN);
 
+            % QUEST PLOT: picture of the references and comparison axes, saved
+            % at the start of the session (before the first trial)
+            this.saveQuestReferencePlot();
+
 
             % show cursor if ClaraDebug
             if this.ExperimentOptions.ClaraDebug
@@ -1618,14 +1622,8 @@ classdef A1MotionEllipsesQuest < ArumeExperimentDesigns.EyeTracking
                 end
 
                 % Same folder as the session data; falls back to the current folder
-                save_dir = '';
-                try save_dir = this.Session.dataPath; catch, end
-                if isempty(save_dir) || ~exist(save_dir, 'dir')
-                    save_dir = pwd;
-                end
-                try sess_name = this.Session.name; catch, sess_name = ''; end
-                if isempty(sess_name), sess_name = this.Session.subjectCode; end
-                fname = fullfile(char(save_dir), [char(sess_name) '_QuestStaircases.mat']);
+                % (QUEST PLOT: path logic moved to questFileBase, shared with the PNG)
+                fname = [this.questFileBase() '_QuestStaircases.mat'];
 
                 save(fname, 'QuestStaircases', 'QuestInfo', '-v6'); % -v6: uncompressed, fast between trials
                 if isnan(lastTrialNumber)
@@ -1635,6 +1633,128 @@ classdef A1MotionEllipsesQuest < ArumeExperimentDesigns.EyeTracking
                 % never stop the experiment because of a save problem
                 warning('A1MotionEllipsesQuest:QuestSave', 'Could not save QUEST staircases (%s).', ex.message);
             end
+        end
+
+        % =====================================================================
+        % QUEST PLOT: folder + file stem shared by the QUEST output files
+        % (same folder as the session data; falls back to the current folder)
+        % =====================================================================
+        function base = questFileBase(this)
+            save_dir = '';
+            try save_dir = this.Session.dataPath; catch, end
+            if isempty(save_dir) || ~exist(save_dir, 'dir')
+                save_dir = pwd;
+            end
+            try sess_name = this.Session.name; catch, sess_name = ''; end
+            if isempty(sess_name), sess_name = this.Session.subjectCode; end
+            base = fullfile(char(save_dir), char(sess_name));
+        end
+
+        % =====================================================================
+        % QUEST PLOT: save a PNG of the reference vectors and their comparison
+        % axes in 2D velocity space (Vx, Vy). Called once in initBeforeRunning,
+        % before the first trial. Drawn in an invisible figure so the stimulus
+        % window is not disturbed.
+        %   big dot   = reference vector (label: ref index, comparison angle, N reps)
+        %   line      = comparison axis, from the reference out to the largest
+        %               allowed offset (Quest_Max_Rel_Offset x ref speed)
+        %   small dot = QUEST's starting guess on that axis (10^Quest_tGuess x ref speed)
+        %   grey      = speed max circle and component max box (random refs only)
+        % =====================================================================
+        function saveQuestReferencePlot(this)
+            fig = [];
+            try
+                info = this.questInfo;
+                opts = this.ExperimentOptions;
+                nz = 0.05; % same nonzero_rand default as SetUpTrialTable
+                try
+                    if ~isempty(opts.nonzero_rand), nz = opts.nonzero_rand; end
+                catch
+                end
+
+                % one entry per (reference, comparison angle) combo; repetitions share it
+                combo_keys = [[info.RefIndex]', [info.AxisIndex]'];
+                [combos, first_k] = unique(combo_keys, 'rows', 'stable');
+                n_c = numel(first_k);
+
+                % geometry of every combo
+                P_ref = zeros(n_c, 2); P_end = zeros(n_c, 2); P_guess = zeros(n_c, 2);
+                spd = zeros(n_c, 1); labels = cell(n_c, 1);
+                for c = 1:n_c
+                    k = first_k(c);
+                    v_ref = info(k).RefVelocity;
+                    u_dir = info(k).CompDirection;
+                    if info(k).ZeroRefRandomized
+                        ref_speed = nz; % [0 0] refs are replaced by +/-nonzero_rand each trial
+                        ref_note = ' (randomized)';
+                    else
+                        ref_speed = norm(v_ref);
+                        ref_note = '';
+                    end
+                    P_ref(c, :)   = v_ref;
+                    P_end(c, :)   = v_ref + opts.Quest_Max_Rel_Offset * ref_speed * u_dir;
+                    P_guess(c, :) = v_ref + 10^opts.Quest_tGuess * ref_speed * u_dir;
+                    spd(c)        = ref_speed;
+                    labels{c}     = sprintf('  R%d, %.0f%s, x%d%s', info(k).RefIndex, info(k).CompAngleDeg, ...
+                        char(176), sum(all(combo_keys == combos(c, :), 2)), ref_note);
+                end
+
+                % panel 1: everything; panel 2: zoom on the slower half of the references
+                lim_full = max([1; abs(P_ref(:)); abs(P_end(:))]);
+                if opts.Quest_Random_Refs
+                    lim_full = max([lim_full, opts.Quest_Ref_Speed_Max, opts.Quest_Ref_Comp_Max]);
+                end
+                slow = spd <= median(spd);
+                lim_zoom = max(max([abs(P_ref(slow, :)), abs(P_end(slow, :))])); % (works on older MATLAB too)
+                lims = 1.1 * [lim_full, max(lim_zoom, 0.1)];
+                panel_titles = {'All references', 'Zoom: slower half of the references'};
+
+                fig = figure('Visible', 'off', 'Color', 'w', 'Position', [100 100 1600 800]);
+                colors = lines(n_c);
+                for p = 1:2
+                    ax = axes('Parent', fig, 'Position', [0.05 + 0.5*(p-1), 0.1, 0.42, 0.75]);
+                    hold(ax, 'on'); axis(ax, 'equal'); grid(ax, 'on'); box(ax, 'on');
+                    lim = lims(p);
+                    plot(ax, [-lim lim], [0 0], '-', 'Color', [0.3 0.3 0.3], 'LineWidth', 0.5);
+                    plot(ax, [0 0], [-lim lim], '-', 'Color', [0.3 0.3 0.3], 'LineWidth', 0.5);
+                    if opts.Quest_Random_Refs % limits used to draw the random references
+                        th = linspace(0, 360, 361);
+                        s_max = opts.Quest_Ref_Speed_Max;
+                        c_max = opts.Quest_Ref_Comp_Max;
+                        plot(ax, s_max * cosd(th), s_max * sind(th), ':', 'Color', [0.6 0.6 0.6]);
+                        plot(ax, [-c_max c_max c_max -c_max -c_max], [-c_max -c_max c_max c_max -c_max], ...
+                            '--', 'Color', [0.6 0.6 0.6]);
+                    end
+                    for c = 1:n_c
+                        plot(ax, [P_ref(c, 1) P_end(c, 1)], [P_ref(c, 2) P_end(c, 2)], '-', ...
+                            'Color', colors(c, :), 'LineWidth', 1.5);
+                        plot(ax, P_guess(c, 1), P_guess(c, 2), 'o', 'MarkerSize', 4, ...
+                            'MarkerFaceColor', colors(c, :), 'MarkerEdgeColor', 'none');
+                        plot(ax, P_ref(c, 1), P_ref(c, 2), 'o', 'MarkerSize', 8, ...
+                            'MarkerFaceColor', colors(c, :), 'MarkerEdgeColor', 'k');
+                        if all(abs(P_ref(c, :)) <= lim) % only label refs inside this panel
+                            text(ax, P_ref(c, 1), P_ref(c, 2), labels{c}, 'FontSize', 8, ...
+                                'VerticalAlignment', 'bottom', 'Interpreter', 'none', 'Clipping', 'on');
+                        end
+                    end
+                    xlim(ax, [-lim lim]); ylim(ax, [-lim lim]);
+                    xlabel(ax, 'V_x (deg/s)'); ylabel(ax, 'V_y (deg/s)');
+                    title(ax, panel_titles{p}, 'FontWeight', 'normal');
+                end
+                annotation(fig, 'textbox', [0 0.9 1 0.08], 'EdgeColor', 'none', ...
+                    'HorizontalAlignment', 'center', 'Interpreter', 'none', 'FontSize', 11, 'String', ...
+                    {sprintf('%s: %d references, %d staircases', char(this.Session.subjectCode), ...
+                    numel(unique(combos(:, 1))), numel(info)), ...
+                    'big dot = reference (index, comparison angle, N reps); line = comparison axis to max offset; small dot = QUEST start guess'});
+
+                fname = [this.questFileBase() '_QuestReferences.png'];
+                print(fig, fname, '-dpng', '-r150');
+                fprintf('QUEST reference plot saved to: %s\n', fname);
+            catch ex
+                % never stop the experiment because of a plotting problem
+                warning('A1MotionEllipsesQuest:QuestPlot', 'Could not save the QUEST reference plot (%s).', ex.message);
+            end
+            if ~isempty(fig) && isvalid(fig), close(fig); end
         end
     end
 

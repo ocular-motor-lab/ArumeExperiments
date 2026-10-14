@@ -230,7 +230,7 @@ classdef A1MotionEllipsesQuest < ArumeExperimentDesigns.EyeTracking
             % converted (questToLog / questFromLog) only when calling Quest* functions.
             % tGuess is given linearly; the prior SD, grain and range are QUEST's
             % internal (log10) quantities and stay in log10 units.
-            dlg.Quest_tGuessRel  = { 0.1 '* (rel offset, x ref speed)' [0.0001 10] }; % prior guess: 10% of ref speed
+            dlg.Quest_tGuessRel  = { 0.2 '* (rel offset, x ref speed)' [0.0001 10] }; % prior guess: 20% of ref speed
             dlg.Quest_tGuessSd   = { 2 '* (log10 units, QUEST prior SD)' [0.01 10] };  % wide prior
             dlg.Quest_pThreshold = { 0.6667 '* (prop correct)' [0.34 0.99] }; % midway between 3AFC chance (1/3) and 1
             dlg.Quest_beta       = { 3.5 '*' [0.1 20] }; % default 3.5
